@@ -1,0 +1,11 @@
+[package]
+name = "qgi2-router"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Per-step (model, speculation, sampling) selection for QGI-2"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "qgi2-rules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Compiled Datalog rules for QGI-2: verify, tool gating, skill selection, mood switching"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+qgi2-factgraph.workspace = true
+ascent.workspace = true
+serde.workspace = true
+serde_json.workspace = true

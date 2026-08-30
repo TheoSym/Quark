@@ -21,3 +21,13 @@ captures/
 /*.avif
 /*.mp4
 /*.png
+
+# Secrets. The repo root carries a real .env with live fleet credentials
+# (Cloudflare, Tailscale, GPU hosts, provider API keys). Untracked is not
+# enough on its own — `git add -A` would stage it — so it is ignored
+# explicitly. Templates (.env.example) stay committable.
+.env
+.env.*
+*.env
+!.env.example
+!*.env.example

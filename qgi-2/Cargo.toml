@@ -1,0 +1,71 @@
+# QGI-2 — inference-first agent harness, built additively on jcode.
+#
+# This is a SEPARATE cargo workspace that path-depends on jcode's crates.
+# Nothing in `../crates`, `../src`, or `../Cargo.toml` is modified by this
+# workspace; jcode is consumed strictly as a library plus a set of runtime
+# extension seams (Provider trait, tool Registry, `[providers.*]` config).
+[workspace]
+resolver = "3"
+members = [
+    "crates/qgi2-spec-types",
+    # TODO(restore): re-enable as each crate lands.
+    "crates/qgi2-factgraph",
+    "crates/qgi2-rules",
+    "crates/qgi2-assembler",
+    "crates/qgi2-router",
+    "crates/qgi2-engine-vllm",
+    "crates/qgi2-metrics",
+    "crates/qgi2-turn",
+    "crates/qgi2-edge-http",
+    "crates/qgi2-edge-provider",
+    "bin/qgi2",
+]
+# Left over from a dependency probe; not part of the product.
+exclude = ["crates/_probe"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.90"
+
+[workspace.dependencies]
+# --- QGI-2 internal ---
+qgi2-spec-types = { path = "crates/qgi2-spec-types" }
+qgi2-factgraph = { path = "crates/qgi2-factgraph" }
+qgi2-rules = { path = "crates/qgi2-rules" }
+qgi2-assembler = { path = "crates/qgi2-assembler" }
+qgi2-router = { path = "crates/qgi2-router" }
+qgi2-engine-vllm = { path = "crates/qgi2-engine-vllm" }
+qgi2-metrics = { path = "crates/qgi2-metrics" }
+qgi2-turn = { path = "crates/qgi2-turn" }
+qgi2-edge-http = { path = "crates/qgi2-edge-http" }
+qgi2-edge-provider = { path = "crates/qgi2-edge-provider" }
+
+# --- jcode (consumed, never modified) ---
+jcode-message-types = { path = "../crates/jcode-message-types" }
+jcode-provider-core = { path = "../crates/jcode-provider-core" }
+jcode-memory-types = { path = "../crates/jcode-memory-types" }
+jcode-config-types = { path = "../crates/jcode-config-types" }
+
+# --- third party (versions aligned with jcode's lockfile where shared) ---
+anyhow = "1"
+async-trait = "0.1"
+ascent = "0.8"
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "tokio"] }
+blake3 = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+futures = "0.3"
+reqwest = { version = "0.12", default-features = false, features = ["json", "charset", "http2", "rustls-tls", "rustls-tls-native-roots", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-stream = "0.1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

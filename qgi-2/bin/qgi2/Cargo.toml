@@ -1,0 +1,29 @@
+[package]
+name = "qgi2"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "QGI-2: an inference-first agent harness built additively on jcode"
+
+[[bin]]
+name = "qgi2"
+path = "src/main.rs"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+qgi2-factgraph.workspace = true
+qgi2-rules.workspace = true
+qgi2-router.workspace = true
+qgi2-engine-vllm.workspace = true
+qgi2-turn.workspace = true
+qgi2-edge-http.workspace = true
+qgi2-edge-provider.workspace = true
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

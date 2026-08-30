@@ -1,0 +1,12 @@
+[package]
+name = "qgi2-assembler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Cache-shaped prompt assembly with per-segment hashes for QGI-2"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+qgi2-factgraph.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "qgi2-metrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Per-turn metrics for QGI-2: cache hit rate, speculation acceptance, token ratios"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true

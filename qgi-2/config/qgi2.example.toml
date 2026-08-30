@@ -1,0 +1,63 @@
+# QGI-2 configuration. Copy to ~/.qgi2/config.toml.
+#
+# This file is QGI-2's own. jcode's config is untouched except for one
+# [providers.qgi2] block — print it with `qgi2 config --jcode`.
+
+[server]
+bind = "127.0.0.1:8788"
+# graph_dir = "~/.qgi2/graphs"
+
+[persona]
+mood = "builder"          # builder | researcher | companion
+profile = "traceable"     # traceable | deterministic | quick
+# A mood switch rewrites segment 2 and discards the cached prefix, so it is
+# opt-in rather than something that happens to you mid-session.
+allow_mood_switch = false
+
+# --- vLLM processes ---
+#
+# `speculation` must match the --speculative-config the process was LAUNCHED
+# with. It is not a per-request setting: QGI-2 routes each step to the process
+# that implements the speculation its triple calls for, and refuses to run a
+# step on a process that implements a different one.
+#
+# Launch example (planner, MTP n=2):
+#   vllm serve Qwen3.8-Flash-Next-NVFP4 --port 8000 \
+#     --speculative-config '{"method":"mtp","num_speculative_tokens":2}' \
+#     --enable-prefix-caching
+#
+# Launch example (worker, DFlash2 n=7):
+#   vllm serve Qwen3.8-27B-NVFP4 --port 8001 \
+#     --speculative-config '{"method":"dflash2","num_speculative_tokens":7}' \
+#     --enable-prefix-caching
+
+[[engines]]
+role = "planner"
+base_url = "http://127.0.0.1:8000/v1"
+model = "Qwen3.8-Flash-Next-NVFP4"
+speculation = "mtp"
+speculation_n = 2
+
+[[engines]]
+role = "worker"
+base_url = "http://127.0.0.1:8001/v1"
+model = "Qwen3.8-27B-NVFP4"
+speculation = "dflash2"
+speculation_n = 7
+
+# The `deterministic` profile needs a worker launched with MTP, because DFlash2
+# cannot produce greedy output. Uncomment this THIRD process to use it:
+#
+# [[engines]]
+# role = "worker"
+# base_url = "http://127.0.0.1:8003/v1"
+# model = "Qwen3.8-27B-NVFP4"
+# speculation = "mtp"
+# speculation_n = 3
+
+[embedder]
+role = "embedder"
+base_url = "http://127.0.0.1:8002/v1"
+model = "Qwen3-Embedding-0.6B"
+speculation = "off"
+speculation_n = 0

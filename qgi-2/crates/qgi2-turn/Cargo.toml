@@ -1,0 +1,24 @@
+[package]
+name = "qgi2-turn"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The QGI-2 per-turn loop: assemble, plan, tools, extract, verify, commit, answer, mood check"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+qgi2-factgraph.workspace = true
+qgi2-rules.workspace = true
+qgi2-assembler.workspace = true
+qgi2-router.workspace = true
+qgi2-engine-vllm.workspace = true
+qgi2-metrics.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

@@ -1,0 +1,24 @@
+[package]
+name = "qgi2-edge-provider"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "QGI-2 as a jcode Provider: the in-process edge, registered at a variant composition root"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+qgi2-factgraph.workspace = true
+qgi2-turn.workspace = true
+qgi2-engine-vllm.workspace = true
+jcode-provider-core.workspace = true
+jcode-message-types.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

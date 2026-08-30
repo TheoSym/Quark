@@ -1,0 +1,13 @@
+[package]
+name = "qgi2-factgraph"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Typed fact graph for QGI-2: in-RAM, deterministically rendered, rule-written"
+
+[dependencies]
+qgi2-spec-types.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true

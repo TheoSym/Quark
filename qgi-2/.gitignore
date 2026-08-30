@@ -1,0 +1,13 @@
+# QGI-2 is a nested cargo workspace, so the root .gitignore's `/target` rule
+# (anchored to the repo root) does not cover it. Without this, `git add qgi-2/`
+# stages the whole build directory.
+/target
+
+# Persisted fact graphs. These are session memory, not source: they contain
+# whatever the agent learned from the repo and the user, so they are local
+# state rather than something to share.
+/graphs/
+*.json.tmp
+
+# Leftover from a dependency probe; not part of the product.
+/crates/_probe/
