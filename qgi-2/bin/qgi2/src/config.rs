@@ -7,7 +7,7 @@
 //! point for OpenAI-compatible endpoints.
 
 use anyhow::{Context, Result};
-use qgi2_engine_vllm::{Endpoint, EngineRegistry};
+use qgi2_engine::{Endpoint, EngineKind, EngineRegistry};
 use qgi2_spec_types::{ModelRole, Mood, Persona, Profile, Speculation};
 use qgi2_turn::SessionConfig;
 use serde::{Deserialize, Serialize};
@@ -65,6 +65,9 @@ impl Default for PersonaConfig {
 pub struct EngineConfig {
     /// `planner` or `worker`.
     pub role: String,
+    /// `vllm` or `sglang`. Defaults to vLLM, which is what the spec names.
+    #[serde(default = "default_engine_kind")]
+    pub engine: String,
     pub base_url: String,
     pub model: String,
     /// The speculation this vLLM process was launched with: `mtp`, `dflash2`,
@@ -81,6 +84,10 @@ fn default_spec_method() -> String {
     "off".to_string()
 }
 
+fn default_engine_kind() -> String {
+    "vllm".to_string()
+}
+
 impl Default for Qgi2Config {
     fn default() -> Self {
         Self {
@@ -89,6 +96,7 @@ impl Default for Qgi2Config {
             engines: vec![
                 EngineConfig {
                     role: "planner".into(),
+                    engine: "vllm".into(),
                     base_url: "http://127.0.0.1:8000/v1".into(),
                     model: "Qwen3.8-Flash-Next-NVFP4".into(),
                     speculation: "mtp".into(),
@@ -97,6 +105,7 @@ impl Default for Qgi2Config {
                 },
                 EngineConfig {
                     role: "worker".into(),
+                    engine: "vllm".into(),
                     base_url: "http://127.0.0.1:8001/v1".into(),
                     model: "Qwen3.8-27B-NVFP4".into(),
                     speculation: "dflash2".into(),
@@ -106,6 +115,7 @@ impl Default for Qgi2Config {
             ],
             embedder: Some(EngineConfig {
                 role: "embedder".into(),
+                engine: "vllm".into(),
                 base_url: "http://127.0.0.1:8002/v1".into(),
                 model: "Qwen3-Embedding-0.6B".into(),
                 speculation: "off".into(),
@@ -178,14 +188,31 @@ impl Qgi2Config {
                 "worker" => ModelRole::Worker,
                 other => anyhow::bail!("unknown engine role {other:?}; expected planner or worker"),
             };
-            let mut endpoint = Endpoint::new(&e.base_url, &e.model, parse_spec(e)?);
-            endpoint.api_key = e.api_key.clone();
+            let kind: EngineKind = e.engine.parse().map_err(|m: String| anyhow::anyhow!(m))?;
+            let spec = parse_spec(e)?;
+            // Catch an impossible pairing here rather than at the first turn:
+            // an SGLang endpoint claiming DFlash2 is a config error, not a
+            // deployment that happens to be down.
+            if !qgi2_engine::endpoint::engine_supports(kind, spec) {
+                anyhow::bail!(
+                    "engine `{kind}` cannot run `{}` (the {} endpoint at {} claims it)",
+                    spec,
+                    e.role,
+                    e.base_url
+                );
+            }
+            let endpoint = Endpoint::new(&e.base_url, &e.model, spec)
+                .with_engine(kind)
+                .with_api_key(e.api_key.clone());
             r.register(role, endpoint);
         }
         if let Some(e) = &self.embedder {
-            let mut endpoint = Endpoint::new(&e.base_url, &e.model, Speculation::Off);
-            endpoint.api_key = e.api_key.clone();
-            r.set_embedder(endpoint);
+            let kind: EngineKind = e.engine.parse().map_err(|m: String| anyhow::anyhow!(m))?;
+            r.set_embedder(
+                Endpoint::new(&e.base_url, &e.model, Speculation::Off)
+                    .with_engine(kind)
+                    .with_api_key(e.api_key.clone()),
+            );
         }
         Ok(r)
     }
@@ -199,10 +226,11 @@ fn parse_spec(e: &EngineConfig) -> Result<Speculation> {
     Ok(match e.speculation.as_str() {
         "mtp" => Speculation::Mtp { n: e.speculation_n },
         "dflash2" => Speculation::DFlash2 { n: e.speculation_n },
+        "eagle3" => Speculation::Eagle3 { n: e.speculation_n },
         "ngram" => Speculation::NGram { n: e.speculation_n },
         "off" | "none" => Speculation::Off,
         other => anyhow::bail!(
-            "unknown speculation {other:?}; expected mtp, dflash2, ngram, or off"
+            "unknown speculation {other:?}; expected mtp, dflash2, eagle3, ngram, or off"
         ),
     })
 }
@@ -294,5 +322,89 @@ mod tests {
         assert!(s.contains("[providers.qgi2]"));
         assert!(s.contains("openai-compatible"));
         assert!(s.contains("No jcode source file is modified"));
+    }
+}
+
+#[cfg(test)]
+mod sglang_tests {
+    use super::*;
+    use qgi2_spec_types::{ModelRole, Speculation};
+
+    fn sglang_config() -> Qgi2Config {
+        Qgi2Config {
+            engines: vec![
+                EngineConfig {
+                    role: "planner".into(),
+                    engine: "sglang".into(),
+                    base_url: "http://onyxtron-g12:30000/v1".into(),
+                    model: "planner".into(),
+                    speculation: "mtp".into(),
+                    speculation_n: 2,
+                    api_key: None,
+                },
+                EngineConfig {
+                    role: "worker".into(),
+                    engine: "sglang".into(),
+                    base_url: "http://rhoditron-g24:30000/v1".into(),
+                    model: "worker".into(),
+                    speculation: "eagle3".into(),
+                    speculation_n: 5,
+                    api_key: None,
+                },
+            ],
+            embedder: None,
+            ..Qgi2Config::default()
+        }
+    }
+
+    #[test]
+    fn an_sglang_fleet_builds_a_registry() {
+        let r = sglang_config().registry().unwrap();
+        let e = r
+            .resolve(ModelRole::Worker, Speculation::Eagle3 { n: 5 })
+            .unwrap();
+        assert_eq!(e.engine, EngineKind::Sglang);
+    }
+
+    #[test]
+    fn an_sglang_endpoint_claiming_dflash2_is_rejected_at_load() {
+        // A config error, not a deployment that happens to be down — so it
+        // should fail when the config is read, not on the first turn.
+        let mut c = sglang_config();
+        c.engines[1].speculation = "dflash2".into();
+        c.engines[1].speculation_n = 7;
+        let err = c.registry().unwrap_err().to_string();
+        assert!(err.contains("cannot run"), "{err}");
+        assert!(err.contains("sglang"), "{err}");
+    }
+
+    #[test]
+    fn a_mixed_fleet_is_allowed() {
+        // An SGLang worker beside a vLLM planner is a reasonable deployment.
+        let mut c = sglang_config();
+        c.engines[0].engine = "vllm".into();
+        let r = c.registry().unwrap();
+        assert_eq!(r.engine_kinds().len(), 2);
+    }
+
+    #[test]
+    fn an_unknown_engine_is_rejected() {
+        let mut c = sglang_config();
+        c.engines[0].engine = "tensorrt".into();
+        assert!(c.registry().unwrap_err().to_string().contains("tensorrt"));
+    }
+
+    #[test]
+    fn the_engine_field_defaults_to_vllm_for_older_configs() {
+        let toml_text = r#"
+[[engines]]
+role = "planner"
+base_url = "http://h:8000/v1"
+model = "m"
+speculation = "mtp"
+speculation_n = 2
+"#;
+        let c: Qgi2Config = toml::from_str(toml_text).unwrap();
+        assert_eq!(c.engines[0].engine, "vllm");
     }
 }

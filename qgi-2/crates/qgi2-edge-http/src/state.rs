@@ -1,7 +1,7 @@
 //! Shared server state: the session store.
 
 use anyhow::Result;
-use qgi2_engine_vllm::EngineRegistry;
+use qgi2_engine::EngineRegistry;
 use qgi2_factgraph::FactGraph;
 use qgi2_spec_types::Persona;
 use qgi2_turn::{Session, SessionConfig, session::SkillCandidate};
@@ -129,7 +129,7 @@ pub struct AppState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qgi2_engine_vllm::Endpoint;
+    use qgi2_engine::Endpoint;
     use qgi2_spec_types::{ModelRole, Mood, Profile, Speculation};
 
     fn store() -> SessionStore {

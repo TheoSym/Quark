@@ -1335,7 +1335,7 @@ dependencies = [
  "clap",
  "qgi2-edge-http",
  "qgi2-edge-provider",
- "qgi2-engine-vllm",
+ "qgi2-engine",
  "qgi2-factgraph",
  "qgi2-router",
  "qgi2-rules",
@@ -1365,7 +1365,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "qgi2-engine-vllm",
+ "qgi2-engine",
  "qgi2-factgraph",
  "qgi2-metrics",
  "qgi2-rules",
@@ -1386,7 +1386,7 @@ dependencies = [
  "futures",
  "jcode-message-types",
  "jcode-provider-core",
- "qgi2-engine-vllm",
+ "qgi2-engine",
  "qgi2-factgraph",
  "qgi2-spec-types",
  "qgi2-turn",
@@ -1397,10 +1397,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "qgi2-engine-vllm"
+name = "qgi2-engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "futures",
  "qgi2-spec-types",
  "reqwest",
@@ -1408,7 +1409,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.20",
  "tokio",
- "tokio-stream",
  "tracing",
 ]
 
@@ -1470,7 +1470,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "qgi2-assembler",
- "qgi2-engine-vllm",
+ "qgi2-engine",
  "qgi2-factgraph",
  "qgi2-metrics",
  "qgi2-router",
@@ -2155,17 +2155,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
- "tokio",
-]
-
-[[package]]
-name = "tokio-stream"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3d06f0b082ba57c26b79407372e57cf2a1e28124f78e9479fe80322cf53420b"
-dependencies = [
- "futures-core",
- "pin-project-lite",
  "tokio",
 ]
 

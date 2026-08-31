@@ -15,7 +15,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::{Qgi2Config, default_config_path, jcode_provider_snippet};
 use qgi2_edge_http::{AppState, SessionStore, router};
-use qgi2_engine_vllm::VllmClient;
+use qgi2_engine::{HttpClient, engine_for};
 use qgi2_router::Router as StepRouter;
 use qgi2_spec_types::{Mood, Persona, Profile};
 use std::path::PathBuf;
@@ -170,39 +170,56 @@ async fn doctor(cfg: Qgi2Config, mood: Option<String>, profile: Option<String>) 
     for p in &plans {
         match registry.resolve(p.role, p.speculation) {
             Ok(e) => println!(
-                "  {:<10} {:<8} {:<14} -> {}",
+                "  {:<10} {:<8} {:<14} -> {} ({})",
                 p.step.as_str(),
                 p.role.as_str(),
                 p.speculation.to_string(),
-                e.base_url
+                e.base_url,
+                e.engine
             ),
             Err(e) => {
                 failures += 1;
-                println!("  {:<10} {:<8} {:<14} -> UNROUTED", p.step.as_str(), p.role.as_str(), p.speculation.to_string());
+                println!(
+                    "  {:<10} {:<8} {:<14} -> UNROUTED",
+                    p.step.as_str(),
+                    p.role.as_str(),
+                    p.speculation.to_string()
+                );
                 println!("      {e}");
+                // Naming the flag turns "it doesn't work" into "run this".
+                for kind in registry.engine_kinds() {
+                    let engine = engine_for(kind, HttpClient::default());
+                    if engine.supports(p.speculation) {
+                        println!("      launch: {}", engine.launch_hint(p.speculation));
+                    }
+                }
             }
         }
     }
 
     println!("\nreachability:");
-    let client = VllmClient::default();
+    let http = HttpClient::default();
     for (role, endpoint) in registry.all() {
-        let up = client.health(endpoint).await;
+        let up = engine_for(endpoint.engine, http.clone())
+            .health(endpoint)
+            .await;
         if !up {
             failures += 1;
         }
         println!(
-            "  {:<8} {:<40} {}",
+            "  {:<8} {:<8} {:<40} {}",
             role,
+            endpoint.engine.as_str(),
             endpoint.base_url,
             if up { "up" } else { "UNREACHABLE" }
         );
     }
     if let Some(e) = &registry.embedder {
-        let up = client.health(e).await;
+        let up = engine_for(e.engine, http.clone()).health(e).await;
         println!(
-            "  {:<8} {:<40} {}",
+            "  {:<8} {:<8} {:<40} {}",
             "embedder",
+            e.engine.as_str(),
             e.base_url,
             if up { "up" } else { "UNREACHABLE" }
         );

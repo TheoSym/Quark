@@ -1,15 +1,17 @@
 //! Individual steps: running one model call under its plan, and parsing the
 //! structured result.
 //!
-//! Every structured step goes through [`run_structured`], which sends the
-//! step's schema as `guided_json` and then *still* validates the shape it got
-//! back. Guided decoding makes malformed output very unlikely, not impossible —
-//! a deployment can have the guided backend misconfigured, and the failure mode
-//! without a check here is a silently empty extraction that looks like "the
-//! model found nothing".
+//! Every structured step goes through [`run_structured`], which hands the
+//! step's schema to the engine and then *still* validates the shape it got
+//! back. Guided decoding makes malformed output very unlikely, not impossible:
+//! a deployment can have the guided backend misconfigured, or be an engine
+//! build that ignores the constraint field entirely. The failure mode without a
+//! check here is a silently empty extraction that looks like "the model found
+//! nothing".
 
 use anyhow::{Context, Result, bail};
-use qgi2_engine_vllm::{ChatMessage, ChatRequest, ChatResponse, EngineRegistry, VllmClient};
+use qgi2_engine::{ChatMessage, ChatRequest, ChatResponse, Engine, EngineRegistry};
+use std::sync::Arc;
 use qgi2_spec_types::{ProposedFact, StepPlan};
 use serde::Deserialize;
 use serde_json::Value;
@@ -56,10 +58,10 @@ pub struct ToolArgsOutput {
 /// Run one model step and return the raw response.
 ///
 /// The endpoint is resolved from the plan's `(role, speculation)` pair — see
-/// [`qgi2_engine_vllm::EngineRegistry`] for why speculation selects a process
+/// [`qgi2_engine::EngineRegistry`] for why speculation selects a process
 /// rather than a request field.
 pub async fn run_step(
-    client: &VllmClient,
+    engines: &Engines,
     registry: &EngineRegistry,
     plan: &StepPlan,
     system: &str,
@@ -69,26 +71,61 @@ pub async fn run_step(
         .resolve(plan.role, plan.speculation)
         .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-    let mut req = ChatRequest::new(
-        endpoint.model.clone(),
-        vec![ChatMessage::system(system), ChatMessage::user(user)],
-    )
-    .with_sampling(&plan.sampling);
+    let mut req = ChatRequest::new(vec![ChatMessage::system(system), ChatMessage::user(user)])
+        .with_sampling(plan.sampling);
 
     if let Some(schema) = &plan.schema {
         req = req.with_schema(schema.clone());
-        // Pin the backend when the profile demands reproducibility: guided
-        // backends can differ in which token they admit first at a grammar
-        // branch, which is enough to diverge two "identical" greedy runs.
-        if plan.sampling.seed.is_some() {
-            req.guided_decoding_backend = Some("xgrammar".to_string());
-        }
     }
 
-    client
+    let engine = engines.for_endpoint(endpoint)?;
+    engine
         .chat(endpoint, &req)
         .await
         .with_context(|| format!("{} step on the {}", plan.step, plan.role))
+}
+
+/// The engine backends a session can reach, one per kind in its registry.
+///
+/// A session's endpoints may span engines — an SGLang worker beside a vLLM
+/// planner is a reasonable deployment — so the backend is chosen per endpoint
+/// rather than once per session.
+#[derive(Clone, Default)]
+pub struct Engines {
+    by_kind: std::collections::BTreeMap<qgi2_engine::EngineKind, Arc<dyn Engine>>,
+}
+
+impl Engines {
+    /// Build one backend per engine kind the registry mentions.
+    pub fn for_registry(registry: &EngineRegistry) -> Self {
+        let http = qgi2_engine::HttpClient::default();
+        let by_kind = registry
+            .engine_kinds()
+            .into_iter()
+            .map(|k| (k, qgi2_engine::engine_for(k, http.clone())))
+            .collect();
+        Self { by_kind }
+    }
+
+    pub fn for_endpoint(&self, endpoint: &qgi2_engine::Endpoint) -> Result<&Arc<dyn Engine>> {
+        self.by_kind.get(&endpoint.engine).ok_or_else(|| {
+            anyhow::anyhow!(
+                "no backend built for engine {} at {}",
+                endpoint.engine,
+                endpoint.base_url
+            )
+        })
+    }
+
+    pub fn kinds(&self) -> Vec<qgi2_engine::EngineKind> {
+        self.by_kind.keys().copied().collect()
+    }
+}
+
+impl std::fmt::Debug for Engines {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Engines").field("kinds", &self.kinds()).finish()
+    }
 }
 
 /// Run a structured step, deserialize its output, and hand back the response.
@@ -102,7 +139,7 @@ pub async fn run_step(
 /// that silently yields `Default` is indistinguishable from one that genuinely
 /// found nothing, and the difference matters for the rejection-rate metric.
 pub async fn run_structured<T: for<'de> Deserialize<'de>>(
-    client: &VllmClient,
+    engines: &Engines,
     registry: &EngineRegistry,
     plan: &StepPlan,
     system: &str,
@@ -115,7 +152,7 @@ pub async fn run_structured<T: for<'de> Deserialize<'de>>(
         );
     }
 
-    let resp = run_step(client, registry, plan, system, user).await?;
+    let resp = run_step(engines, registry, plan, system, user).await?;
     let text = resp.text().trim();
 
     if text.is_empty() {

@@ -29,7 +29,7 @@ use async_trait::async_trait;
 use futures::stream;
 use jcode_message_types::{Message, StreamEvent, ToolDefinition};
 use jcode_provider_core::{EventStream, Provider};
-use qgi2_engine_vllm::EngineRegistry;
+use qgi2_engine::EngineRegistry;
 use qgi2_spec_types::Persona;
 use qgi2_turn::{DeferToCaller, RoundOutcome, Session, SessionConfig, session::SkillCandidate};
 use std::sync::Arc;
@@ -258,7 +258,7 @@ pub fn events_for(outcome: &RoundOutcome) -> Vec<StreamEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qgi2_engine_vllm::Endpoint;
+    use qgi2_engine::Endpoint;
     use qgi2_spec_types::{ModelRole, Mood, Profile, Speculation};
 
     fn provider(persona: Persona) -> Qgi2Provider {

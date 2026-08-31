@@ -20,11 +20,11 @@
 //! rounds into one [`TurnMetrics`], so "tokens per turn" means what the spec
 //! says it means rather than "tokens per model round-trip".
 
-use crate::steps::{self, ExtractOutput, PlanOutput, ToolArgsOutput};
+use crate::steps::{self, Engines, ExtractOutput, PlanOutput, ToolArgsOutput};
 use crate::tools::{ToolCall, ToolDisposition, ToolOutcome, ToolRunner};
 use anyhow::Result;
 use qgi2_assembler::{Assembler, CacheOutlook};
-use qgi2_engine_vllm::{EngineRegistry, VllmClient, scrape_acceptance};
+use qgi2_engine::EngineRegistry;
 use qgi2_factgraph::{FactGraph, RenderBudget, Retrieval, Scope, Walk};
 use qgi2_metrics::{Breach, SessionMetrics, TurnMetrics};
 use qgi2_router::{Router, schemas};
@@ -182,7 +182,7 @@ pub struct Session {
     pub metrics: SessionMetrics,
     assembler: Assembler,
     retrieval: Retrieval,
-    client: VllmClient,
+    engines: Engines,
     registry: EngineRegistry,
     skills: Vec<SkillCandidate>,
     turn: u64,
@@ -194,7 +194,7 @@ pub struct Session {
     recent_relations: Vec<Relation>,
     /// Last acceptance scrape per endpoint, so the reported number describes
     /// this turn rather than the server's lifetime.
-    last_acceptance: std::collections::BTreeMap<String, qgi2_engine_vllm::AcceptanceSnapshot>,
+    last_acceptance: std::collections::BTreeMap<String, qgi2_engine::AcceptanceSnapshot>,
 }
 
 impl Session {
@@ -209,7 +209,7 @@ impl Session {
             config,
             assembler: Assembler::with_budget(RenderBudget::default()),
             retrieval: Retrieval::default(),
-            client: VllmClient::default(),
+            engines: Engines::for_registry(&registry),
             registry,
             skills,
             turn: 0,
@@ -362,7 +362,7 @@ impl Session {
         // --- plan ---
         let plan_step = router.plan(StepKind::Plan).map_err(|e| anyhow::anyhow!("{e}"))?;
         let (planned, plan_resp): (PlanOutput, _) =
-            steps::run_structured(&self.client, &self.registry, &plan_step, &system, &volatile)
+            steps::run_structured(&self.engines, &self.registry, &plan_step, &system, &volatile)
                 .await?;
         record(&mut metrics, ModelRole::Planner, &plan_resp);
 
@@ -410,7 +410,7 @@ impl Session {
             .plan(StepKind::Answer)
             .map_err(|e| anyhow::anyhow!("{e}"))?;
         let answer_resp =
-            steps::run_step(&self.client, &self.registry, &answer_step, &system, &volatile).await?;
+            steps::run_step(&self.engines, &self.registry, &answer_step, &system, &volatile).await?;
         record(&mut metrics, ModelRole::Planner, &answer_resp);
         result.answer = answer_resp.text().to_string();
 
@@ -498,7 +498,7 @@ impl Session {
             args_step.schema = Some(schemas::tool_args_schema_for(&spec.name, &spec.parameters));
 
             let (args, args_resp): (ToolArgsOutput, _) = steps::run_structured(
-                &self.client,
+                &self.engines,
                 &self.registry,
                 &args_step,
                 system,
@@ -535,7 +535,7 @@ impl Session {
             .plan(StepKind::Extract)
             .map_err(|e| anyhow::anyhow!("{e}"))?;
         let (extracted, resp): (ExtractOutput, _) =
-            steps::run_structured(&self.client, &self.registry, &step, system, user).await?;
+            steps::run_structured(&self.engines, &self.registry, &step, system, user).await?;
         record(metrics, ModelRole::Worker, &resp);
 
         if extracted.facts.is_empty() {
@@ -578,7 +578,10 @@ impl Session {
 
     async fn record_acceptance(&mut self, metrics: &mut TurnMetrics) {
         for (role_name, endpoint) in self.registry.all() {
-            let Ok(now) = scrape_acceptance(&self.client, endpoint).await else {
+            let Ok(engine) = self.engines.for_endpoint(endpoint) else {
+                continue;
+            };
+            let Ok(now) = engine.acceptance(endpoint).await else {
                 continue;
             };
             let key = format!("{role_name}:{}", endpoint.base_url);
@@ -644,7 +647,7 @@ pub struct SessionEnd {
 /// Every model call in the loop goes through here, so a step that forgets to
 /// record is a step whose tokens never reach the cache-hit or token-ratio
 /// metrics.
-fn record(metrics: &mut TurnMetrics, role: ModelRole, resp: &qgi2_engine_vllm::ChatResponse) {
+fn record(metrics: &mut TurnMetrics, role: ModelRole, resp: &qgi2_engine::ChatResponse) {
     let (prompt, completion, cached) = steps::usage_of(resp);
     metrics.record_usage(role, prompt, completion, cached);
 }
@@ -662,7 +665,7 @@ fn blend_rate(rate_a: f64, count_a: usize, rate_b: f64, count_b: usize) -> f64 {
 mod tests {
     use super::*;
     use crate::tools::{DeferToCaller, ToolSpec};
-    use qgi2_engine_vllm::Endpoint;
+    use qgi2_engine::Endpoint;
     use qgi2_spec_types::Speculation;
 
     fn registry() -> EngineRegistry {
@@ -695,7 +698,34 @@ mod tests {
         };
         let s = Session::new(config, registry(), vec![]);
         let err = s.preflight().unwrap_err().to_string();
-        assert!(err.contains("--speculative-config"), "{err}");
+        // The message names what *is* deployed, so the reader can see the gap
+        // rather than only being told something is missing.
+        assert!(err.contains("mtp n=3"), "{err}");
+        assert!(err.contains("dflash2 n=7"), "{err}");
+        assert!(err.contains("vllm"), "engine is named: {err}");
+    }
+
+    #[test]
+    fn an_sglang_worker_cannot_serve_the_traceable_profile() {
+        // Traceable asks for DFlash2 n=7 and no SGLang build implements it.
+        // The error must say the engine cannot do it at all, not that an
+        // endpoint is missing — the fix is a different profile, not a flag.
+        use qgi2_engine::{Endpoint, EngineKind};
+        let mut r = EngineRegistry::new();
+        r.register(
+            ModelRole::Planner,
+            Endpoint::new("http://onyxtron-g12:30000/v1", "p", Speculation::Mtp { n: 2 })
+                .with_engine(EngineKind::Sglang),
+        );
+        r.register(
+            ModelRole::Worker,
+            Endpoint::new("http://rhoditron-g24:30000/v1", "w", Speculation::Eagle3 { n: 5 })
+                .with_engine(EngineKind::Sglang),
+        );
+        let s = Session::new(SessionConfig::default(), r, vec![]);
+        let err = s.preflight().unwrap_err().to_string();
+        assert!(err.contains("cannot run"), "{err}");
+        assert!(err.contains("sglang"), "{err}");
     }
 
     #[tokio::test]

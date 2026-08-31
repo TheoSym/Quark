@@ -1,0 +1,57 @@
+# QGI-2 against an SGLang fleet.
+#
+# The spec names vLLM, but SGLang's RadixAttention is prefix sharing across
+# requests, which is what a large byte-stable prefix is built to exploit. The
+# harness is engine-agnostic above `qgi2-engine`; only the schema field, the
+# metric names, and the available speculators differ.
+#
+# ONE THING TO KNOW BEFORE YOU START: SGLang has no DFlash2. The spec's
+# `traceable` profile asks for it on the worker, so on SGLang use `eagle3`
+# instead — it fills the same role and, unlike DFlash2, verifies by exact
+# rejection sampling, so it is safe under `deterministic` too.
+
+[server]
+bind = "127.0.0.1:8788"
+
+[persona]
+mood = "builder"
+profile = "traceable"
+allow_mood_switch = false
+
+# Launch (planner, MTP via SGLang's NEXTN):
+#   python -m sglang.launch_server --model-path <planner> --port 30000 \
+#     --speculative-algorithm NEXTN --speculative-num-steps 2 \
+#     --speculative-num-draft-tokens 3 \
+#     --enable-hierarchical-cache
+[[engines]]
+role = "planner"
+engine = "sglang"
+base_url = "http://onyxtron-g12:30000/v1"
+model = "planner"
+speculation = "mtp"
+speculation_n = 2
+
+# Launch (worker, EAGLE3):
+#   python -m sglang.launch_server --model-path <worker> --port 30000 \
+#     --speculative-algorithm EAGLE3 --speculative-num-steps 5 \
+#     --speculative-eagle-topk 8 --speculative-num-draft-tokens 6 \
+#     --enable-hierarchical-cache --hicache-ratio 2
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://rhoditron-g24:30000/v1"
+model = "worker"
+speculation = "eagle3"
+speculation_n = 5
+
+# Launch with --is-embedding.
+[embedder]
+role = "embedder"
+engine = "sglang"
+base_url = "http://onyxtron-g12:30001/v1"
+model = "Qwen3-Embedding-0.6B"
+speculation = "off"
+speculation_n = 0
+
+# A mixed fleet is fine — set `engine` per endpoint. An SGLang worker beside a
+# vLLM planner builds one backend per kind and routes each step to its own.

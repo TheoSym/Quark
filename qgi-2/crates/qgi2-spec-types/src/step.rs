@@ -52,6 +52,14 @@ pub enum Speculation {
     /// DFlash2 draft model. Faster, but cannot produce greedy output, so it is
     /// unusable under the Deterministic profile.
     DFlash2 { n: u8 },
+    /// EAGLE-3 draft head. SGLang's headline speculator; vLLM does not serve it
+    /// under this name.
+    ///
+    /// Unlike DFlash2 it verifies by exact rejection sampling, which preserves
+    /// the target model's distribution (greedy included). So an SGLang
+    /// deployment can run the Deterministic profile on EAGLE-3 rather than
+    /// dropping the worker to MTP.
+    Eagle3 { n: u8 },
     /// N-gram lookup against the prompt. Only useful when output copies input.
     NGram { n: u8 },
     /// No speculation.
@@ -65,7 +73,9 @@ impl Speculation {
     /// sampling with speculation asks here rather than matching on the variant.
     pub const fn supports_greedy(self) -> bool {
         match self {
-            Self::Mtp { .. } | Self::NGram { .. } | Self::Off => true,
+            // EAGLE verifies by exact rejection sampling, so it reproduces the
+            // target distribution including the greedy case.
+            Self::Mtp { .. } | Self::NGram { .. } | Self::Eagle3 { .. } | Self::Off => true,
             Self::DFlash2 { .. } => false,
         }
     }
@@ -73,7 +83,7 @@ impl Speculation {
     /// Lookahead depth; `0` when speculation is off.
     pub const fn lookahead(self) -> u8 {
         match self {
-            Self::Mtp { n } | Self::DFlash2 { n } | Self::NGram { n } => n,
+            Self::Mtp { n } | Self::DFlash2 { n } | Self::NGram { n } | Self::Eagle3 { n } => n,
             Self::Off => 0,
         }
     }
@@ -83,6 +93,7 @@ impl Speculation {
             Self::Mtp { .. } => "mtp",
             Self::DFlash2 { .. } => "dflash2",
             Self::NGram { .. } => "ngram",
+            Self::Eagle3 { .. } => "eagle3",
             Self::Off => "off",
         }
     }
@@ -92,7 +103,9 @@ impl Speculation {
     pub const fn acceptance_floor(self, role: ModelRole) -> Option<f64> {
         match (self, role) {
             (Self::Mtp { .. }, ModelRole::Planner) => Some(1.8),
-            (Self::DFlash2 { .. }, ModelRole::Worker) => Some(2.0),
+            // EAGLE-3 fills DFlash2's role on SGLang, so it is held to the same
+            // worker floor rather than going unmeasured.
+            (Self::DFlash2 { .. } | Self::Eagle3 { .. }, ModelRole::Worker) => Some(2.0),
             _ => None,
         }
     }
@@ -273,6 +286,22 @@ mod tests {
         assert!(Speculation::Mtp { n: 3 }.supports_greedy());
         assert!(Speculation::NGram { n: 4 }.supports_greedy());
         assert!(Speculation::Off.supports_greedy());
+    }
+
+    #[test]
+    fn eagle3_is_greedy_safe_because_it_verifies_exactly() {
+        // This is why an SGLang deployment can run Deterministic on EAGLE-3
+        // instead of dropping the worker to MTP.
+        assert!(Speculation::Eagle3 { n: 5 }.supports_greedy());
+    }
+
+    #[test]
+    fn eagle3_is_held_to_the_workers_acceptance_floor() {
+        // It fills DFlash2's role, so it must not go unmeasured.
+        assert_eq!(
+            Speculation::Eagle3 { n: 5 }.acceptance_floor(ModelRole::Worker),
+            Some(2.0)
+        );
     }
 
     #[test]

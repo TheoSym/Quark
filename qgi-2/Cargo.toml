@@ -13,7 +13,7 @@ members = [
     "crates/qgi2-rules",
     "crates/qgi2-assembler",
     "crates/qgi2-router",
-    "crates/qgi2-engine-vllm",
+    "crates/qgi2-engine",
     "crates/qgi2-metrics",
     "crates/qgi2-turn",
     "crates/qgi2-edge-http",
@@ -36,7 +36,7 @@ qgi2-factgraph = { path = "crates/qgi2-factgraph" }
 qgi2-rules = { path = "crates/qgi2-rules" }
 qgi2-assembler = { path = "crates/qgi2-assembler" }
 qgi2-router = { path = "crates/qgi2-router" }
-qgi2-engine-vllm = { path = "crates/qgi2-engine-vllm" }
+qgi2-engine = { path = "crates/qgi2-engine" }
 qgi2-metrics = { path = "crates/qgi2-metrics" }
 qgi2-turn = { path = "crates/qgi2-turn" }
 qgi2-edge-http = { path = "crates/qgi2-edge-http" }
