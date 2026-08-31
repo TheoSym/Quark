@@ -68,6 +68,18 @@ pub struct Endpoint {
     /// Optional bearer token.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
+    /// Stream the response.
+    ///
+    /// Defaults to true. A non-streamed request that runs past ~100 s is killed
+    /// by the Cloudflare edge with a 524, which is exactly what a planner step
+    /// on a long prompt does. Streaming costs nothing locally and removes that
+    /// failure mode entirely, so it is the default rather than an opt-in.
+    #[serde(default = "default_stream")]
+    pub stream: bool,
+}
+
+fn default_stream() -> bool {
+    true
 }
 
 fn default_engine() -> EngineKind {
@@ -87,7 +99,15 @@ impl Endpoint {
             speculation_method: speculation.method_name().to_string(),
             speculation_n: speculation.lookahead(),
             api_key: None,
+            stream: true,
         }
+    }
+
+    /// Turn streaming off. Only sensible for a local backend that is not behind
+    /// a proxy with an idle timeout.
+    pub fn without_streaming(mut self) -> Self {
+        self.stream = false;
+        self
     }
 
     pub fn with_engine(mut self, engine: EngineKind) -> Self {

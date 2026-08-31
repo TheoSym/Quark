@@ -1,0 +1,77 @@
+# QGI-2 fully self-hosted — the topology deploy/ brings up.
+#
+# Every process is yours, so speculation, HiCache and prefix caching are all
+# under your control. That is the difference between running the spec and
+# approximating it through a gateway.
+#
+# Ports are the backends' own (:18xxx). They bind 127.0.0.1, so either
+# `tailscale serve` them (check infra/tailscale-acl.hujson first — gpu-lane to
+# gpu-lane is port-listed, and an ACL miss looks exactly like a bind problem)
+# or point base_url at the LiteLLM gateway instead.
+
+[server]
+bind = "127.0.0.1:8788"
+# graph_dir = "~/.qgi2/graphs"
+
+[persona]
+mood = "builder"
+profile = "traceable"
+allow_mood_switch = false
+
+# --- planner: vidatron GPU0, deploy/launch-qgi2-planner.sh ---
+[[engines]]
+role = "planner"
+engine = "sglang"
+base_url = "http://100.107.254.57:18033/v1"
+model = "QGI-2-Planner"
+speculation = "mtp"
+speculation_n = 2
+
+# --- worker: vidatron GPU1, already running ---
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://100.107.254.57:18031/v1"
+model = "QGI-3.8-27b DFlash"
+speculation = "dflash2"
+speculation_n = 7
+
+# --- second worker, for the `deterministic` profile only ---
+#
+# DFlash2 cannot produce greedy output and `deterministic` forces T=0, so the
+# profile needs its own process. Uncomment together with launching
+# deploy/launch-qgi2-worker-mtp.sh; `qgi2 doctor --profile deterministic` will
+# tell you if it is missing.
+#
+# NOTE: on vegatron (A6000, sm_86) FP8 will not run — point MODEL_PATH at an
+# AWQ/GPTQ int4 checkpoint there.
+#
+# [[engines]]
+# role = "worker"
+# engine = "sglang"
+# base_url = "http://100.77.65.105:18034/v1"
+# model = "QGI-2-Worker-MTP"
+# speculation = "mtp"
+# speculation_n = 3
+
+[embedder]
+role = "embedder"
+engine = "vllm"
+base_url = "http://100.95.12.86:11434/v1"
+model = "QGI-Embed"
+speculation = "off"
+speculation_n = 0
+
+# page_size MUST match the servers' --page-size, or the harness pads its stable
+# prefix to a boundary the engine does not share and the alignment does nothing.
+[hicache]
+enabled = true
+page_size = 64
+io_backend = "kernel"
+write_policy = "write_through_selective"
+mem_layout = "page_first"
+fa3 = false
+
+[hicache.l2]
+mode = "ratio"
+value = 2.0

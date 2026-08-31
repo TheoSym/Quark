@@ -66,6 +66,62 @@ impl HttpClient {
         Ok(text)
     }
 
+    /// POST JSON and collect a Server-Sent Events stream into one body.
+    ///
+    /// Streaming is the default for QGI-2 because a non-streamed request that
+    /// runs past ~100 s is killed by the Cloudflare edge with a 524, and a
+    /// planner step on a long prompt does exactly that. Streaming also keeps
+    /// the connection alive for the whole generation, so the failure mode
+    /// becomes a slow answer rather than a lost turn.
+    ///
+    /// Returns `(text, usage)`. Usage arrives on the final chunk and only when
+    /// `stream_options.include_usage` was set — without it the cache-hit metric
+    /// silently reads zero for every streamed turn.
+    pub async fn post_sse<B: serde::Serialize>(
+        &self,
+        endpoint: &Endpoint,
+        path: &str,
+        body: &B,
+    ) -> Result<(String, Option<serde_json::Value>)> {
+        use futures::StreamExt;
+
+        let url = endpoint.url(path);
+        let mut req = self.inner.post(&url).json(body);
+        if let Some(key) = &endpoint.api_key {
+            req = req.bearer_auth(key);
+        }
+        let resp = req.send().await.with_context(|| format!("POST {url} (stream)"))?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            bail!(
+                "{} returned {status} from {}: {text}",
+                endpoint.engine,
+                endpoint.base_url
+            );
+        }
+
+        let mut text = String::new();
+        let mut usage = None;
+        let mut buf = String::new();
+        let mut stream = resp.bytes_stream();
+
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk.context("reading SSE chunk")?;
+            buf.push_str(&String::from_utf8_lossy(&chunk));
+            // Events are separated by a blank line, and a network chunk can
+            // split one, so only complete events are consumed.
+            while let Some(idx) = buf.find("
+
+") {
+                let event = buf[..idx].to_string();
+                buf.drain(..idx + 2);
+                collect_event(&event, &mut text, &mut usage);
+            }
+        }
+        Ok((text, usage))
+    }
+
     /// GET a URL and return the body, for Prometheus scrapes.
     pub async fn get_text(&self, url: &str, api_key: Option<&str>) -> Result<String> {
         let mut req = self.inner.get(url).timeout(Duration::from_secs(10));
@@ -115,6 +171,32 @@ impl HttpClient {
             Ok(v) if v.get("data").is_some() || v.get("object").is_some() => Ok(()),
             Ok(_) => Err("answered JSON that is not a model listing".into()),
             Err(_) => Err("answered something that is not JSON".into()),
+        }
+    }
+}
+
+/// Fold one SSE event into the accumulating text and usage.
+fn collect_event(event: &str, text: &mut String, usage: &mut Option<serde_json::Value>) {
+    for line in event.lines() {
+        let Some(data) = line.strip_prefix("data:") else {
+            continue;
+        };
+        let data = data.trim();
+        if data.is_empty() || data == "[DONE]" {
+            continue;
+        }
+        // A chunk shape this client does not know is not worth failing a turn
+        // over; the deltas and the usage chunk are what matter.
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(data) else {
+            continue;
+        };
+        if let Some(u) = v.get("usage")
+            && !u.is_null()
+        {
+            *usage = Some(u.clone());
+        }
+        if let Some(c) = v["choices"][0]["delta"]["content"].as_str() {
+            text.push_str(c);
         }
     }
 }
@@ -175,5 +257,69 @@ mod health_tests {
     #[test]
     fn an_empty_body_is_not_healthy() {
         assert!(classify("").is_err());
+    }
+}
+
+#[cfg(test)]
+mod sse_tests {
+    use super::*;
+
+    fn collect(events: &[&str]) -> (String, Option<serde_json::Value>) {
+        let mut text = String::new();
+        let mut usage = None;
+        for e in events {
+            collect_event(e, &mut text, &mut usage);
+        }
+        (text, usage)
+    }
+
+    #[test]
+    fn deltas_accumulate_into_the_answer() {
+        let (text, _) = collect(&[
+            r#"data: {"choices":[{"delta":{"content":"Hello"}}]}"#,
+            r#"data: {"choices":[{"delta":{"content":", world"}}]}"#,
+        ]);
+        assert_eq!(text, "Hello, world");
+    }
+
+    #[test]
+    fn the_final_usage_chunk_is_captured() {
+        // Without stream_options.include_usage there is no such chunk, and the
+        // cache-hit metric reads zero for every streamed turn.
+        let (_, usage) = collect(&[
+            r#"data: {"choices":[{"delta":{"content":"hi"}}]}"#,
+            r#"data: {"choices":[],"usage":{"prompt_tokens":100,"prompt_tokens_details":{"cached_tokens":90}}}"#,
+        ]);
+        let u = usage.expect("usage chunk");
+        assert_eq!(u["prompt_tokens_details"]["cached_tokens"], 90);
+    }
+
+    #[test]
+    fn done_and_blank_lines_are_ignored() {
+        let (text, _) = collect(&[
+            r#"data: {"choices":[{"delta":{"content":"x"}}]}"#,
+            "data: [DONE]",
+            "data:",
+            ": a comment",
+        ]);
+        assert_eq!(text, "x");
+    }
+
+    #[test]
+    fn an_unparseable_chunk_does_not_lose_the_turn() {
+        // A chunk shape this client does not know should be skipped, not fatal.
+        let (text, _) = collect(&[
+            r#"data: {"choices":[{"delta":{"content":"a"}}]}"#,
+            "data: {not json",
+            r#"data: {"choices":[{"delta":{"content":"b"}}]}"#,
+        ]);
+        assert_eq!(text, "ab");
+    }
+
+    #[test]
+    fn a_null_usage_field_is_not_mistaken_for_usage() {
+        // vLLM sends "usage": null on every non-final chunk.
+        let (_, usage) = collect(&[r#"data: {"choices":[{"delta":{"content":"x"}}],"usage":null}"#]);
+        assert!(usage.is_none());
     }
 }

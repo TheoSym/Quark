@@ -22,6 +22,19 @@ use qgi2_spec_types::{
     StepPlan,
 };
 
+/// Output cap for planner steps.
+///
+/// Comfortably above the 2048 floor a reasoning model needs before its thinking
+/// budget starves the visible answer, and far below a full context window,
+/// where a runaway loop would spend the whole generation.
+pub const PLANNER_MAX_TOKENS: u32 = 8192;
+
+/// Output cap for worker steps.
+///
+/// Worker output is a schema-constrained JSON object; the extract schema alone
+/// caps facts at 16. This is generous for that and still bounds a loop.
+pub const WORKER_MAX_TOKENS: u32 = 4096;
+
 /// Chooses the triple for each step of a turn.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Router {
@@ -109,6 +122,16 @@ impl Router {
         if role == ModelRole::Worker {
             sampling.thinking = false;
         }
+
+        // Always a finite cap. An uncapped request lets a model that starts
+        // looping run until the context is exhausted, which costs a full
+        // generation and returns nothing usable. The worker's steps emit a
+        // fixed-shape JSON object and need far less room than an answer, so the
+        // caps differ by role rather than being one conservative number.
+        sampling.max_tokens = sampling.max_tokens.or(Some(match role {
+            ModelRole::Planner => PLANNER_MAX_TOKENS,
+            ModelRole::Worker => WORKER_MAX_TOKENS,
+        }));
 
         let speculation = self.speculation_for(role, step, &sampling);
 

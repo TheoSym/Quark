@@ -50,6 +50,8 @@ pub struct ChatRequest {
     pub schema: Option<Value>,
     /// Extra body fields a deployment needs.
     pub extra: Map<String, Value>,
+    /// Stream the response. See [`crate::Endpoint::stream`].
+    pub stream: bool,
 }
 
 impl ChatRequest {
@@ -59,7 +61,13 @@ impl ChatRequest {
             sampling: Sampling::at_temperature(0.7),
             schema: None,
             extra: Map::new(),
+            stream: true,
         }
+    }
+
+    pub fn streaming(mut self, on: bool) -> Self {
+        self.stream = on;
+        self
     }
 
     pub fn with_sampling(mut self, sampling: Sampling) -> Self {
@@ -98,6 +106,15 @@ impl ChatRequest {
             // request-level hint is passed through for deployments that read it
             // and is harmless where it is ignored.
             body.insert("batch_invariant".into(), json!(true));
+        }
+        if self.stream {
+            body.insert("stream".into(), json!(true));
+            // Without this the final chunk carries no usage, and the cache-hit
+            // metric reads zero for every streamed turn.
+            body.insert(
+                "stream_options".into(),
+                json!({ "include_usage": true }),
+            );
         }
         for (k, v) in &self.extra {
             body.insert(k.clone(), v.clone());

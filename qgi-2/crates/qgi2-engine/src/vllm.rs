@@ -4,7 +4,7 @@ use crate::endpoint::{Endpoint, EngineKind, engine_typically_supports};
 use crate::http::HttpClient;
 use crate::metrics::{AcceptanceSnapshot, prometheus_lines};
 use crate::types::{ChatRequest, ChatResponse, EmbeddingResponse};
-use crate::Engine;
+use crate::{Engine, send_chat};
 use anyhow::{Context, Result, bail};
 use async_trait::async_trait;
 use qgi2_spec_types::Speculation;
@@ -31,7 +31,7 @@ impl Engine for VllmEngine {
     }
 
     async fn chat(&self, endpoint: &Endpoint, req: &ChatRequest) -> Result<ChatResponse> {
-        let mut body = req.to_openai_body(&endpoint.model);
+        let mut body = req.clone().streaming(endpoint.stream).to_openai_body(&endpoint.model);
 
         // vLLM's guided decoding is a top-level `guided_json` field.
         if let Some(schema) = &req.schema {
@@ -45,12 +45,7 @@ impl Engine for VllmEngine {
             }
         }
 
-        let text = self
-            .http
-            .post_json(endpoint, "/chat/completions", &body)
-            .await?;
-        serde_json::from_str(&text)
-            .with_context(|| format!("decoding chat response from {}", endpoint.base_url))
+        send_chat(&self.http, endpoint, &body).await
     }
 
     async fn embed(&self, endpoint: &Endpoint, texts: &[String]) -> Result<Vec<Vec<f32>>> {

@@ -84,6 +84,43 @@ pub trait Engine: Send + Sync {
     fn launch_hint(&self, speculation: Speculation) -> String;
 }
 
+/// Send a prepared chat body, streaming when the endpoint asks for it.
+///
+/// Shared by both backends: the wire body differs (guided_json vs
+/// response_format), the transport does not.
+pub async fn send_chat(
+    http: &HttpClient,
+    endpoint: &Endpoint,
+    body: &serde_json::Map<String, serde_json::Value>,
+) -> Result<ChatResponse> {
+    use anyhow::Context;
+
+    if !body.get("stream").and_then(|v| v.as_bool()).unwrap_or(false) {
+        let text = http.post_json(endpoint, "/chat/completions", body).await?;
+        return serde_json::from_str(&text)
+            .with_context(|| format!("decoding chat response from {}", endpoint.base_url));
+    }
+
+    let (text, usage) = http.post_sse(endpoint, "/chat/completions", body).await?;
+    // A streamed response is reassembled into the same shape a non-streamed one
+    // would have had, so nothing above this line knows the difference.
+    let usage = usage.and_then(|u| serde_json::from_value::<Usage>(u).ok());
+    Ok(ChatResponse {
+        id: String::new(),
+        model: body
+            .get("model")
+            .and_then(|m| m.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        choices: vec![ChatChoice {
+            index: 0,
+            message: ChatMessage::assistant(text),
+            finish_reason: Some("stop".into()),
+        }],
+        usage,
+    })
+}
+
 /// Build the engine for a kind.
 pub fn engine_for(kind: EngineKind, http: HttpClient) -> Arc<dyn Engine> {
     match kind {
