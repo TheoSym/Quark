@@ -82,6 +82,12 @@ pub struct EngineConfig {
     pub speculation_n: u8,
     #[serde(default)]
     pub api_key: Option<String>,
+    /// Send an explicit `cache_control` breakpoint. Needed by Anthropic and
+    /// Alibaba Qwen routes, which cache only where the request says to; without
+    /// it they report `cached_tokens: 0` on a perfectly stable prefix and the
+    /// harness raises a false alarm on the spec's key metric.
+    #[serde(default)]
+    pub cache_control: bool,
 }
 
 fn default_spec_method() -> String {
@@ -106,6 +112,7 @@ impl Default for Qgi2Config {
                     speculation: "mtp".into(),
                     speculation_n: 2,
                     api_key: None,
+                    cache_control: false,
                 },
                 EngineConfig {
                     role: "worker".into(),
@@ -115,6 +122,7 @@ impl Default for Qgi2Config {
                     speculation: "dflash2".into(),
                     speculation_n: 7,
                     api_key: None,
+                    cache_control: false,
                 },
             ],
             hicache: None,
@@ -126,6 +134,7 @@ impl Default for Qgi2Config {
                 speculation: "off".into(),
                 speculation_n: 0,
                 api_key: None,
+                cache_control: false,
             }),
         }
     }
@@ -224,7 +233,8 @@ impl Qgi2Config {
             // would have refused a live deployment. `qgi2 doctor` warns instead.
             let endpoint = Endpoint::new(&e.base_url, &e.model, spec)
                 .with_engine(kind)
-                .with_api_key(e.api_key.clone());
+                .with_api_key(e.api_key.clone())
+                .with_cache_control(e.cache_control);
             r.register(role, endpoint);
         }
         if let Some(e) = &self.embedder {
@@ -362,6 +372,7 @@ mod sglang_tests {
                     speculation: "mtp".into(),
                     speculation_n: 2,
                     api_key: None,
+                    cache_control: false,
                 },
                 EngineConfig {
                     role: "worker".into(),
@@ -371,6 +382,7 @@ mod sglang_tests {
                     speculation: "eagle3".into(),
                     speculation_n: 5,
                     api_key: None,
+                    cache_control: false,
                 },
             ],
             embedder: None,

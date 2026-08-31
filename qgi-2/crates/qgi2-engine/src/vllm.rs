@@ -31,7 +31,11 @@ impl Engine for VllmEngine {
     }
 
     async fn chat(&self, endpoint: &Endpoint, req: &ChatRequest) -> Result<ChatResponse> {
-        let mut body = req.clone().streaming(endpoint.stream).to_openai_body(&endpoint.model);
+        let mut body = req
+            .clone()
+            .streaming(endpoint.stream)
+            .with_cache_breakpoint(endpoint.cache_control)
+            .to_openai_body(&endpoint.model);
 
         // vLLM's guided decoding is a top-level `guided_json` field.
         if let Some(schema) = &req.schema {

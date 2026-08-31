@@ -1,0 +1,78 @@
+# QGI-2 against cloud models — for testing the harness before the planner box
+# exists.
+#
+# What this CAN test: the fact graph, the rules, segment assembly and prefix
+# stability, tool rounds, and the e2e coding A/B. That is most of what QGI-2 is.
+#
+# What it CANNOT test: speculation (no --speculative-config on a gateway) and
+# HiCache (a launch flag). Those need deploy/.
+#
+# Model choice is not "best model" in the abstract. It is: which route reports
+# `usage.prompt_tokens_details.cached_tokens`, because that is the number the
+# spec's >=85% metric is computed from, and a route that never reports it makes
+# the harness's central claim unmeasurable.
+
+[server]
+bind = "127.0.0.1:8788"
+
+[persona]
+mood = "builder"
+profile = "traceable"
+allow_mood_switch = false
+
+# --- planner: DeepSeek-V4-Pro ---
+#
+# The best cloud route for this harness, and not because of leaderboards:
+# MODELS.md records it as provider-pinned with ~98% prompt-cache hits, and
+# DeepSeek caches *implicitly*, so cached_tokens is populated with no
+# request-side marker. Provider-pinning is load-bearing — OpenRouter's caching
+# is per-provider, and rotation defeats it.
+#
+# Cache construction is best-effort and takes a few seconds, so turn 1 of a
+# session can legitimately report 0%. Do not read a cold start as a breach.
+[[engines]]
+role = "planner"
+engine = "vllm"
+base_url = "https://llm.qgi.dev/v1"
+model = "QGI-V4 Pro"
+speculation = "off"
+speculation_n = 0
+cache_control = false     # implicit caching; a marker would be redundant
+# api_key = "$LITELLM_MASTER_KEY"
+
+# --- worker: the local 27B, which is the spec's worker anyway ---
+#
+# Keeping the worker local means speculation and HiCache stay measurable on the
+# three steps that run most often (route, tool_args, extract twice per turn),
+# even while the planner is cloud. That is the more useful half to instrument.
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://100.107.254.57:18031/v1"
+model = "QGI-3.8-27b DFlash"
+speculation = "dflash2"
+speculation_n = 7
+
+# --- if you point either role at a Qwen or Anthropic route instead ---
+#
+# Set cache_control = true. Alibaba Qwen and Anthropic cache only where the
+# request marks a breakpoint; without it they report cached_tokens: 0 on a
+# prefix that never changed, and the harness flags a threshold breach that is
+# entirely an artifact of the missing marker.
+#
+# [[engines]]
+# role = "planner"
+# engine = "vllm"
+# base_url = "https://llm.qgi.dev/v1"
+# model = "Qwen 3.8 max"
+# speculation = "off"
+# speculation_n = 0
+# cache_control = true
+
+[embedder]
+role = "embedder"
+engine = "vllm"
+base_url = "http://100.95.12.86:11434/v1"
+model = "QGI-Embed"
+speculation = "off"
+speculation_n = 0

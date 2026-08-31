@@ -76,6 +76,19 @@ pub struct Endpoint {
     /// failure mode entirely, so it is the default rather than an opt-in.
     #[serde(default = "default_stream")]
     pub stream: bool,
+    /// Mark the stable prefix with an explicit `cache_control` breakpoint.
+    ///
+    /// Providers split two ways. DeepSeek and OpenAI cache implicitly — a
+    /// repeated prefix is reused with no request-side marker. Anthropic and
+    /// Alibaba Qwen cache only where the request says to, and with no marker
+    /// they report `cached_tokens: 0` forever.
+    ///
+    /// That second case is a trap for this harness specifically: the prefix is
+    /// stable, the harness reports 0% cache, and the spec says a cache drop is
+    /// a bug — so the metric raises a real-looking alarm about a prompt that
+    /// was correct all along. Set this for Anthropic and Qwen routes.
+    #[serde(default)]
+    pub cache_control: bool,
 }
 
 fn default_stream() -> bool {
@@ -100,7 +113,15 @@ impl Endpoint {
             speculation_n: speculation.lookahead(),
             api_key: None,
             stream: true,
+            cache_control: false,
         }
+    }
+
+    /// Send an explicit `cache_control` breakpoint at the end of the stable
+    /// prefix. Needed by Anthropic and Alibaba Qwen; harmless elsewhere.
+    pub fn with_cache_control(mut self, on: bool) -> Self {
+        self.cache_control = on;
+        self
     }
 
     /// Turn streaming off. Only sensible for a local backend that is not behind

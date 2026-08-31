@@ -68,7 +68,11 @@ impl Engine for SglangEngine {
     }
 
     async fn chat(&self, endpoint: &Endpoint, req: &ChatRequest) -> Result<ChatResponse> {
-        let mut body = req.clone().streaming(endpoint.stream).to_openai_body(&endpoint.model);
+        let mut body = req
+            .clone()
+            .streaming(endpoint.stream)
+            .with_cache_breakpoint(endpoint.cache_control)
+            .to_openai_body(&endpoint.model);
 
         if let Some(schema) = &req.schema {
             // The OpenAI-standard form. `guided_json` would be accepted and

@@ -52,6 +52,9 @@ pub struct ChatRequest {
     pub extra: Map<String, Value>,
     /// Stream the response. See [`crate::Endpoint::stream`].
     pub stream: bool,
+    /// Mark the end of the stable prefix for providers that cache explicitly.
+    /// See [`crate::Endpoint::cache_control`].
+    pub cache_breakpoint: bool,
 }
 
 impl ChatRequest {
@@ -62,7 +65,13 @@ impl ChatRequest {
             schema: None,
             extra: Map::new(),
             stream: true,
+            cache_breakpoint: false,
         }
+    }
+
+    pub fn with_cache_breakpoint(mut self, on: bool) -> Self {
+        self.cache_breakpoint = on;
+        self
     }
 
     pub fn streaming(mut self, on: bool) -> Self {
@@ -85,6 +94,39 @@ impl ChatRequest {
         self
     }
 
+    /// Messages, with a cache breakpoint on the system message when asked.
+    ///
+    /// The breakpoint goes at the end of the *system* message because that is
+    /// exactly QGI-2's stable prefix — segments 1-3. Placing it later would
+    /// include volatile bytes in the cached span and the provider would miss
+    /// every turn; placing it earlier would leave the durable slice
+    /// uncached for no reason.
+    fn render_messages(&self) -> Value {
+        if !self.cache_breakpoint {
+            return json!(self.messages);
+        }
+        let rendered: Vec<Value> = self
+            .messages
+            .iter()
+            .map(|m| {
+                if m.role == "system" {
+                    // Block form is the only shape that carries cache_control.
+                    json!({
+                        "role": m.role,
+                        "content": [{
+                            "type": "text",
+                            "text": m.content,
+                            "cache_control": { "type": "ephemeral" }
+                        }]
+                    })
+                } else {
+                    json!(m)
+                }
+            })
+            .collect();
+        json!(rendered)
+    }
+
     /// The fields both engines share, as an OpenAI chat body.
     ///
     /// Optional fields are omitted rather than sent as null: some
@@ -92,7 +134,7 @@ impl ChatRequest {
     pub fn to_openai_body(&self, model: &str) -> Map<String, Value> {
         let mut body = Map::new();
         body.insert("model".into(), json!(model));
-        body.insert("messages".into(), json!(self.messages));
+        body.insert("messages".into(), self.render_messages());
         body.insert("temperature".into(), json!(self.sampling.temperature));
         body.insert("top_p".into(), json!(self.sampling.top_p));
         if let Some(seed) = self.sampling.seed {
@@ -332,5 +374,54 @@ mod tests {
             usage: None,
         };
         assert!(r.into_ordered(2).is_err());
+    }
+}
+
+#[cfg(test)]
+mod cache_control_tests {
+    use super::*;
+
+    fn req() -> ChatRequest {
+        ChatRequest::new(vec![
+            ChatMessage::system("STABLE PREFIX"),
+            ChatMessage::user("volatile query"),
+        ])
+    }
+
+    #[test]
+    fn without_a_breakpoint_messages_stay_in_plain_form() {
+        // DeepSeek and OpenAI cache implicitly; block form would be noise.
+        let body = req().to_openai_body("m");
+        assert_eq!(body["messages"][0]["content"], "STABLE PREFIX");
+    }
+
+    #[test]
+    fn a_breakpoint_marks_the_system_message_only() {
+        // The system message is exactly QGI-2's stable prefix (segments 1-3).
+        // Marking later would pull volatile bytes into the cached span and miss
+        // every turn; marking earlier would leave the durable slice uncached.
+        let body = req().with_cache_breakpoint(true).to_openai_body("m");
+        let sys = &body["messages"][0];
+        assert_eq!(sys["content"][0]["text"], "STABLE PREFIX");
+        assert_eq!(sys["content"][0]["cache_control"]["type"], "ephemeral");
+
+        let user = &body["messages"][1];
+        assert_eq!(user["content"], "volatile query");
+        assert!(user["content"].is_string(), "the tail must not be marked");
+    }
+
+    #[test]
+    fn the_breakpoint_does_not_disturb_the_rest_of_the_body() {
+        let body = req().with_cache_breakpoint(true).to_openai_body("m");
+        assert_eq!(body["model"], "m");
+        assert_eq!(body["messages"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn a_request_with_no_system_message_is_unchanged() {
+        let body = ChatRequest::new(vec![ChatMessage::user("hi")])
+            .with_cache_breakpoint(true)
+            .to_openai_body("m");
+        assert_eq!(body["messages"][0]["content"], "hi");
     }
 }
