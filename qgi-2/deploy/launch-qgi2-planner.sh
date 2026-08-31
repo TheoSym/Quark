@@ -13,6 +13,13 @@ PORT="${PORT:-18033}"
 NAME="${NAME:-QGI-2-Planner}"
 GPU="${CUDA_VISIBLE_DEVICES:-0}"
 
+# The spec says the planner is 262K-native, but the NVFP4 Flash-Next rebuilds
+# on HF are 131K. Asking for more than the checkpoint supports fails at load, so
+# this is a variable rather than the spec's number. QGI-2 keeps prompts short by
+# design -- the fact graph exists so history does not become context -- so 131K
+# is not the constraint it would be for a history-replaying harness.
+CTX="${CTX:-131072}"
+
 # Speculation MUST match what qgi2's config declares for the planner. The
 # harness routes each step to the process launched with its speculation, so a
 # mismatch here makes acceptance numbers describe a configuration nobody chose.
@@ -26,7 +33,7 @@ exec python -m sglang.launch_server \
   --served-model-name "$NAME" \
   --host 127.0.0.1 --port "$PORT" \
   --trust-remote-code \
-  --context-length 262144 \
+  --context-length "$CTX" \
   --mem-fraction-static 0.85 \
   \
   `# --- agent readiness (model-serve §7). Without these the model dumps raw` \
