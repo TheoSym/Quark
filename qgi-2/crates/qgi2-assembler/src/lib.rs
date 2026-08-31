@@ -20,6 +20,7 @@ mod core_prompt;
 
 pub use core_prompt::CORE_PROMPT;
 
+use qgi2_engine::PageAlignment;
 use qgi2_factgraph::{FactGraph, RenderBudget, Scope, render};
 use qgi2_spec_types::{
     Mood, Profile, Segment, SegmentHash, SegmentId, SegmentSet, SEGMENT_ORDER,
@@ -116,6 +117,18 @@ impl Assembled {
 pub struct Assembler {
     previous: Option<BTreeMap<SegmentId, SegmentHash>>,
     budget: RenderBudget,
+    /// When set, the stable prefix is padded up to a KV page boundary.
+    ///
+    /// HiCache (and vLLM's prefix cache) store KV in fixed-size pages, and a
+    /// prefix is reusable only to its last *complete* page. A stable prefix
+    /// that ends mid-page shares that page with the start of the volatile
+    /// tail, so it is recomputed every turn however stable its contents are.
+    /// Padding converts that page into a cached one.
+    alignment: Option<PageAlignment>,
+    /// Padding is computed once per session and then frozen. Recomputing it as
+    /// the durable slice grows would change segment 3's bytes mid-session,
+    /// which is the exact thing the stable prefix must never do.
+    frozen_padding: Option<String>,
 }
 
 impl Assembler {
@@ -125,9 +138,20 @@ impl Assembler {
 
     pub fn with_budget(budget: RenderBudget) -> Self {
         Self {
-            previous: None,
             budget,
+            ..Self::default()
         }
+    }
+
+    /// Pad the stable prefix to the engine's KV page boundary.
+    pub fn with_page_alignment(mut self, alignment: PageAlignment) -> Self {
+        self.alignment = Some(alignment);
+        self
+    }
+
+    /// Padding currently applied to the stable prefix, in bytes.
+    pub fn padding_bytes(&self) -> usize {
+        self.frozen_padding.as_ref().map(|p| p.len()).unwrap_or(0)
     }
 
     /// Whether this assembler has seen a turn yet.
@@ -140,6 +164,9 @@ impl Assembler {
     /// `PrefixBroken` for a change the harness intended.
     pub fn reset(&mut self) {
         self.previous = None;
+        // The padding was sized for the previous prefix; a deliberate prefix
+        // change re-sizes it.
+        self.frozen_padding = None;
     }
 
     /// Assemble the six segments in spec order.
@@ -160,10 +187,26 @@ impl Assembler {
         let durable = render::render_scope(graph, Scope::Durable, self.budget);
         let subgraph = render::render_facts(graph, subgraph_ids, self.budget);
 
+        let mood_text = mood.table().render();
+        let durable_text = match (&self.alignment, &self.frozen_padding) {
+            (_, Some(pad)) => format!("{}{pad}", durable.text),
+            (Some(align), None) => {
+                // Size the padding against the whole stable prefix, not just
+                // segment 3: the page boundary the engine sees is a function of
+                // every token before it.
+                let prefix_len =
+                    CORE_PROMPT.len() + 1 + mood_text.len() + 1 + durable.text.len();
+                let pad = align.padding_text(prefix_len);
+                self.frozen_padding = Some(pad.clone());
+                format!("{}{pad}", durable.text)
+            }
+            (None, None) => durable.text.clone(),
+        };
+
         let segments = SegmentSet::new(
             CORE_PROMPT.to_string(),
-            mood.table().render(),
-            durable.text,
+            mood_text,
+            durable_text,
             render_skills(skills),
             subgraph.text,
             query.to_string(),
@@ -401,5 +444,112 @@ mod tests {
         let mut b = Assembler::new();
         let two = b.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
         assert_eq!(one.segments, two.segments);
+    }
+}
+
+#[cfg(test)]
+mod alignment_tests {
+    use super::*;
+    use qgi2_engine::PageAlignment;
+    use qgi2_spec_types::{
+        CommitToken, Confidence, ConflictPolicy, ProposedFact, Relation, Source,
+    };
+
+    fn graph_with(n: usize) -> FactGraph {
+        let mut g = FactGraph::new();
+        for i in 0..n {
+            let f = ProposedFact {
+                subject: format!("task:{i}"),
+                relation: Relation::DependsOn,
+                object: format!("file:{i}.rs"),
+                confidence: Confidence::new(0.9),
+                evidence: None,
+            }
+            .commit(CommitToken::issued_by_verify_stage(), Source::User, 1);
+            g.commit(f, Scope::Durable, ConflictPolicy::LatestWins);
+        }
+        g
+    }
+
+    fn align() -> PageAlignment {
+        PageAlignment { page_size: 64 }
+    }
+
+    #[test]
+    fn alignment_lands_the_stable_prefix_on_a_page_boundary() {
+        let mut a = Assembler::new().with_page_alignment(align());
+        let out = a.assemble(&graph_with(3), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let tokens = align().estimated_tokens(out.system().len());
+        assert_eq!(tokens % 64, 0, "prefix is {tokens} tokens, not a page multiple");
+    }
+
+    #[test]
+    fn without_alignment_nothing_is_padded() {
+        let mut a = Assembler::new();
+        a.assemble(&graph_with(3), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        assert_eq!(a.padding_bytes(), 0);
+    }
+
+    #[test]
+    fn padding_is_frozen_so_it_cannot_break_the_prefix_mid_session() {
+        // The trap this guards: recomputing padding as the durable slice grows
+        // would change segment 3's bytes on a later turn — the precise thing
+        // the stable prefix must never do. Alignment must not itself become a
+        // source of cache misses.
+        let mut g = graph_with(3);
+        let mut a = Assembler::new().with_page_alignment(align());
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let pad = a.padding_bytes();
+
+        // Grow the durable slice, which alone already breaks the prefix — the
+        // point is that padding does not change on top of it.
+        let f = ProposedFact {
+            subject: "task:new".into(),
+            relation: Relation::DependsOn,
+            object: "file:new.rs".into(),
+            confidence: Confidence::new(0.9),
+            evidence: None,
+        }
+        .commit(CommitToken::issued_by_verify_stage(), Source::User, 2);
+        g.commit(f, Scope::Durable, ConflictPolicy::LatestWins);
+
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        assert_eq!(a.padding_bytes(), pad, "padding must not move mid-session");
+    }
+
+    #[test]
+    fn an_aligned_session_still_reports_an_intact_prefix_across_turns() {
+        let g = graph_with(3);
+        let mut a = Assembler::new().with_page_alignment(align());
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "first");
+        let out = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "second");
+        assert!(
+            matches!(out.outlook, CacheOutlook::PrefixIntact { .. }),
+            "alignment must not itself break the prefix: {:?}",
+            out.outlook
+        );
+    }
+
+    #[test]
+    fn reset_resizes_the_padding_for_the_new_prefix() {
+        let g = graph_with(3);
+        let mut a = Assembler::new().with_page_alignment(align());
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.reset();
+        assert_eq!(a.padding_bytes(), 0, "reset clears the frozen padding");
+
+        // A mood switch changes segment 2, so the prefix must be re-aligned
+        // against its new length rather than keeping the old padding.
+        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "q");
+        let tokens = align().estimated_tokens(out.system().len());
+        assert_eq!(tokens % 64, 0, "re-aligned for the new mood segment");
+    }
+
+    #[test]
+    fn padding_costs_less_than_one_page() {
+        let mut a = Assembler::new().with_page_alignment(align());
+        a.assemble(&graph_with(20), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let pad_tokens = align().estimated_tokens(a.padding_bytes());
+        assert!(pad_tokens < 64, "padding cost {pad_tokens} tokens");
     }
 }

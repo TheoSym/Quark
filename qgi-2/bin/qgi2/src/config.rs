@@ -7,7 +7,7 @@
 //! point for OpenAI-compatible endpoints.
 
 use anyhow::{Context, Result};
-use qgi2_engine::{Endpoint, EngineKind, EngineRegistry};
+use qgi2_engine::{Endpoint, EngineKind, EngineRegistry, HiCacheConfig};
 use qgi2_spec_types::{ModelRole, Mood, Persona, Profile, Speculation};
 use qgi2_turn::SessionConfig;
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,10 @@ pub struct Qgi2Config {
     pub engines: Vec<EngineConfig>,
     #[serde(default)]
     pub embedder: Option<EngineConfig>,
+    /// SGLang HiCache. Ignored by vLLM endpoints, which have their own prefix
+    /// cache and no tiering.
+    #[serde(default)]
+    pub hicache: Option<HiCacheConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,6 +117,7 @@ impl Default for Qgi2Config {
                     api_key: None,
                 },
             ],
+            hicache: None,
             embedder: Some(EngineConfig {
                 role: "embedder".into(),
                 engine: "vllm".into(),

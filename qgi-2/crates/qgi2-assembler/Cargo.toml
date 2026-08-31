@@ -8,5 +8,6 @@ description = "Cache-shaped prompt assembly with per-segment hashes for QGI-2"
 [dependencies]
 qgi2-spec-types.workspace = true
 qgi2-factgraph.workspace = true
+qgi2-engine.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -15,7 +15,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::{Qgi2Config, default_config_path, jcode_provider_snippet};
 use qgi2_edge_http::{AppState, SessionStore, router};
-use qgi2_engine::{HttpClient, engine_for};
+use qgi2_engine::{EngineKind, HiCacheConfig, HttpClient, engine_for, hicache};
 use qgi2_router::Router as StepRouter;
 use qgi2_spec_types::{Mood, Persona, Profile};
 use std::path::PathBuf;
@@ -61,6 +61,21 @@ enum Command {
         #[arg(long, default_value = "traceable")]
         profile: String,
     },
+    /// SGLang HiCache: print launch commands, or read a live deployment's tiers.
+    Hicache {
+        /// Probe the configured endpoints and report per-tier hit rates.
+        #[arg(long)]
+        probe: bool,
+        /// Which tier to configure for: 2 (host memory) or 3 (external store).
+        #[arg(long, default_value_t = 2)]
+        tier: u8,
+        /// L3 backend when --tier 3: `file` or `mooncake`.
+        #[arg(long, default_value = "file")]
+        l3: String,
+        /// Mooncake master address, or the file backend's directory.
+        #[arg(long)]
+        store: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -88,6 +103,9 @@ async fn main() -> Result<()> {
             Ok(())
         }
         Command::Plan { mood, profile } => plan(&mood, &profile),
+        Command::Hicache { probe, tier, l3, store } => {
+            hicache_cmd(cfg, probe, tier, &l3, store).await
+        }
     }
 }
 
@@ -262,4 +280,157 @@ fn plan(mood: &str, profile: &str) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// `qgi2 hicache` — configure or inspect SGLang's hierarchical KV cache.
+async fn hicache_cmd(
+    cfg: Qgi2Config,
+    probe: bool,
+    tier: u8,
+    l3: &str,
+    store: Option<String>,
+) -> Result<()> {
+    if probe {
+        return hicache_probe(cfg).await;
+    }
+
+    let hc = match tier {
+        2 => HiCacheConfig::l2_only(),
+        3 => match l3 {
+            "file" => HiCacheConfig::with_file_l3(
+                store.unwrap_or_else(|| "/var/cache/qgi2/kv".to_string()),
+            ),
+            "mooncake" => HiCacheConfig::with_mooncake_l3(
+                store.ok_or_else(|| {
+                    anyhow::anyhow!("--store is the mooncake master address, e.g. 10.0.0.1:50051")
+                })?,
+                hostname(),
+            ),
+            other => anyhow::bail!("unknown L3 backend {other:?}; expected file or mooncake"),
+        },
+        other => anyhow::bail!("unknown tier {other}; expected 2 (host memory) or 3 (store)"),
+    };
+
+    let problems = hc.problems();
+    if !problems.is_empty() {
+        // A launch command generated from a configuration that will not behave
+        // as written is worse than no command at all.
+        for p in &problems {
+            eprintln!("problem: {p}");
+        }
+        anyhow::bail!("{} problem(s) in the HiCache configuration", problems.len());
+    }
+
+    println!("# HiCache tiers: {}", 
+        hc.tiers().iter().map(|t| t.to_string()).collect::<Vec<_>>().join(" -> "));
+    println!(
+        "# The harness pads its stable prefix to {}-token pages when this is enabled.",
+        hc.page_size
+    );
+    println!("#\n# Add to ~/.qgi2/config.toml:\n#");
+    for line in toml::to_string_pretty(&hc)?.lines() {
+        println!("#   {line}");
+    }
+    println!("#   ^ under a [hicache] table\n");
+
+    for e in &cfg.engines {
+        if e.engine != "sglang" {
+            continue;
+        }
+        let spec_flags = sglang_spec_flags(e);
+        let port = port_of(&e.base_url).unwrap_or(30000);
+        println!("# --- {} ({}) ---", e.role, e.base_url);
+        println!("{}\n", hc.launch_command(&e.model, port, &spec_flags));
+    }
+    Ok(())
+}
+
+/// Read a live deployment's tier hit rates.
+async fn hicache_probe(cfg: Qgi2Config) -> Result<()> {
+    let registry = cfg.registry()?;
+    let http = HttpClient::default();
+    let declared = cfg.hicache.clone().unwrap_or_else(HiCacheConfig::l2_only);
+
+    let mut any_sglang = false;
+    for (role, endpoint) in registry.all() {
+        if endpoint.engine != EngineKind::Sglang {
+            continue;
+        }
+        any_sglang = true;
+        let stats = hicache::scrape_hicache(&http, endpoint).await;
+        println!("{role} @ {}", endpoint.base_url);
+        if !stats.any() {
+            // Distinguish "not enabled" from "unreachable": both show as no
+            // data, and the fixes are different.
+            println!("  no HiCache metrics — server may not have --enable-hierarchical-cache,");
+            println!("  or /metrics is not exposed (SGLang needs --enable-metrics)");
+            continue;
+        }
+        for (label, v) in [
+            ("L1 (GPU)  ", stats.l1_hit_rate),
+            ("L2 (host) ", stats.l2_hit_rate),
+            ("L3 (store)", stats.l3_hit_rate),
+        ] {
+            match v {
+                Some(r) => println!("  {label} hit rate {:>6.1}%", r * 100.0),
+                None => println!("  {label} not reported"),
+            }
+        }
+        if let Some(u) = stats.host_pool_utilization {
+            println!("  host pool  {:>6.1}% full", u * 100.0);
+        }
+        for f in stats.findings(&declared) {
+            println!("  ! {f}");
+        }
+    }
+
+    if !any_sglang {
+        println!("no SGLang endpoints configured; HiCache is SGLang-only");
+    }
+    Ok(())
+}
+
+fn sglang_spec_flags(e: &config::EngineConfig) -> Vec<String> {
+    let n = e.speculation_n;
+    match e.speculation.as_str() {
+        "eagle3" => vec![
+            "--speculative-algorithm".into(),
+            "EAGLE3".into(),
+            "--speculative-num-steps".into(),
+            n.to_string(),
+            "--speculative-eagle-topk".into(),
+            "8".into(),
+            "--speculative-num-draft-tokens".into(),
+            (n + 1).to_string(),
+        ],
+        "mtp" => vec![
+            "--speculative-algorithm".into(),
+            "NEXTN".into(),
+            "--speculative-num-steps".into(),
+            n.to_string(),
+            "--speculative-num-draft-tokens".into(),
+            (n + 1).to_string(),
+        ],
+        "ngram" => vec![
+            "--speculative-algorithm".into(),
+            "NGRAM".into(),
+            "--speculative-num-draft-tokens".into(),
+            n.to_string(),
+        ],
+        _ => Vec::new(),
+    }
+}
+
+fn port_of(base_url: &str) -> Option<u16> {
+    base_url
+        .rsplit(':')
+        .next()?
+        .split('/')
+        .next()?
+        .parse()
+        .ok()
+}
+
+fn hostname() -> Option<String> {
+    std::env::var("HOSTNAME").ok()
 }

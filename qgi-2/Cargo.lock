@@ -1353,6 +1353,7 @@ dependencies = [
 name = "qgi2-assembler"
 version = "0.1.0"
 dependencies = [
+ "qgi2-engine",
  "qgi2-factgraph",
  "qgi2-spec-types",
  "serde",
