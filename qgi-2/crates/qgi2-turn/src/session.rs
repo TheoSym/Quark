@@ -67,6 +67,13 @@ pub struct SessionConfig {
     /// asking for tools and forces the answer step, so the user gets a reply
     /// that says what happened rather than nothing at all.
     pub max_tool_rounds: u32,
+    /// Speculation overrides for deployments that differ from the spec's table
+    /// — most commonly a cloud-served planner, which has no speculator you can
+    /// configure. `None` leaves the table in charge.
+    #[serde(default)]
+    pub planner_speculation: Option<qgi2_spec_types::Speculation>,
+    #[serde(default)]
+    pub worker_speculation: Option<qgi2_spec_types::Speculation>,
 }
 
 impl Default for SessionConfig {
@@ -82,6 +89,8 @@ impl Default for SessionConfig {
             decay_floor: 0.2,
             allow_mood_switch: false,
             max_tool_rounds: 12,
+            planner_speculation: None,
+            worker_speculation: None,
         }
     }
 }
@@ -243,7 +252,10 @@ impl Session {
     }
 
     fn router(&self) -> Router {
-        Router::new(self.config.persona)
+        Router::new(self.config.persona).with_speculation(
+            self.config.planner_speculation,
+            self.config.worker_speculation,
+        )
     }
 
     /// Check every endpoint the current persona will need, before turn one.
@@ -706,26 +718,28 @@ mod tests {
     }
 
     #[test]
-    fn an_sglang_worker_cannot_serve_the_traceable_profile() {
-        // Traceable asks for DFlash2 n=7 and no SGLang build implements it.
-        // The error must say the engine cannot do it at all, not that an
-        // endpoint is missing — the fix is a different profile, not a flag.
+    fn the_qgi_fleet_config_preflights_clean() {
+        // docs/MODELS.md: Qwen3.8-27B-FP8 with DFlash2 spec-decode on SGLang at
+        // vidatron :18031. This is the spec's worker, already deployed. An
+        // earlier capability table called the pairing impossible and would have
+        // refused it — this pins that it routes.
         use qgi2_engine::{Endpoint, EngineKind};
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Planner,
-            Endpoint::new("http://onyxtron-g12:30000/v1", "p", Speculation::Mtp { n: 2 })
-                .with_engine(EngineKind::Sglang),
+            Endpoint::new("https://llm.qgi.dev/v1", "QGI 3.8 Flash", Speculation::Mtp { n: 2 }),
         );
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://rhoditron-g24:30000/v1", "w", Speculation::Eagle3 { n: 5 })
-                .with_engine(EngineKind::Sglang),
+            Endpoint::new(
+                "http://100.107.254.57:18031/v1",
+                "QGI-3.8-27b DFlash",
+                Speculation::DFlash2 { n: 7 },
+            )
+            .with_engine(EngineKind::Sglang),
         );
         let s = Session::new(SessionConfig::default(), r, vec![]);
-        let err = s.preflight().unwrap_err().to_string();
-        assert!(err.contains("cannot run"), "{err}");
-        assert!(err.contains("sglang"), "{err}");
+        s.preflight().expect("the live fleet's traceable profile must route");
     }
 
     #[tokio::test]

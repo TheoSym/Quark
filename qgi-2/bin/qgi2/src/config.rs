@@ -181,8 +181,31 @@ impl Qgi2Config {
         Ok(SessionConfig {
             persona: self.persona()?,
             allow_mood_switch: self.persona.allow_mood_switch,
+            // Take the speculation each role's endpoint actually declares. The
+            // spec's table assumes both models are self-hosted with a
+            // speculator you control; a cloud-served planner has none, and
+            // without this the router would plan MTP for it and nothing would
+            // route. The endpoint is the ground truth either way.
+            planner_speculation: self.declared_speculation("planner")?,
+            worker_speculation: self.declared_speculation("worker")?,
             ..SessionConfig::default()
         })
+    }
+
+    /// The speculation declared for a role, when exactly one endpoint serves it.
+    ///
+    /// `None` when a role has several endpoints: that is the multi-process
+    /// deployment the spec describes, and there the profile table is what picks
+    /// between them.
+    fn declared_speculation(&self, role: &str) -> Result<Option<Speculation>> {
+        let mut matching = self.engines.iter().filter(|e| e.role == role);
+        let Some(only) = matching.next() else {
+            return Ok(None);
+        };
+        if matching.next().is_some() {
+            return Ok(None);
+        }
+        Ok(Some(parse_spec(only)?))
     }
 
     pub fn registry(&self) -> Result<EngineRegistry> {
@@ -195,17 +218,10 @@ impl Qgi2Config {
             };
             let kind: EngineKind = e.engine.parse().map_err(|m: String| anyhow::anyhow!(m))?;
             let spec = parse_spec(e)?;
-            // Catch an impossible pairing here rather than at the first turn:
-            // an SGLang endpoint claiming DFlash2 is a config error, not a
-            // deployment that happens to be down.
-            if !qgi2_engine::endpoint::engine_supports(kind, spec) {
-                anyhow::bail!(
-                    "engine `{kind}` cannot run `{}` (the {} endpoint at {} claims it)",
-                    spec,
-                    e.role,
-                    e.base_url
-                );
-            }
+            // No capability check here. The endpoint's declared configuration is
+            // ground truth: the QGI fleet serves DFlash2 on SGLang, which an
+            // earlier hardcoded table called impossible, and a config error here
+            // would have refused a live deployment. `qgi2 doctor` warns instead.
             let endpoint = Endpoint::new(&e.base_url, &e.model, spec)
                 .with_engine(kind)
                 .with_api_key(e.api_key.clone());
@@ -372,15 +388,17 @@ mod sglang_tests {
     }
 
     #[test]
-    fn an_sglang_endpoint_claiming_dflash2_is_rejected_at_load() {
-        // A config error, not a deployment that happens to be down — so it
-        // should fail when the config is read, not on the first turn.
+    fn an_sglang_endpoint_may_declare_dflash2() {
+        // The QGI fleet serves Qwen3.8-27B with DFlash2 spec-decode on SGLang
+        // (docs/MODELS.md, vidatron :18031). An earlier version rejected this
+        // pairing at load from a hardcoded capability table, which would have
+        // refused a live deployment. The declaration is ground truth; the
+        // mismatch is surfaced as a warning by `qgi2 doctor` instead.
         let mut c = sglang_config();
         c.engines[1].speculation = "dflash2".into();
         c.engines[1].speculation_n = 7;
-        let err = c.registry().unwrap_err().to_string();
-        assert!(err.contains("cannot run"), "{err}");
-        assert!(err.contains("sglang"), "{err}");
+        let r = c.registry().expect("a declared pairing must load");
+        assert_eq!(r.unusual_pairings().len(), 1, "but it is worth a warning");
     }
 
     #[test]

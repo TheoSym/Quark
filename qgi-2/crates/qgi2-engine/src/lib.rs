@@ -30,7 +30,7 @@ pub mod sglang;
 pub mod types;
 pub mod vllm;
 
-pub use endpoint::{Endpoint, EngineKind, EngineRegistry, EngineRegistryError, engine_supports};
+pub use endpoint::{Endpoint, EngineKind, EngineRegistry, EngineRegistryError, engine_typically_supports};
 pub use hicache::{HiCacheConfig, HiCacheStats, L2Sizing, L3Backend, PageAlignment, Tier, scrape_hicache};
 pub use http::HttpClient;
 pub use metrics::AcceptanceSnapshot;

@@ -160,21 +160,6 @@ pub enum EngineRegistryError {
         claimed: String,
         planned: String,
     },
-    /// The engine cannot run this speculation at all, whatever the flags.
-    ///
-    /// Distinct from `NoEndpoint` on purpose: "SGLang has no DFlash2" sends you
-    /// to the profile table, while "no endpoint registered" sends you hunting a
-    /// config typo that does not exist.
-    #[error(
-        "{engine} cannot run {speculation} at all — it is not a speculator that engine \
-         implements. The {role}'s profile asks for it; pick a profile whose speculation \
-         {engine} supports, or run that step on a different engine."
-    )]
-    Unsupported {
-        engine: EngineKind,
-        role: ModelRole,
-        speculation: Speculation,
-    },
 }
 
 /// The `(role, speculation) -> endpoint` table.
@@ -226,35 +211,34 @@ impl EngineRegistry {
                 claimed: format!("{} n={}", e.speculation_method, e.speculation_n),
                 planned: speculation.to_string(),
             }),
-            None => {
-                // If every endpoint registered for this role runs an engine that
-                // cannot implement the speculation at all, say *that* instead of
-                // "not registered" — the fix is a different profile, not a
-                // different flag.
-                if let Some(engine) = self.sole_engine_for(role)
-                    && !engine_supports(engine, speculation)
-                {
-                    return Err(EngineRegistryError::Unsupported {
-                        engine,
-                        role,
-                        speculation,
-                    });
-                }
-                Err(EngineRegistryError::NoEndpoint {
-                    role,
-                    speculation,
-                    registered: self.describe(role),
-                })
-            }
+            None => Err(EngineRegistryError::NoEndpoint {
+                role,
+                speculation,
+                registered: self.describe(role),
+            }),
         }
     }
 
-    /// The engine kind, if every endpoint for a role agrees on one.
-    fn sole_engine_for(&self, role: ModelRole) -> Option<EngineKind> {
-        let m = self.endpoints.get(role.as_str())?;
-        let mut kinds = m.values().map(|e| e.engine);
-        let first = kinds.next()?;
-        kinds.all(|k| k == first).then_some(first)
+    /// Endpoints whose declared speculation is unusual for their engine.
+    ///
+    /// Advisory only. See [`engine_typically_supports`] for why this cannot be
+    /// an error.
+    pub fn unusual_pairings(&self) -> Vec<String> {
+        self.all()
+            .iter()
+            .filter_map(|(role, e)| {
+                let spec = e.speculation()?;
+                (!engine_typically_supports(e.engine, spec)).then(|| {
+                    format!(
+                        "{role} at {} declares {spec} on {}, which is not one of that \
+                         engine's usual speculators — fine if your build serves it (the QGI \
+                         fleet runs DFlash2 on SGLang), worth a second look if you did not \
+                         intend it",
+                        e.base_url, e.engine
+                    )
+                })
+            })
+            .collect()
     }
 
     /// What is registered for a role, for the error message.
@@ -308,11 +292,19 @@ impl EngineRegistry {
     }
 }
 
-/// Which speculators each engine implements.
+/// Which speculators an engine *typically* ships.
 ///
-/// Kept here rather than only on the `Engine` trait so the registry can produce
-/// a good error without constructing a backend (and its HTTP client) first.
-pub fn engine_supports(engine: EngineKind, spec: Speculation) -> bool {
+/// **Advisory, never a veto.** An earlier version treated this as ground truth
+/// and refused to route a step whose speculation was not in the table. That was
+/// wrong in the way guardrails usually are: the QGI fleet runs Qwen3.8-27B with
+/// DFlash2 spec-decode on SGLang, which this table said was impossible, so the
+/// harness would have hard-errored on a live, working deployment.
+///
+/// The endpoint's declared configuration is ground truth — it describes what
+/// was actually launched. This table only powers a warning, because engines
+/// gain speculators between releases and a deployment can be patched, and
+/// neither is something a compile-time list can know about.
+pub fn engine_typically_supports(engine: EngineKind, spec: Speculation) -> bool {
     match engine {
         EngineKind::Vllm => matches!(
             spec,
@@ -385,16 +377,35 @@ mod tests {
     }
 
     #[test]
-    fn asking_sglang_for_dflash2_says_the_engine_cannot_do_it() {
-        // Not "no endpoint registered" — that would send someone hunting a
-        // config typo. The fix is a different profile.
-        let err = sglang_registry()
+    fn an_sglang_endpoint_may_declare_dflash2() {
+        // The QGI fleet runs Qwen3.8-27B with DFlash2 spec-decode on SGLang. An
+        // earlier version vetoed this pairing from a hardcoded table and would
+        // have refused to route against a live, working deployment. The
+        // endpoint's declaration is ground truth.
+        let mut r = EngineRegistry::new();
+        r.register(
+            ModelRole::Worker,
+            Endpoint::new("http://100.107.254.57:18031/v1", "qwen3.8-27b", Speculation::DFlash2 { n: 7 })
+                .with_engine(EngineKind::Sglang),
+        );
+        let e = r
             .resolve(ModelRole::Worker, Speculation::DFlash2 { n: 7 })
-            .unwrap_err();
-        assert!(matches!(err, EngineRegistryError::Unsupported { .. }), "{err:?}");
-        let msg = err.to_string();
-        assert!(msg.contains("cannot run"), "{msg}");
-        assert!(msg.contains("sglang"), "{msg}");
+            .expect("a declared DFlash2 SGLang endpoint must route");
+        assert_eq!(e.engine, EngineKind::Sglang);
+    }
+
+    #[test]
+    fn an_unusual_pairing_is_a_warning_not_a_refusal() {
+        let mut r = EngineRegistry::new();
+        r.register(
+            ModelRole::Worker,
+            Endpoint::new("http://h/v1", "m", Speculation::DFlash2 { n: 7 })
+                .with_engine(EngineKind::Sglang),
+        );
+        assert!(r.resolve(ModelRole::Worker, Speculation::DFlash2 { n: 7 }).is_ok());
+        let warnings = r.unusual_pairings();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("worth a second look"), "{warnings:?}");
     }
 
     #[test]
@@ -419,15 +430,16 @@ mod tests {
 
     #[test]
     fn engine_support_tables_differ_where_it_matters() {
-        assert!(engine_supports(EngineKind::Vllm, Speculation::DFlash2 { n: 7 }));
-        assert!(!engine_supports(EngineKind::Sglang, Speculation::DFlash2 { n: 7 }));
-        assert!(engine_supports(EngineKind::Sglang, Speculation::Eagle3 { n: 5 }));
-        assert!(!engine_supports(EngineKind::Vllm, Speculation::Eagle3 { n: 5 }));
+        assert!(engine_typically_supports(EngineKind::Vllm, Speculation::DFlash2 { n: 7 }));
+        // Advisory only — the QGI fleet does exactly this pairing in production.
+        assert!(!engine_typically_supports(EngineKind::Sglang, Speculation::DFlash2 { n: 7 }));
+        assert!(engine_typically_supports(EngineKind::Sglang, Speculation::Eagle3 { n: 5 }));
+        assert!(!engine_typically_supports(EngineKind::Vllm, Speculation::Eagle3 { n: 5 }));
         // Both do MTP and n-gram.
         for k in EngineKind::ALL {
-            assert!(engine_supports(k, Speculation::Mtp { n: 2 }));
-            assert!(engine_supports(k, Speculation::NGram { n: 4 }));
-            assert!(engine_supports(k, Speculation::Off));
+            assert!(engine_typically_supports(k, Speculation::Mtp { n: 2 }));
+            assert!(engine_typically_supports(k, Speculation::NGram { n: 4 }));
+            assert!(engine_typically_supports(k, Speculation::Off));
         }
     }
 

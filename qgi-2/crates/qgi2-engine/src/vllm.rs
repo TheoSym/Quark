@@ -1,6 +1,6 @@
 //! The vLLM backend.
 
-use crate::endpoint::{Endpoint, EngineKind, engine_supports};
+use crate::endpoint::{Endpoint, EngineKind, engine_typically_supports};
 use crate::http::HttpClient;
 use crate::metrics::{AcceptanceSnapshot, prometheus_lines};
 use crate::types::{ChatRequest, ChatResponse, EmbeddingResponse};
@@ -27,7 +27,7 @@ impl Engine for VllmEngine {
     }
 
     fn supports(&self, speculation: Speculation) -> bool {
-        engine_supports(EngineKind::Vllm, speculation)
+        engine_typically_supports(EngineKind::Vllm, speculation)
     }
 
     async fn chat(&self, endpoint: &Endpoint, req: &ChatRequest) -> Result<ChatResponse> {
@@ -132,7 +132,7 @@ impl Engine for VllmEngine {
 
 /// Reject a request vLLM cannot serve before it is sent.
 pub fn check_serviceable(endpoint: &Endpoint, spec: Speculation) -> Result<()> {
-    if !engine_supports(EngineKind::Vllm, spec) {
+    if !engine_typically_supports(EngineKind::Vllm, spec) {
         bail!("vLLM does not implement {spec} (endpoint {})", endpoint.base_url);
     }
     Ok(())

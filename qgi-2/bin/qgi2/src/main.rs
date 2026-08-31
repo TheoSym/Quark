@@ -117,7 +117,10 @@ async fn serve(cfg: Qgi2Config, bind_override: Option<String>) -> Result<()> {
     // Fail before binding rather than on the first turn: a harness that accepts
     // connections and then errors on every request is worse than one that never
     // came up.
-    let step_router = StepRouter::new(session_config.persona);
+    let step_router = StepRouter::new(session_config.persona).with_speculation(
+        session_config.planner_speculation,
+        session_config.worker_speculation,
+    );
     registry
         .preflight(&step_router.plan_all().map_err(|e| anyhow::anyhow!("{e}"))?)
         .map_err(|e| anyhow::anyhow!("{e}"))
@@ -180,8 +183,18 @@ async fn doctor(cfg: Qgi2Config, mood: Option<String>, profile: Option<String>) 
     println!("persona: {}/{}", persona.mood, persona.profile);
 
     let registry = cfg.registry()?;
-    let step_router = StepRouter::new(persona);
+    let session_config = cfg.session_config()?;
+    // The same router the session will build, overrides included — a doctor
+    // that routes differently from the harness is worse than no doctor.
+    let step_router = StepRouter::new(persona).with_speculation(
+        session_config.planner_speculation,
+        session_config.worker_speculation,
+    );
     let plans = step_router.plan_all().map_err(|e| anyhow::anyhow!("{e}"))?;
+
+    for w in registry.unusual_pairings() {
+        println!("note: {w}");
+    }
 
     let mut failures = 0;
     println!("\nrouting:");
@@ -218,10 +231,8 @@ async fn doctor(cfg: Qgi2Config, mood: Option<String>, profile: Option<String>) 
     println!("\nreachability:");
     let http = HttpClient::default();
     for (role, endpoint) in registry.all() {
-        let up = engine_for(endpoint.engine, http.clone())
-            .health(endpoint)
-            .await;
-        if !up {
+        let detail = http.health_detail(endpoint).await;
+        if detail.is_err() {
             failures += 1;
         }
         println!(
@@ -229,17 +240,24 @@ async fn doctor(cfg: Qgi2Config, mood: Option<String>, profile: Option<String>) 
             role,
             endpoint.engine.as_str(),
             endpoint.base_url,
-            if up { "up" } else { "UNREACHABLE" }
+            match &detail {
+                Ok(()) => "up".to_string(),
+                Err(why) => format!("DOWN — {why}"),
+            }
         );
     }
     if let Some(e) = &registry.embedder {
-        let up = engine_for(e.engine, http.clone()).health(e).await;
+        let detail = http.health_detail(e).await;
+        let up = detail.is_ok();
         println!(
             "  {:<8} {:<8} {:<40} {}",
             "embedder",
             e.engine.as_str(),
             e.base_url,
-            if up { "up" } else { "UNREACHABLE" }
+            match &detail {
+                Ok(()) => "up".to_string(),
+                Err(why) => format!("DOWN — {why}"),
+            }
         );
         if !up && !persona.profile.retrieval().lexical_only {
             // Quick never calls the embedder, so its absence only matters for

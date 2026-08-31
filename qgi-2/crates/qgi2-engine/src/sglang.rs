@@ -18,7 +18,7 @@
 //!    from `cached_tokens`: it covers RadixAttention's cross-request sharing,
 //!    which is exactly what a stable prefix is supposed to exploit.
 
-use crate::endpoint::{Endpoint, EngineKind, engine_supports};
+use crate::endpoint::{Endpoint, EngineKind, engine_typically_supports};
 use crate::http::HttpClient;
 use crate::metrics::{AcceptanceSnapshot, prometheus_lines};
 use crate::types::{ChatRequest, ChatResponse, EmbeddingResponse};
@@ -64,7 +64,7 @@ impl Engine for SglangEngine {
     }
 
     fn supports(&self, speculation: Speculation) -> bool {
-        engine_supports(EngineKind::Sglang, speculation)
+        engine_typically_supports(EngineKind::Sglang, speculation)
     }
 
     async fn chat(&self, endpoint: &Endpoint, req: &ChatRequest) -> Result<ChatResponse> {

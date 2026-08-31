@@ -26,11 +26,38 @@ use qgi2_spec_types::{
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Router {
     pub persona: Persona,
+    /// Speculation for planner steps, when the deployment differs from the
+    /// spec's table.
+    ///
+    /// The spec assumes both models are self-hosted with a speculator you
+    /// control. A planner served by a cloud gateway has none — you cannot pass
+    /// `--speculative-config` to OpenRouter. Setting this to `Off` is how that
+    /// deployment is *stated* rather than silently defaulted, which keeps
+    /// "nothing defaults" true: the triple is still explicit, it is just
+    /// explicit in config instead of in the table.
+    pub planner_speculation: Option<Speculation>,
+    /// Same, for worker steps.
+    pub worker_speculation: Option<Speculation>,
 }
 
 impl Router {
     pub fn new(persona: Persona) -> Self {
-        Self { persona }
+        Self {
+            persona,
+            planner_speculation: None,
+            worker_speculation: None,
+        }
+    }
+
+    /// Override the speculation the table would choose for a role.
+    pub fn with_speculation(
+        mut self,
+        planner: Option<Speculation>,
+        worker: Option<Speculation>,
+    ) -> Self {
+        self.planner_speculation = planner;
+        self.worker_speculation = worker;
+        self
     }
 
     pub fn mood(&self) -> Mood {
@@ -107,6 +134,13 @@ impl Router {
         step: StepKind,
         sampling: &Sampling,
     ) -> Speculation {
+        if let Some(override_) = match role {
+            ModelRole::Planner => self.planner_speculation,
+            ModelRole::Worker => self.worker_speculation,
+        } {
+            return override_;
+        }
+
         match role {
             // Spec: "MTP on the planner". n=2 is the spec's planner example in
             // the per-turn loop (`plan [planner, MTP n=2, ...]`).
@@ -326,5 +360,60 @@ mod tests {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod override_tests {
+    use super::*;
+
+    fn router(mood: Mood, profile: Profile) -> Router {
+        Router::new(Persona::new(mood, profile))
+    }
+
+    #[test]
+    fn a_cloud_planner_can_declare_no_speculation() {
+        // You cannot pass --speculative-config to a gateway. Declaring `off` is
+        // how that deployment is stated; the alternative was an unroutable
+        // planner on every fleet whose planner is cloud-served.
+        let r = router(Mood::Builder, Profile::Traceable)
+            .with_speculation(Some(Speculation::Off), None);
+        let p = r.plan(StepKind::Plan).unwrap();
+        assert_eq!(p.speculation, Speculation::Off);
+        // The worker still follows the profile table.
+        assert_eq!(
+            r.plan(StepKind::Extract).unwrap().speculation,
+            Speculation::DFlash2 { n: 7 }
+        );
+    }
+
+    #[test]
+    fn an_override_still_produces_a_valid_plan() {
+        for mood in Mood::ALL {
+            for profile in Profile::ALL {
+                let r = router(mood, profile)
+                    .with_speculation(Some(Speculation::Off), Some(Speculation::Eagle3 { n: 5 }));
+                for p in r.plan_all().unwrap() {
+                    p.validate()
+                        .unwrap_or_else(|e| panic!("{mood}/{profile}: {e}"));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn overriding_the_worker_cannot_break_the_greedy_invariant() {
+        // Deterministic forces T=0. An override to DFlash2 would pair greedy
+        // sampling with a speculator that cannot produce it — validate must
+        // still catch that rather than the override bypassing the check.
+        let r = router(Mood::Builder, Profile::Deterministic)
+            .with_speculation(None, Some(Speculation::DFlash2 { n: 7 }));
+        assert!(r.plan(StepKind::Extract).is_err());
+    }
+
+    #[test]
+    fn no_override_leaves_the_spec_table_in_charge() {
+        let r = router(Mood::Builder, Profile::Traceable);
+        assert_eq!(r.plan(StepKind::Plan).unwrap().speculation, Speculation::Mtp { n: 2 });
     }
 }

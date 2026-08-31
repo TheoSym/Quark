@@ -1,0 +1,83 @@
+# QGI-2 on the live QGI fleet (docs/MODELS.md, 2026-08-30 rewrite).
+#
+# This is close to the spec's own component table, because the fleet already
+# runs most of it:
+#
+#   spec worker   Qwen3.8-27B + DFlash2        -> QGI-3.8-27b DFlash, vidatron :18031, SGLang
+#   spec planner  Qwen3.8-Flash-Next, 262K ctx -> QGI 3.8 Flash (1M ctx), gateway
+#   spec embedder Qwen3-Embedding-0.6B         -> QGI-Embed (bge-m3), iridtron Ollama
+#
+# `qgi2 doctor` will warn that DFlash2 on SGLang is an unusual pairing. It is
+# not wrong — that is exactly what vidatron runs. The warning exists because a
+# compile-time table cannot know which speculators a given build ships, and it
+# is advisory precisely so it cannot refuse a live deployment.
+
+[server]
+bind = "127.0.0.1:8788"
+
+[persona]
+mood = "builder"
+profile = "traceable"     # DFlash2 n=7 on the worker — matches vidatron
+allow_mood_switch = false
+
+# --- worker: the spec's model, already deployed with the spec's speculator ---
+#
+# 131K ctx, FP8, tools via the qwen3_coder parser. Tailnet address; off-tailnet
+# callers need the Cloudflare Access service-token headers.
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://100.107.254.57:18031/v1"
+model = "QGI-3.8-27b DFlash"
+speculation = "dflash2"
+speculation_n = 7
+# api_key = "..."   # LITELLM_MASTER_KEY if routed via the gateway instead
+
+# --- planner: 1M context, through the LiteLLM gateway ---
+#
+# Cloud-served, so there is no speculation to declare and no HiCache. Marked
+# `vllm` because the gateway speaks the OpenAI-standard shape that backend
+# emits; the harness only uses that to pick a request encoding.
+#
+# NOTE the gateway's rule from MODELS.md: reasoning models need max_tokens >=
+# 2048 or content comes back empty with finish_reason: length. QGI-2 sends no
+# max_tokens by default, which is the safe side of that (no cap at all), but if
+# you set one, keep it above 2048.
+[[engines]]
+role = "planner"
+engine = "vllm"
+base_url = "https://llm.qgi.dev/v1"
+model = "QGI 3.8 Flash"
+speculation = "off"
+speculation_n = 0
+# api_key = "$LITELLM_MASTER_KEY"
+
+# --- embedder: entry-point retrieval only ---
+[embedder]
+role = "embedder"
+engine = "vllm"
+base_url = "http://100.95.12.86:11434/v1"
+model = "QGI-Embed"
+speculation = "off"
+speculation_n = 0
+
+# --- HiCache on the SGLang worker ---
+#
+# vidatron is 2x RTX PRO 6000 96 GB with GPU0 idle, so there is room for a
+# generous L2 and, later, a second worker process on a different speculator.
+#
+# Not enabled by default: turning it on means relaunching vidatron's SGLang,
+# which is a live production endpoint. Uncomment when you are ready, and get
+# the launch line from `qgi2 hicache --tier 2`.
+#
+# [hicache]
+# enabled = true
+# page_size = 64
+# io_backend = "kernel"
+# write_policy = "write_through_selective"
+# mem_layout = "page_first"
+# fa3 = false
+#
+# [hicache.l2]
+# mode = "ratio"
+# value = 2.0
