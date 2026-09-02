@@ -187,8 +187,17 @@ impl Qgi2Config {
     }
 
     pub fn session_config(&self) -> Result<SessionConfig> {
+        // The planner:worker ratio only means something when there are two
+        // models. With one, it would describe the step mix and breach against a
+        // target that no longer applies.
+        let thresholds = if self.registry()?.is_single_model() {
+            qgi2_spec_types::Thresholds::single_model()
+        } else {
+            qgi2_spec_types::Thresholds::default()
+        };
         Ok(SessionConfig {
             persona: self.persona()?,
+            thresholds,
             allow_mood_switch: self.persona.allow_mood_switch,
             // Take the speculation each role's endpoint actually declares. The
             // spec's table assumes both models are self-hosted with a

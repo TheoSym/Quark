@@ -102,7 +102,7 @@ async fn main() -> Result<()> {
             }
             Ok(())
         }
-        Command::Plan { mood, profile } => plan(&mood, &profile),
+        Command::Plan { mood, profile } => plan(&cfg, &mood, &profile),
         Command::Hicache { probe, tier, l3, store } => {
             hicache_cmd(cfg, probe, tier, &l3, store).await
         }
@@ -273,14 +273,28 @@ async fn doctor(cfg: Qgi2Config, mood: Option<String>, profile: Option<String>) 
     Ok(())
 }
 
-fn plan(mood: &str, profile: &str) -> Result<()> {
+fn plan(cfg: &Qgi2Config, mood: &str, profile: &str) -> Result<()> {
     let persona = Persona::new(
         mood.parse().map_err(|e: String| anyhow::anyhow!(e))?,
         profile.parse().map_err(|e: String| anyhow::anyhow!(e))?,
     );
-    let router = StepRouter::new(persona);
+    // The same overrides the session will use. A routing table the harness
+    // would not actually follow is worse than no table — it was showing MTP for
+    // a planner the config had already pinned to something else.
+    let session_config = cfg.session_config()?;
+    let router = StepRouter::new(persona).with_speculation(
+        session_config.planner_speculation,
+        session_config.worker_speculation,
+    );
 
-    println!("persona: {}/{}\n", persona.mood, persona.profile);
+    println!("persona: {}/{}", persona.mood, persona.profile);
+    if cfg.registry()?.is_single_model() {
+        println!(
+            "mode:    single-model — one process serves both roles, so the \
+             planner:worker token ratio is not checked"
+        );
+    }
+    println!();
     println!(
         "{:<10} {:<8} {:<14} {:<7} {:<6} {:<8} {}",
         "step", "model", "speculation", "temp", "seed", "think", "schema"

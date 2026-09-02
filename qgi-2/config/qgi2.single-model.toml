@@ -1,0 +1,62 @@
+# QGI-2 with one model doing everything.
+#
+# The spec's architecture is a big planner over a small worker. Collapsing it to
+# one process is a real variant, not a degraded config, and for the QGI fleet it
+# is the one that can run today: the 27B DFlash worker is already up on vidatron
+# and needs no gateway, no Cloudflare Access headers, and no new machine.
+#
+# WHAT YOU KEEP — which is most of what QGI-2 is:
+#   - the typed fact graph and the Datalog rules
+#   - cache-shaped segment assembly and prefix-stability reporting
+#   - constrained decoding on every structured step
+#   - the tool-round loop
+#   - per-step sampling: worker steps still run with thinking off, which is a
+#     real saving even on one model
+#   - cache hit rate, speculation acceptance, rejection rate
+#
+# WHAT YOU LOSE:
+#   - the planner:worker token ratio, which asks "is work landing on the cheaper
+#     model?" and has no answer when there is no cheaper model. QGI-2 detects
+#     this from the endpoints and stops checking it, rather than breaching every
+#     turn against a target that no longer applies.
+#   - the cost argument. Every step now costs 27B-grade tokens, including the
+#     three structured ones that exist precisely to be cheap.
+#
+# Single-model mode is DETECTED, not declared: if planner and worker resolve to
+# the same URL *and* model, it is single-model. There is no flag to get out of
+# sync with the endpoints. `qgi2 plan` prints the mode it inferred.
+
+[server]
+bind = "127.0.0.1:8788"
+
+[persona]
+mood = "builder"
+profile = "traceable"
+allow_mood_switch = false
+
+# The same endpoint, listed once per role. Both entries must declare the same
+# speculation, because one process has one speculator — the router takes each
+# role's speculation from what its endpoint says it was launched with.
+[[engines]]
+role = "planner"
+engine = "sglang"
+base_url = "http://100.107.254.57:18031/v1"
+model = "QGI-3.8-27b DFlash"
+speculation = "dflash2"
+speculation_n = 7
+
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://100.107.254.57:18031/v1"
+model = "QGI-3.8-27b DFlash"
+speculation = "dflash2"
+speculation_n = 7
+
+[embedder]
+role = "embedder"
+engine = "vllm"
+base_url = "http://100.95.12.86:11434/v1"
+model = "QGI-Embed"
+speculation = "off"
+speculation_n = 0

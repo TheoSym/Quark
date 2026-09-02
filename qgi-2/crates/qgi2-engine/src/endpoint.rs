@@ -260,6 +260,30 @@ impl EngineRegistry {
         }
     }
 
+    /// Whether one process serves every role.
+    ///
+    /// The spec's architecture is a big planner over a small worker, and several
+    /// of its metrics only mean something under that split. Detecting the
+    /// collapsed case from the endpoints themselves — rather than a config flag
+    /// — means the two cannot disagree: if planner and worker resolve to the
+    /// same URL and model, it *is* single-model, whatever anything claims.
+    pub fn is_single_model(&self) -> bool {
+        let mut seen: Option<(&str, &str)> = None;
+        let mut roles = 0usize;
+        for (_, e) in self.all() {
+            let key = (e.base_url.as_str(), e.model.as_str());
+            match seen {
+                None => seen = Some(key),
+                Some(prev) if prev == key => {}
+                Some(_) => return false,
+            }
+            roles += 1;
+        }
+        // One endpoint listed once is not "single-model mode" — it is a
+        // half-configured deployment, and `resolve` will say so.
+        roles > 1 && seen.is_some()
+    }
+
     /// Endpoints whose declared speculation is unusual for their engine.
     ///
     /// Advisory only. See [`engine_typically_supports`] for why this cannot be
@@ -516,5 +540,56 @@ mod tests {
     fn an_endpoint_reports_the_speculation_it_claims() {
         let e = Endpoint::new("http://h/v1", "m", Speculation::Eagle3 { n: 5 });
         assert_eq!(e.speculation(), Some(Speculation::Eagle3 { n: 5 }));
+    }
+}
+
+#[cfg(test)]
+mod single_model_tests {
+    use super::*;
+
+    fn endpoint(url: &str, model: &str) -> Endpoint {
+        Endpoint::new(url, model, Speculation::DFlash2 { n: 7 }).with_engine(EngineKind::Sglang)
+    }
+
+    #[test]
+    fn one_endpoint_serving_both_roles_is_single_model() {
+        let mut r = EngineRegistry::new();
+        let e = endpoint("http://h:18031/v1", "qwen3.8-27b");
+        r.register(ModelRole::Planner, e.clone());
+        r.register(ModelRole::Worker, e);
+        assert!(r.is_single_model());
+    }
+
+    #[test]
+    fn two_different_models_are_not_single_model() {
+        let mut r = EngineRegistry::new();
+        r.register(ModelRole::Planner, endpoint("http://h:18033/v1", "planner"));
+        r.register(ModelRole::Worker, endpoint("http://h:18031/v1", "worker"));
+        assert!(!r.is_single_model());
+    }
+
+    #[test]
+    fn the_same_url_serving_two_models_is_not_single_model() {
+        // A gateway multiplexes many models behind one URL, so the URL alone
+        // cannot decide this — the model name has to match too.
+        let mut r = EngineRegistry::new();
+        r.register(ModelRole::Planner, endpoint("https://gw/v1", "big"));
+        r.register(ModelRole::Worker, endpoint("https://gw/v1", "small"));
+        assert!(!r.is_single_model());
+    }
+
+    #[test]
+    fn a_half_configured_registry_is_not_single_model() {
+        // One role registered is a deployment that will fail to route, not a
+        // deliberate collapse of the two-model split. Calling it single-model
+        // would suppress a metric to describe a broken config.
+        let mut r = EngineRegistry::new();
+        r.register(ModelRole::Worker, endpoint("http://h:18031/v1", "only"));
+        assert!(!r.is_single_model());
+    }
+
+    #[test]
+    fn an_empty_registry_is_not_single_model() {
+        assert!(!EngineRegistry::new().is_single_model());
     }
 }

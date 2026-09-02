@@ -107,7 +107,26 @@ pub struct Thresholds {
     /// Fraction of extracted facts rejected at verify. Spec: <= 0.10.
     pub max_rejection_rate: f64,
     /// Planner:worker token ratio, expressed as planner/worker. Spec: <= 1/3.
-    pub max_planner_worker_ratio: f64,
+    ///
+    /// `None` in single-model mode. The metric asks "is work landing on the
+    /// cheaper model?", and with one model serving both roles there is no
+    /// cheaper model — the ratio would just describe the step mix and breach
+    /// constantly against a target that no longer means anything.
+    pub max_planner_worker_ratio: Option<f64>,
+}
+
+impl Thresholds {
+    /// Thresholds for a deployment where one model serves both roles.
+    ///
+    /// Everything else still applies: cache hit rate, speculation acceptance
+    /// and the extraction rejection rate are all properties of the harness, not
+    /// of the two-model split.
+    pub fn single_model() -> Self {
+        Self {
+            max_planner_worker_ratio: None,
+            ..Self::default()
+        }
+    }
 }
 
 impl Default for Thresholds {
@@ -117,7 +136,7 @@ impl Default for Thresholds {
             planner_acceptance: 1.8,
             worker_acceptance: 2.0,
             max_rejection_rate: 0.10,
-            max_planner_worker_ratio: 1.0 / 3.0,
+            max_planner_worker_ratio: Some(1.0 / 3.0),
         }
     }
 }

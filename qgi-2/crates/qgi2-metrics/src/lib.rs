@@ -169,15 +169,15 @@ impl TurnMetrics {
             });
         }
 
-        if let Some(r) = self.planner_worker_ratio()
-            && r > t.max_planner_worker_ratio
+        if let Some(max) = t.max_planner_worker_ratio
+            && let Some(r) = self.planner_worker_ratio()
+            && r > max
         {
             out.push(Breach {
                 kind: BreachKind::TokenRatio,
                 detail: format!(
-                    "planner:worker token ratio {r:.2} exceeds the {:.2} target; \
-                     work that belongs on the worker is running on the planner",
-                    t.max_planner_worker_ratio
+                    "planner:worker token ratio {r:.2} exceeds the {max:.2} target; \
+                     work that belongs on the worker is running on the planner"
                 ),
             });
         }
@@ -464,5 +464,50 @@ mod tests {
             s.record(healthy_turn(t));
         }
         assert_eq!(s.to_facts(8), s.to_facts(8));
+    }
+}
+
+#[cfg(test)]
+mod single_model_tests {
+    use super::*;
+
+    #[test]
+    fn single_model_thresholds_drop_only_the_ratio() {
+        let t = Thresholds::single_model();
+        assert!(t.max_planner_worker_ratio.is_none());
+        // Everything else is a property of the harness, not of the split.
+        assert_eq!(t.cache_hit_rate, Thresholds::default().cache_hit_rate);
+        assert_eq!(t.max_rejection_rate, Thresholds::default().max_rejection_rate);
+        assert_eq!(t.worker_acceptance, Thresholds::default().worker_acceptance);
+    }
+
+    #[test]
+    fn a_lopsided_ratio_is_not_a_breach_in_single_model_mode() {
+        // With one model there is no cheaper model for work to land on, so the
+        // ratio would just describe the step mix and breach on every turn.
+        let mut m = TurnMetrics::new(1);
+        m.record_usage(ModelRole::Planner, 9000, 1000, 8000);
+        m.record_usage(ModelRole::Worker, 500, 100, 400);
+        assert!(
+            m.breaches(Thresholds::default())
+                .iter()
+                .any(|b| b.kind == BreachKind::TokenRatio),
+            "the two-model default must still catch it"
+        );
+        assert!(
+            !m.breaches(Thresholds::single_model())
+                .iter()
+                .any(|b| b.kind == BreachKind::TokenRatio)
+        );
+    }
+
+    #[test]
+    fn single_model_mode_still_catches_a_cache_drop() {
+        // Suppressing the ratio must not quietly disarm the metric the spec
+        // actually calls a bug.
+        let mut m = TurnMetrics::new(1);
+        m.record_usage(ModelRole::Planner, 1000, 100, 100);
+        let b = m.breaches(Thresholds::single_model());
+        assert!(b.iter().any(|b| b.kind == BreachKind::CacheHitRate));
     }
 }
