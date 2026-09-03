@@ -151,6 +151,18 @@ impl Engine for SglangEngine {
             Speculation::NGram { n } => {
                 format!("--speculative-algorithm NGRAM --speculative-num-draft-tokens {n}")
             }
+            // From the RTX PRO 6000 recipe (SamSammane/Qwen3.8-27B-RTX-6000-PRO-
+            // SGLang-DSpark/start.sh): a separate BF16 drafter, block size n,
+            // FlashInfer for the draft attention and Triton for the GDN verify
+            // path. Measured 200-223 tok/s single-stream on the 27B.
+            Speculation::DSpark { n } => format!(
+                "--speculative-algorithm DSPARK \
+                 --speculative-draft-model-path RadixArk/Qwen3.8-27B-DSpark \
+                 --speculative-dspark-block-size {n} \
+                 --speculative-draft-model-quantization unquant \
+                 --speculative-draft-attention-backend flashinfer \
+                 --linear-attn-verify-backend triton"
+            ),
             s => format!("SGLang does not implement {s}"),
         }
     }
@@ -218,6 +230,14 @@ sglang:num_running_reqs 3.0
         let hint = engine().launch_hint(Speculation::Eagle3 { n: 5 });
         assert!(hint.contains("EAGLE3"), "{hint}");
         assert!(hint.contains("--speculative-eagle-topk"), "{hint}");
+    }
+
+    #[test]
+    fn dspark_launches_with_the_external_drafter() {
+        let hint = engine().launch_hint(Speculation::DSpark { n: 7 });
+        assert!(hint.contains("DSPARK"), "{hint}");
+        assert!(hint.contains("--speculative-draft-model-path"), "{hint}");
+        assert!(hint.contains("--speculative-dspark-block-size 7"), "{hint}");
     }
 
     #[test]

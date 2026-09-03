@@ -10,6 +10,20 @@ use async_trait::async_trait;
 use qgi2_spec_types::Speculation;
 use serde_json::json;
 
+/// The flags every vLLM process under QGI-2 needs, whatever the speculation.
+///
+/// - `--enable-prefix-caching`: the whole premise.
+/// - `--mamba-cache-mode align`: on a hybrid (GDN) model the recurrent state
+///   resumes only at aligned boundaries; without this, prefix hits on the
+///   spec's own planner/worker family do not happen at all
+///   (syv-ai/qwen38-27b-rtx3090, `batch/start_qwen.sh`).
+/// - `--enable-force-include-usage`: usage on every response, streamed
+///   included. Without it `cached_tokens` is absent on streamed replies and
+///   the cache metric reads zero -- which the spec calls a bug -- for a
+///   prefix that was fine.
+pub const COMMON_FLAGS: &str =
+    "--enable-prefix-caching --mamba-cache-mode align --enable-force-include-usage";
+
 pub struct VllmEngine {
     http: HttpClient,
 }
@@ -17,6 +31,41 @@ pub struct VllmEngine {
 impl VllmEngine {
     pub fn new(http: HttpClient) -> Self {
         Self { http }
+    }
+
+    /// The server's own prefix-cache hit rate, from
+    /// `vllm:prefix_cache_hits / vllm:prefix_cache_queries`.
+    ///
+    /// The harness's per-request figure from `cached_tokens` only sees what
+    /// this session reused. These counters also cover prefix shared *between*
+    /// sessions on the same server, which is what running several personas
+    /// against one process is for. vLLM never emits DeepSeek's
+    /// `prompt_cache_hit_tokens`; these are the equivalent
+    /// (syv-ai/qwen38-27b-rtx3090, docs/gotchas.md).
+    ///
+    /// Both are monotonic counters, so a lifetime reading is what you get here;
+    /// difference two readings for a window.
+    pub async fn cache_hit_counters(&self, endpoint: &Endpoint) -> Option<(u64, u64)> {
+        let url = format!("{}/metrics", endpoint.root());
+        let body = self
+            .http
+            .get_text(&url, endpoint.api_key.as_deref())
+            .await
+            .ok()?;
+        let mut hits = None;
+        let mut queries = None;
+        for (name, v) in prometheus_lines(&body) {
+            match name {
+                "vllm:prefix_cache_hits" | "vllm:prefix_cache_hits_total" => {
+                    hits = Some(v.max(0.0) as u64)
+                }
+                "vllm:prefix_cache_queries" | "vllm:prefix_cache_queries_total" => {
+                    queries = Some(v.max(0.0) as u64)
+                }
+                _ => {}
+            }
+        }
+        Some((hits?, queries?))
     }
 }
 
@@ -118,9 +167,16 @@ impl Engine for VllmEngine {
 
     fn launch_hint(&self, speculation: Speculation) -> String {
         match speculation {
-            Speculation::Off => "--enable-prefix-caching (no speculation)".into(),
+            Speculation::Off => format!("{} (no speculation)", COMMON_FLAGS),
+            // DSpark on vLLM takes the external drafter in the speculative
+            // config (vllm #47808), not as a separate flag.
+            Speculation::DSpark { n } => format!(
+                "{} --speculative-config '{{\"method\":\"dspark\",\"model\":\"/path/to/RadixArk-Qwen3.8-27B-DSpark\",\"num_speculative_tokens\":{n}}}'",
+                COMMON_FLAGS
+            ),
             s if self.supports(s) => format!(
-                "--enable-prefix-caching --speculative-config '{{\"method\":\"{}\",\"num_speculative_tokens\":{}}}'",
+                "{} --speculative-config '{{\"method\":\"{}\",\"num_speculative_tokens\":{}}}'",
+                COMMON_FLAGS,
                 s.method_name(),
                 s.lookahead()
             ),
@@ -202,6 +258,47 @@ vllm:num_requests_running 2.0
         assert!(hint.contains("--speculative-config"), "{hint}");
         assert!(hint.contains("dflash2"), "{hint}");
         assert!(hint.contains("7"), "{hint}");
+    }
+
+    #[test]
+    fn every_vllm_hint_forces_usage_and_aligns_the_mamba_cache() {
+        // Without --enable-force-include-usage, streamed replies carry no
+        // cached_tokens and the cache metric reads zero for a healthy prefix.
+        // Without --mamba-cache-mode align, a hybrid model never hits at all.
+        for spec in [
+            Speculation::Off,
+            Speculation::Mtp { n: 3 },
+            Speculation::DFlash2 { n: 7 },
+            Speculation::DSpark { n: 7 },
+        ] {
+            let hint = engine().launch_hint(spec);
+            assert!(hint.contains("--enable-force-include-usage"), "{spec}: {hint}");
+            assert!(hint.contains("--mamba-cache-mode align"), "{spec}: {hint}");
+            assert!(hint.contains("--enable-prefix-caching"), "{spec}: {hint}");
+        }
+    }
+
+    #[test]
+    fn dspark_on_vllm_names_the_external_drafter() {
+        let hint = engine().launch_hint(Speculation::DSpark { n: 7 });
+        assert!(hint.contains("\"method\":\"dspark\""), "{hint}");
+        assert!(hint.contains("\"model\":"), "{hint}");
+        assert!(hint.contains("\"num_speculative_tokens\":7"), "{hint}");
+    }
+
+    #[test]
+    fn prefix_cache_counters_parse() {
+        let body = "vllm:prefix_cache_queries_total 1000.0\nvllm:prefix_cache_hits_total 870.0\n";
+        let mut hits = None;
+        let mut queries = None;
+        for (name, v) in prometheus_lines(body) {
+            match name {
+                "vllm:prefix_cache_hits_total" => hits = Some(v as u64),
+                "vllm:prefix_cache_queries_total" => queries = Some(v as u64),
+                _ => {}
+            }
+        }
+        assert_eq!((hits, queries), (Some(870), Some(1000)));
     }
 
     #[test]

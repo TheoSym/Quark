@@ -62,6 +62,23 @@ pub enum Speculation {
     Eagle3 { n: u8 },
     /// N-gram lookup against the prompt. Only useful when output copies input.
     NGram { n: u8 },
+    /// DSpark: a separately trained BF16 drafter (RadixArk/Qwen3.8-27B-DSpark)
+    /// with confidence-scheduled verification. `n` is the block size; the
+    /// verify width is `n + 1` including the bonus token.
+    ///
+    /// Measured on the exact worker model, 17/17 runs, zero errors
+    /// (SamSammane/qwen38-27b-nvfp4-sm121-vllm): mean acceptance **3.5** with
+    /// thinking on, **~2.1** with thinking off. Both clear the spec's 2.0
+    /// worker floor; the thinking-on figure is the regime QGI-2's worker runs
+    /// in for `plan` but not for the JSON steps, so expect the lower number on
+    /// extract/tool-args. Wins over MTP at c1–c4 (the harness's serial
+    /// per-turn regime); MTP wins at c8+.
+    ///
+    /// Greedy-safe: it verifies the draft against the target, and the campaign's
+    /// semantic gates pass under both greedy and temperature 0.6 with
+    /// "sampling not the variable". So, unlike DFlash2, it serves the
+    /// Deterministic profile.
+    DSpark { n: u8 },
     /// No speculation.
     Off,
 }
@@ -75,7 +92,11 @@ impl Speculation {
         match self {
             // EAGLE verifies by exact rejection sampling, so it reproduces the
             // target distribution including the greedy case.
-            Self::Mtp { .. } | Self::NGram { .. } | Self::Eagle3 { .. } | Self::Off => true,
+            Self::Mtp { .. }
+            | Self::NGram { .. }
+            | Self::Eagle3 { .. }
+            | Self::DSpark { .. }
+            | Self::Off => true,
             Self::DFlash2 { .. } => false,
         }
     }
@@ -83,7 +104,11 @@ impl Speculation {
     /// Lookahead depth; `0` when speculation is off.
     pub const fn lookahead(self) -> u8 {
         match self {
-            Self::Mtp { n } | Self::DFlash2 { n } | Self::NGram { n } | Self::Eagle3 { n } => n,
+            Self::Mtp { n }
+            | Self::DFlash2 { n }
+            | Self::NGram { n }
+            | Self::Eagle3 { n }
+            | Self::DSpark { n } => n,
             Self::Off => 0,
         }
     }
@@ -94,18 +119,27 @@ impl Speculation {
             Self::DFlash2 { .. } => "dflash2",
             Self::NGram { .. } => "ngram",
             Self::Eagle3 { .. } => "eagle3",
+            Self::DSpark { .. } => "dspark",
             Self::Off => "off",
         }
     }
 
     /// The acceptance floor this method is held to, from the spec's success
     /// metrics: planner MTP >= 1.8 tokens/step, worker DFlash2 >= 2.0.
+    ///
+    /// Measured against those floors on the exact worker model
+    /// (SamSammane/qwen38-27b-nvfp4-sm121-vllm, 17/17 runs): MTP K=3 runs at
+    /// 1.97x AR, clearing 1.8; DSpark K=7 at 3.5 (thinking on) / ~2.1
+    /// (thinking off), clearing 2.0 in both regimes.
     pub const fn acceptance_floor(self, role: ModelRole) -> Option<f64> {
         match (self, role) {
             (Self::Mtp { .. }, ModelRole::Planner) => Some(1.8),
-            // EAGLE-3 fills DFlash2's role on SGLang, so it is held to the same
-            // worker floor rather than going unmeasured.
-            (Self::DFlash2 { .. } | Self::Eagle3 { .. }, ModelRole::Worker) => Some(2.0),
+            // Every trained worker drafter fills DFlash2's role and is held to
+            // the same floor rather than going unmeasured.
+            (
+                Self::DFlash2 { .. } | Self::Eagle3 { .. } | Self::DSpark { .. },
+                ModelRole::Worker,
+            ) => Some(2.0),
             _ => None,
         }
     }
@@ -286,6 +320,19 @@ mod tests {
         assert!(Speculation::Mtp { n: 3 }.supports_greedy());
         assert!(Speculation::NGram { n: 4 }.supports_greedy());
         assert!(Speculation::Off.supports_greedy());
+    }
+
+    #[test]
+    fn dspark_is_greedy_safe_and_held_to_the_worker_floor() {
+        // A verified external drafter; the campaign's semantic gates pass with
+        // "sampling not the variable". So it can serve Deterministic, unlike
+        // DFlash2.
+        assert!(Speculation::DSpark { n: 7 }.supports_greedy());
+        assert_eq!(
+            Speculation::DSpark { n: 7 }.acceptance_floor(ModelRole::Worker),
+            Some(2.0)
+        );
+        assert_eq!(Speculation::DSpark { n: 7 }.to_string(), "dspark n=7");
     }
 
     #[test]

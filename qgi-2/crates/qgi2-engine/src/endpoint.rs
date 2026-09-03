@@ -157,6 +157,7 @@ impl Endpoint {
             "mtp" => Speculation::Mtp { n },
             "dflash2" => Speculation::DFlash2 { n },
             "eagle3" => Speculation::Eagle3 { n },
+            "dspark" => Speculation::DSpark { n },
             "ngram" => Speculation::NGram { n },
             "off" | "none" => Speculation::Off,
             _ => return None,
@@ -371,19 +372,26 @@ impl EngineRegistry {
 /// neither is something a compile-time list can know about.
 pub fn engine_typically_supports(engine: EngineKind, spec: Speculation) -> bool {
     match engine {
+        // DSpark is served on both: vLLM via `{"method":"dspark",...}` (#47808)
+        // and SGLang via `--speculative-algorithm DSPARK` (the RTX PRO 6000
+        // recipe). The runbook's "DSpark blocked upstream -- leave OFF" was
+        // about vLLM on B300 (vllm#47610 + FlashInfer SWA), not SM120/SM121.
         EngineKind::Vllm => matches!(
             spec,
             Speculation::Mtp { .. }
                 | Speculation::DFlash2 { .. }
+                | Speculation::DSpark { .. }
                 | Speculation::NGram { .. }
                 | Speculation::Off
         ),
         // SGLang's speculators are EAGLE/EAGLE3, NEXTN (which is MTP for models
-        // that ship an MTP head), and n-gram. DFlash2 is not among them.
+        // that ship an MTP head), DSPARK, and n-gram. DFlash2 is not among them
+        // in stock builds, though the QGI fleet's build serves it.
         EngineKind::Sglang => matches!(
             spec,
             Speculation::Eagle3 { .. }
                 | Speculation::Mtp { .. }
+                | Speculation::DSpark { .. }
                 | Speculation::NGram { .. }
                 | Speculation::Off
         ),
@@ -500,6 +508,10 @@ mod tests {
         assert!(!engine_typically_supports(EngineKind::Sglang, Speculation::DFlash2 { n: 7 }));
         assert!(engine_typically_supports(EngineKind::Sglang, Speculation::Eagle3 { n: 5 }));
         assert!(!engine_typically_supports(EngineKind::Vllm, Speculation::Eagle3 { n: 5 }));
+        // DSpark is real on both engines at SM120/SM121.
+        for k in EngineKind::ALL {
+            assert!(engine_typically_supports(k, Speculation::DSpark { n: 7 }), "{k}");
+        }
         // Both do MTP and n-gram.
         for k in EngineKind::ALL {
             assert!(engine_typically_supports(k, Speculation::Mtp { n: 2 }));

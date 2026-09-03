@@ -500,6 +500,23 @@ impl fmt::Display for Tier {
 /// defaults (64, 64) that is 64 and nothing changes; DeepSeek-V4's 128-token
 /// window pages make it 128; a 16-token page under a 64-token chunk makes it
 /// 64, not 16.
+///
+/// # A failure alignment cannot prevent, and the harness makes reachable
+///
+/// syv-ai/qwen38-27b-rtx3090, gotcha 37: on vLLM with prefix caching, a
+/// captured verify step and a draft count `k`, a request that **hits** the
+/// prefix cache and whose *total* prompt length is `≡ 117 + k (mod 128)`
+/// collapses -- DFlash2 to 1.97 tok/step with degenerate repetition, MTP to an
+/// empty answer with `finish_reason: stop`. Every other residue is clean.
+///
+/// Alignment pads the *stable prefix*; the total length also includes the
+/// volatile tail and so varies per turn, landing on the bad residue roughly
+/// one turn in 128. QGI-2 engineers cache hits deliberately, which is exactly
+/// the precondition. Nothing here can prevent it. What the harness can do is
+/// not hide it: a turn whose acceptance drops to ~2.0 with a near-perfect cache
+/// hit is this bug, not a cache problem, and the fix is the engine's. Do not
+/// sample residues to check -- five samples miss one bad residue 96% of the
+/// time; walk all 128 by padding one token at a time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PageAlignment {
     pub page_size: u32,

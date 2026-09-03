@@ -325,10 +325,11 @@ fn parse_spec(e: &EngineConfig) -> Result<Speculation> {
         "mtp" => Speculation::Mtp { n: e.speculation_n },
         "dflash2" => Speculation::DFlash2 { n: e.speculation_n },
         "eagle3" => Speculation::Eagle3 { n: e.speculation_n },
+        "dspark" => Speculation::DSpark { n: e.speculation_n },
         "ngram" => Speculation::NGram { n: e.speculation_n },
         "off" | "none" => Speculation::Off,
         other => anyhow::bail!(
-            "unknown speculation {other:?}; expected mtp, dflash2, eagle3, ngram, or off"
+            "unknown speculation {other:?}; expected mtp, dflash2, eagle3, dspark, ngram, or off"
         ),
     })
 }
