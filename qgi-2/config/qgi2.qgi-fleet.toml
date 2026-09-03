@@ -21,7 +21,9 @@ bind = "127.0.0.1:8788"
 
 [persona]
 mood = "builder"
-profile = "traceable"     # DFlash2 n=7 on the worker — matches vidatron
+profile = "traceable"     # DFlash2 n=7 on the worker — matches vidatron;
+                          # `deterministic` routes to the same worker (DFlash2
+                          # runs greedy, measured), so no second process.
 allow_mood_switch = false
 
 # --- worker: the spec's model, already deployed with the spec's speculator ---
@@ -68,7 +70,7 @@ speculation_n = 0
 # --- HiCache on the SGLang worker ---
 #
 # vidatron is 2x RTX PRO 6000 96 GB with GPU0 idle, so there is room for a
-# generous L2 and, later, a second worker process on a different speculator.
+# generous L2 and for the planner. The one worker serves every profile.
 #
 # Not enabled by default: turning it on means relaunching vidatron's SGLang,
 # which is a live production endpoint. Uncomment when you are ready, and get

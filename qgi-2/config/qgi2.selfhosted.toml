@@ -40,23 +40,16 @@ model = "QGI-3.8-27b DFlash"
 speculation = "dflash2"
 speculation_n = 7
 
-# --- second worker, for the `deterministic` profile only ---
+# The worker above serves all three profiles, `deterministic` included:
+# DFlash2 runs greedy (measured 2.90-3.45 tok/step on this model), so the
+# second MTP worker an earlier revision required here is not needed. It is
+# still a valid *optional* addition for c8+ throughput; deploy/README.md has
+# the recipe, including the W4A16 quant vegatron's Ampere cards need.
 #
-# DFlash2 cannot produce greedy output and `deterministic` forces T=0, so the
-# profile needs its own process. Uncomment together with launching
-# deploy/launch-qgi2-worker-mtp.sh; `qgi2 doctor --profile deterministic` will
-# tell you if it is missing.
-#
-# NOTE: on vegatron (A6000, sm_86) FP8 will not run — point MODEL_PATH at an
-# AWQ/GPTQ int4 checkpoint there.
-#
-# [[engines]]
-# role = "worker"
-# engine = "sglang"
-# base_url = "http://VEGATRON_TAILNET_IP:18034/v1"
-# model = "QGI-2-Worker-MTP"
-# speculation = "mtp"
-# speculation_n = 3
+# If you relaunch the worker, DSpark K=7 is the measured best for QGI-2's
+# serial regime on this hardware:
+#   speculation = "dspark"
+#   speculation_n = 7
 
 [embedder]
 role = "embedder"
@@ -79,3 +72,13 @@ fa3 = false
 [hicache.l2]
 mode = "ratio"
 value = 2.0
+
+# The 27B is a hybrid model: each request pins recurrent-state slots (78.4 MB
+# each, no paging) and speculation multiplies them. Declare the pool so
+# `qgi2 hicache` sizes it, checks it fits, and emits --max-mamba-cache-size.
+[hicache.gdn]
+slot_bytes = 78400000
+lazy_slots = 4
+max_concurrent = 8
+speculation = { method = "dflash2", n = 7 }
+budget = { total_gb = 96.0, mem_fraction_static = 0.90, weights_gb = 24.5, runtime_gb = 3.5 }

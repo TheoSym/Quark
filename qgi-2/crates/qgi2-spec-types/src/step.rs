@@ -45,6 +45,9 @@ impl fmt::Display for ModelRole {
 /// Spec: "Speculate everywhere. MTP on the planner, DFlash2 or MTP on the
 /// worker, n-gram where the output copies the prompt."
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+// The wire spelling matches the `speculation = "..."` field in qgi2 config and
+// the engines' own names (`dflash2`, `dspark`), not the snake_case mangling
+// (`d_flash2`) serde would derive.
 #[serde(rename_all = "snake_case", tag = "method")]
 pub enum Speculation {
     /// Multi-token prediction head. Supports greedy decoding.
@@ -61,6 +64,7 @@ pub enum Speculation {
     /// stays MTP per the table, but a DFlash2 worker is no longer *refused*
     /// there -- refusing a measured-working configuration is the same mistake
     /// as the SGLang/DFlash2 veto removed earlier.
+    #[serde(rename = "dflash2")]
     DFlash2 { n: u8 },
     /// EAGLE-3 draft head. SGLang's headline speculator; vLLM does not serve it
     /// under this name.
@@ -71,6 +75,7 @@ pub enum Speculation {
     /// dropping the worker to MTP.
     Eagle3 { n: u8 },
     /// N-gram lookup against the prompt. Only useful when output copies input.
+    #[serde(rename = "ngram")]
     NGram { n: u8 },
     /// DSpark: a separately trained BF16 drafter (RadixArk/Qwen3.8-27B-DSpark)
     /// with confidence-scheduled verification. `n` is the block size; the
@@ -88,6 +93,7 @@ pub enum Speculation {
     /// semantic gates pass under both greedy and temperature 0.6 with
     /// "sampling not the variable". So, unlike DFlash2, it serves the
     /// Deterministic profile.
+    #[serde(rename = "dspark")]
     DSpark { n: u8 },
     /// No speculation.
     Off,
@@ -326,6 +332,25 @@ impl StepPlan {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wire_spelling_matches_the_config_field() {
+        // `[hicache.gdn] speculation = { method = "dflash2", n = 7 }` must use
+        // the same word as `[[engines]] speculation = "dflash2"`. The default
+        // snake_case derive produced `d_flash2`, which no config anywhere used.
+        for (s, wire) in [
+            (Speculation::DFlash2 { n: 7 }, "dflash2"),
+            (Speculation::DSpark { n: 7 }, "dspark"),
+            (Speculation::NGram { n: 4 }, "ngram"),
+            (Speculation::Mtp { n: 3 }, "mtp"),
+            (Speculation::Eagle3 { n: 5 }, "eagle3"),
+            (Speculation::Off, "off"),
+        ] {
+            let j = serde_json::to_value(s).unwrap();
+            assert_eq!(j["method"], wire, "{s}");
+            assert_eq!(serde_json::from_value::<Speculation>(j).unwrap(), s);
+        }
+    }
 
     #[test]
     fn every_verified_drafter_is_greedy_safe() {

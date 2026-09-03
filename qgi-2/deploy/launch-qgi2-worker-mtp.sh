@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# OPTIONAL. This is a second worker for throughput (c8+), not a profile
+# requirement: the DFlash2 worker already serves `deterministic` because
+# DFlash2 runs greedy (measured). See deploy/README.md.
 # QGI-2 worker (MTP) — the second worker, for the `deterministic` profile only.
 #
 # Why this exists: `traceable` runs the worker on DFlash2 n=7, but DFlash2

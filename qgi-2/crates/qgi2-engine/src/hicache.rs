@@ -35,6 +35,7 @@
 use crate::endpoint::Endpoint;
 use crate::http::HttpClient;
 use crate::metrics::prometheus_lines;
+use qgi2_spec_types::Speculation;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -228,6 +229,9 @@ pub struct HiCacheConfig {
     /// pure-attention models.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snapshot_chunk: Option<u32>,
+    /// The recurrent-state pool for hybrid models. See [`GdnStatePool`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gdn: Option<GdnStatePool>,
 }
 
 impl Default for HiCacheConfig {
@@ -248,6 +252,7 @@ impl Default for HiCacheConfig {
             mem_layout: MemLayout::PageFirst,
             fa3: false,
             snapshot_chunk: None,
+            gdn: None,
         }
     }
 }
@@ -318,6 +323,9 @@ impl HiCacheConfig {
         if let Some(l3) = &self.l3 {
             f.extend(l3.flags());
         }
+        if let Some(g) = &self.gdn {
+            f.extend(g.launch_flags());
+        }
         f
     }
 
@@ -382,6 +390,10 @@ impl HiCacheConfig {
             && master.trim().is_empty()
         {
             out.push("the mooncake L3 backend needs a master address".into());
+        }
+
+        if let Some(g) = &self.gdn {
+            out.extend(g.problems());
         }
 
         if let Some(chunk) = self.snapshot_chunk
@@ -453,6 +465,153 @@ fn group_flags(flags: &[String]) -> Vec<String> {
         }
     }
     out
+}
+
+/// The recurrent-state pool a hybrid (GDN/Mamba) model needs, and the VRAM it
+/// takes from the KV pool.
+///
+/// Borrowed from the RTX PRO 6000 DSpark recipe's calculator
+/// (SamSammane/Qwen3.8-27B-RTX-6000-PRO-SGLang-DSpark, `start.sh`), which is the
+/// SGLang cookbook's mamba-ratio calculator worked for 96 GB.
+///
+/// # Why this is its own resource
+///
+/// A pure-attention model has one cache: KV, paged, evictable. A hybrid model
+/// has a second one that behaves nothing like it. Each running request pins a
+/// fixed number of recurrent-state **slots** for its lifetime -- no paging, no
+/// eviction -- and a slot is large: **78.4 MB** on the 27B (48 GDN layers x 48
+/// heads x 128 x 128 bf16, plus conv state). Speculation multiplies it: each
+/// draft token in flight needs its own slot, so a DSpark block of 7 wants 8
+/// draft slots on top of the 4 the lazy radix strategy keeps.
+///
+/// So the pool caps **concurrency** independently of KV. On 96 GB, KV stops
+/// being the bound before the state pool does; the recipe pins the pool
+/// explicitly (`--max-mamba-cache-size`) rather than letting the ratio flag
+/// guess. QGI-2 models it for the same reason it models page alignment: a
+/// number the engine will enforce is a number the harness should compute
+/// before launch, not discover at it.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct GdnStatePool {
+    /// Bytes per recurrent-state slot. 78.4 MB for Qwen3.8-27B at bf16.
+    pub slot_bytes: u64,
+    /// Slots the radix strategy keeps per request beyond the drafts. 4 for
+    /// `extra_buffer_lazy`.
+    pub lazy_slots: u32,
+    /// Concurrent requests the pool must serve.
+    pub max_concurrent: u32,
+    /// Speculation in force, which sets the draft slots per request.
+    pub speculation: Speculation,
+    /// VRAM budget, for the fit check. `None` skips it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<VramBudget>,
+}
+
+/// The VRAM arithmetic from the recipe: what is left for KV once weights, the
+/// state pool, and the runtime have taken theirs.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct VramBudget {
+    pub total_gb: f64,
+    /// `--mem-fraction-static`. 0.90 in the recipe.
+    pub mem_fraction_static: f64,
+    /// Base weights plus any drafter. 24.5 GB in the recipe (21.9 + 2.7).
+    pub weights_gb: f64,
+    /// CUDA graphs, FlashInfer workspace, mm pools. 3.5 GB in the recipe.
+    pub runtime_gb: f64,
+}
+
+impl GdnStatePool {
+    /// The 27B's numbers from the recipe, for a given concurrency and
+    /// speculation.
+    pub fn qwen38_27b(max_concurrent: u32, speculation: Speculation) -> Self {
+        Self {
+            slot_bytes: 78_400_000,
+            lazy_slots: 4,
+            max_concurrent,
+            speculation,
+            budget: None,
+        }
+    }
+
+    pub fn with_budget(mut self, budget: VramBudget) -> Self {
+        self.budget = Some(budget);
+        self
+    }
+
+    /// Draft slots a speculator holds in flight: the verify width, which is
+    /// the block size plus the bonus token. Zero when not speculating.
+    pub fn draft_slots(&self) -> u32 {
+        match self.speculation {
+            Speculation::Off => 0,
+            s => u32::from(s.lookahead()) + 1,
+        }
+    }
+
+    /// `S + D`: lazy buffer plus drafts.
+    pub fn slots_per_request(&self) -> u32 {
+        self.lazy_slots + self.draft_slots()
+    }
+
+    /// `--max-mamba-cache-size`.
+    pub fn total_slots(&self) -> u32 {
+        self.max_concurrent * self.slots_per_request()
+    }
+
+    pub fn pool_bytes(&self) -> u64 {
+        u64::from(self.total_slots()) * self.slot_bytes
+    }
+
+    pub fn pool_gb(&self) -> f64 {
+        self.pool_bytes() as f64 / 1e9
+    }
+
+    /// GB left for the KV pool under the budget, if one is set.
+    pub fn kv_pool_gb(&self) -> Option<f64> {
+        let b = self.budget?;
+        Some(b.total_gb * b.mem_fraction_static - b.weights_gb - self.pool_gb() - b.runtime_gb)
+    }
+
+    /// The flags that pin the pool, from the recipe.
+    pub fn launch_flags(&self) -> Vec<String> {
+        vec![
+            "--mamba-ssm-dtype".into(),
+            "bfloat16".into(),
+            "--mamba-radix-cache-strategy".into(),
+            "extra_buffer_lazy".into(),
+            "--max-mamba-cache-size".into(),
+            self.total_slots().to_string(),
+            "--max-running-requests".into(),
+            self.max_concurrent.to_string(),
+        ]
+    }
+
+    pub fn problems(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        if self.max_concurrent == 0 {
+            out.push("gdn pool: max_concurrent is 0; nothing could run".into());
+        }
+        if let Some(kv) = self.kv_pool_gb() {
+            if kv <= 0.0 {
+                out.push(format!(
+                    "gdn pool: {} concurrent x {} slots x {:.1} MB = {:.1} GB of state leaves no \
+                     VRAM for KV under the budget; lower concurrency or the draft block",
+                    self.max_concurrent,
+                    self.slots_per_request(),
+                    self.slot_bytes as f64 / 1e6,
+                    self.pool_gb()
+                ));
+            } else if kv < 8.0 {
+                // ~1.5M tokens at 32.8 KB/token is the recipe's KV pool; under
+                // 8 GB (~250K tokens) a single long-context request cannot
+                // reach the model's native window.
+                out.push(format!(
+                    "gdn pool: only {kv:.1} GB left for KV after a {:.1} GB state pool; a single \
+                     request cannot use the model's context window",
+                    self.pool_gb()
+                ));
+            }
+        }
+        out
+    }
 }
 
 /// A cache tier.
@@ -1138,5 +1297,102 @@ mod granularity_tests {
             ..HiCacheConfig::default()
         };
         assert_eq!(c.page_alignment().unwrap().granularity(), 128);
+    }
+}
+
+
+#[cfg(test)]
+mod gdn_tests {
+    use super::*;
+
+    fn recipe_budget() -> VramBudget {
+        VramBudget {
+            total_gb: 96.0,
+            mem_fraction_static: 0.90,
+            weights_gb: 24.5,
+            runtime_gb: 3.5,
+        }
+    }
+
+    #[test]
+    fn the_recipe_calculator_reproduces() {
+        // start.sh: S=4 + D=8 = 12 slots/req; 8 concurrent -> 96 slots -> ~7.5 GB;
+        // 86.4 - 24.5 - 7.5 - 3.5 = ~50 GB KV.
+        let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 })
+            .with_budget(recipe_budget());
+        assert_eq!(g.draft_slots(), 8);
+        assert_eq!(g.slots_per_request(), 12);
+        assert_eq!(g.total_slots(), 96);
+        assert!((g.pool_gb() - 7.53).abs() < 0.05, "{}", g.pool_gb());
+        let kv = g.kv_pool_gb().unwrap();
+        assert!((kv - 50.9).abs() < 0.5, "{kv}");
+        assert!(g.problems().is_empty(), "{:?}", g.problems());
+    }
+
+    #[test]
+    fn no_speculation_means_no_draft_slots() {
+        let g = GdnStatePool::qwen38_27b(8, Speculation::Off);
+        assert_eq!(g.draft_slots(), 0);
+        assert_eq!(g.slots_per_request(), 4);
+    }
+
+    #[test]
+    fn a_longer_draft_block_costs_slots_not_tokens() {
+        // rtx3090 gotcha 23: the verify block costs KV pool per request slot.
+        let short = GdnStatePool::qwen38_27b(8, Speculation::DFlash2 { n: 7 });
+        let long = GdnStatePool::qwen38_27b(8, Speculation::DFlash2 { n: 15 });
+        assert_eq!(short.slots_per_request(), 12);
+        assert_eq!(long.slots_per_request(), 20);
+        assert!(long.pool_gb() > short.pool_gb() * 1.6);
+    }
+
+    #[test]
+    fn the_pool_caps_concurrency_before_kv_does() {
+        // Push concurrency until the state pool eats the KV budget: the harness
+        // should say so before launch rather than the engine refusing to start.
+        let g = GdnStatePool::qwen38_27b(64, Speculation::DSpark { n: 7 })
+            .with_budget(recipe_budget());
+        let p = g.problems();
+        assert!(!p.is_empty(), "64 concurrent x 12 slots is {:.1} GB", g.pool_gb());
+        assert!(p[0].contains("leaves no VRAM for KV") || p[0].contains("only"), "{p:?}");
+    }
+
+    #[test]
+    fn launch_flags_pin_the_pool() {
+        let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 });
+        let f = g.launch_flags().join(" ");
+        assert!(f.contains("--max-mamba-cache-size 96"), "{f}");
+        assert!(f.contains("--mamba-radix-cache-strategy extra_buffer_lazy"), "{f}");
+        assert!(f.contains("--max-running-requests 8"), "{f}");
+    }
+
+    #[test]
+    fn the_hicache_config_carries_the_pool_into_its_flags_and_problems() {
+        let c = HiCacheConfig {
+            gdn: Some(
+                GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 })
+                    .with_budget(recipe_budget()),
+            ),
+            ..HiCacheConfig::default()
+        };
+        assert!(c.launch_flags().join(" ").contains("--max-mamba-cache-size 96"));
+        assert!(c.problems().is_empty(), "{:?}", c.problems());
+
+        let too_many = HiCacheConfig {
+            gdn: Some(
+                GdnStatePool::qwen38_27b(64, Speculation::DSpark { n: 7 })
+                    .with_budget(recipe_budget()),
+            ),
+            ..HiCacheConfig::default()
+        };
+        assert!(!too_many.problems().is_empty());
+    }
+
+    #[test]
+    fn the_pool_round_trips_through_config() {
+        let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 })
+            .with_budget(recipe_budget());
+        let back: GdnStatePool = serde_json::from_str(&serde_json::to_string(&g).unwrap()).unwrap();
+        assert_eq!(back, g);
     }
 }

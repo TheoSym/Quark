@@ -379,6 +379,20 @@ async fn hicache_cmd(
         "# The harness pads its stable prefix to {}-token pages when this is enabled.",
         hc.page_size
     );
+    if let Some(g) = &hc.gdn {
+        println!(
+            "# GDN state pool: {} concurrent x {} slots ({} lazy + {} draft) x {:.1} MB = {:.1} GB",
+            g.max_concurrent,
+            g.slots_per_request(),
+            g.lazy_slots,
+            g.draft_slots(),
+            g.slot_bytes as f64 / 1e6,
+            g.pool_gb()
+        );
+        if let Some(kv) = g.kv_pool_gb() {
+            println!("#   leaves {kv:.1} GB for the KV pool under the configured budget");
+        }
+    }
     println!("#\n# Add to ~/.qgi2/config.toml:\n#");
     for line in toml::to_string_pretty(&hc)?.lines() {
         println!("#   {line}");

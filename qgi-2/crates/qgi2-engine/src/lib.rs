@@ -32,7 +32,10 @@ pub mod types;
 pub mod vllm;
 
 pub use endpoint::{Endpoint, EngineKind, EngineRegistry, EngineRegistryError, engine_typically_supports};
-pub use hicache::{HiCacheConfig, HiCacheStats, L2Sizing, L3Backend, PageAlignment, Tier, scrape_hicache};
+pub use hicache::{
+    GdnStatePool, HiCacheConfig, HiCacheStats, L2Sizing, L3Backend, PageAlignment, Tier,
+    VramBudget, scrape_hicache,
+};
 pub use http::HttpClient;
 pub use metrics::AcceptanceSnapshot;
 pub use scripted::{Script, ScriptedEngine, SeenStep};
