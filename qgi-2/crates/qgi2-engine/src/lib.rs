@@ -26,6 +26,7 @@ pub mod endpoint;
 pub mod hicache;
 pub mod http;
 pub mod metrics;
+pub mod scripted;
 pub mod sglang;
 pub mod types;
 pub mod vllm;
@@ -34,6 +35,7 @@ pub use endpoint::{Endpoint, EngineKind, EngineRegistry, EngineRegistryError, en
 pub use hicache::{HiCacheConfig, HiCacheStats, L2Sizing, L3Backend, PageAlignment, Tier, scrape_hicache};
 pub use http::HttpClient;
 pub use metrics::AcceptanceSnapshot;
+pub use scripted::{Script, ScriptedEngine, SeenStep};
 pub use sglang::SglangEngine;
 pub use types::{
     ChatChoice, ChatMessage, ChatRequest, ChatResponse, EmbeddingResponse, PromptTokensDetails,

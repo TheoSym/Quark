@@ -248,6 +248,17 @@ impl Session {
         }
     }
 
+    /// Replace the engine backends. See [`Engines::with_engine`].
+    pub fn with_engines(mut self, engines: Engines) -> Self {
+        self.engines = engines;
+        self
+    }
+
+    /// The current backends, for building a modified set.
+    pub fn engines(&self) -> &Engines {
+        &self.engines
+    }
+
     /// Load a persisted graph. The durable slice it carries becomes segment 3.
     pub fn with_graph(mut self, graph: FactGraph) -> Self {
         self.graph = graph;

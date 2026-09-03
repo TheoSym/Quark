@@ -107,6 +107,17 @@ impl Engines {
         Self { by_kind }
     }
 
+    /// Install a backend for a kind, replacing whatever `for_registry` built.
+    ///
+    /// This is how a scripted engine reaches the loop: register endpoints as
+    /// usual, then swap the kind they declare for one that answers from a
+    /// script. Everything above -- routing, assembly, rules, metrics -- sees
+    /// exactly what it would see against a live server.
+    pub fn with_engine(mut self, kind: qgi2_engine::EngineKind, engine: Arc<dyn Engine>) -> Self {
+        self.by_kind.insert(kind, engine);
+        self
+    }
+
     pub fn for_endpoint(&self, endpoint: &qgi2_engine::Endpoint) -> Result<&Arc<dyn Engine>> {
         self.by_kind.get(&endpoint.engine).ok_or_else(|| {
             anyhow::anyhow!(

@@ -280,7 +280,7 @@ mod tests {
 
     #[test]
     fn a_tool_call_response_uses_the_right_finish_reason() {
-        let calls = vec![ToolCall {
+        let calls = [ToolCall {
             id: "c1".into(),
             tool: "read".into(),
             arguments: json!({"path": "a.rs"}),
