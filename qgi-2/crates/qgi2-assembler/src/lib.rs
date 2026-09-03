@@ -472,7 +472,7 @@ mod alignment_tests {
     }
 
     fn align() -> PageAlignment {
-        PageAlignment { page_size: 64 }
+        PageAlignment::pages(64)
     }
 
     #[test]

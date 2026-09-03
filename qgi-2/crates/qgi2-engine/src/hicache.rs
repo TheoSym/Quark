@@ -222,6 +222,12 @@ pub struct HiCacheConfig {
     /// usable memory layout.
     #[serde(default)]
     pub fa3: bool,
+    /// Recurrent-state snapshot chunk for hybrid (GDN/Mamba) models, in tokens.
+    /// Set this when the served model is a hybrid so the prefix is padded to a
+    /// boundary the recurrence can actually resume from. `None` for
+    /// pure-attention models.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_chunk: Option<u32>,
 }
 
 impl Default for HiCacheConfig {
@@ -241,6 +247,7 @@ impl Default for HiCacheConfig {
             write_policy: WritePolicy::WriteThroughSelective,
             mem_layout: MemLayout::PageFirst,
             fa3: false,
+            snapshot_chunk: None,
         }
     }
 }
@@ -377,6 +384,20 @@ impl HiCacheConfig {
             out.push("the mooncake L3 backend needs a master address".into());
         }
 
+        if let Some(chunk) = self.snapshot_chunk
+            && self.page_size > 0
+            && chunk % self.page_size != 0
+        {
+            // Engines that snapshot recurrent state require the KV page and the
+            // state boundary to coincide (FreeToken asserts CHUNK_SIZE %
+            // page_size == 0); a misaligned pair fails at launch.
+            out.push(format!(
+                "snapshot_chunk {chunk} is not a multiple of page_size {}; hybrid engines \
+                 require the recurrent-state boundary to land on a page boundary",
+                self.page_size
+            ));
+        }
+
         out
     }
 
@@ -404,6 +425,7 @@ impl HiCacheConfig {
     pub fn page_alignment(&self) -> Option<PageAlignment> {
         self.enabled.then_some(PageAlignment {
             page_size: self.page_size,
+            snapshot_chunk: self.snapshot_chunk,
         })
     }
 }
@@ -455,19 +477,63 @@ impl fmt::Display for Tier {
     }
 }
 
-/// How the stable prefix is padded to a page boundary.
+/// How the stable prefix is padded to a cache boundary.
 ///
 /// Pages are counted in **tokens**, and QGI-2 does not tokenize — it works in
 /// bytes. So the padding is computed from an estimate, and the estimate being
-/// wrong costs at most one page rather than breaking anything. The
+/// wrong costs at most one unit rather than breaking anything. The
 /// authoritative check is the `cached_tokens` the engine reports back; if the
 /// alignment is not paying off, that number says so.
+///
+/// # Two granularities, not one
+///
+/// A pure-attention model's reusable prefix is page-granular. A **hybrid**
+/// model — GDN/Mamba linear layers beside attention, which is what the spec's
+/// own planner (Flash-Next: "GDN + QSA hybrid") is — is not. Its recurrent
+/// state cannot be resumed mid-stream; an engine checkpoints it only at
+/// `snapshot_chunk`-aligned boundaries and truncates the reusable prefix to the
+/// deepest live snapshot (FreeToken's hybrid radix cache, mirroring SGLang's
+/// `MambaRadixCache`). Padding to a page boundary that is not also a snapshot
+/// boundary still forces the recurrence to replay from the previous chunk.
+///
+/// So the effective unit is `lcm(page_size, snapshot_chunk)`. With the common
+/// defaults (64, 64) that is 64 and nothing changes; DeepSeek-V4's 128-token
+/// window pages make it 128; a 16-token page under a 64-token chunk makes it
+/// 64, not 16.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PageAlignment {
     pub page_size: u32,
+    /// Recurrent-state snapshot granularity for hybrid models, in tokens.
+    /// `None` for pure-attention models.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_chunk: Option<u32>,
 }
 
 impl PageAlignment {
+    pub const fn pages(page_size: u32) -> Self {
+        Self {
+            page_size,
+            snapshot_chunk: None,
+        }
+    }
+
+    /// For a hybrid model whose engine snapshots recurrent state every
+    /// `snapshot_chunk` tokens.
+    pub const fn hybrid(page_size: u32, snapshot_chunk: u32) -> Self {
+        Self {
+            page_size,
+            snapshot_chunk: Some(snapshot_chunk),
+        }
+    }
+
+    /// The boundary the prefix is actually padded to: the least common multiple
+    /// of the page and, when present, the snapshot chunk.
+    pub fn granularity(&self) -> u32 {
+        match self.snapshot_chunk {
+            Some(c) if c > 0 && self.page_size > 0 => lcm(self.page_size, c),
+            _ => self.page_size,
+        }
+    }
     /// Characters per token, for converting a byte length into a token
     /// estimate. ~3.6 is typical of English prose and code under a BPE
     /// tokenizer; it is deliberately a little low, because over-padding wastes
@@ -483,15 +549,16 @@ impl PageAlignment {
     /// Returns 0 when the prefix already lands on one, and never pads a whole
     /// page for nothing.
     pub fn padding_tokens(&self, byte_len: usize) -> u32 {
-        if self.page_size == 0 {
+        let unit = self.granularity();
+        if unit == 0 {
             return 0;
         }
         let tokens = self.estimated_tokens(byte_len);
-        let remainder = tokens % self.page_size;
+        let remainder = tokens % unit;
         if remainder == 0 {
             0
         } else {
-            self.page_size - remainder
+            unit - remainder
         }
     }
 
@@ -538,6 +605,14 @@ impl PageAlignment {
         let max_bytes = (target_tokens as f32 * Self::CHARS_PER_TOKEN).floor() as usize;
         max_bytes.saturating_sub(byte_len)
     }
+}
+
+fn gcd(a: u32, b: u32) -> u32 {
+    if b == 0 { a } else { gcd(b, a % b) }
+}
+
+fn lcm(a: u32, b: u32) -> u32 {
+    a / gcd(a, b) * b
 }
 
 /// Per-tier hit rates, as SGLang reports them.
@@ -804,7 +879,7 @@ mod tests {
 
     #[test]
     fn a_prefix_already_on_a_boundary_is_not_padded() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         // 64 tokens' worth of bytes.
         let bytes = (64.0 * PageAlignment::CHARS_PER_TOKEN) as usize;
         assert_eq!(a.padding_tokens(bytes), 0);
@@ -813,7 +888,7 @@ mod tests {
 
     #[test]
     fn a_partial_page_is_padded_up_to_the_boundary() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         // ~100 tokens: 36 short of the second page.
         let bytes = (100.0 * PageAlignment::CHARS_PER_TOKEN) as usize;
         let pad = a.padding_tokens(bytes);
@@ -823,7 +898,7 @@ mod tests {
 
     #[test]
     fn padding_never_exceeds_one_page() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         for bytes in [0, 1, 100, 999, 5000, 100_000] {
             assert!(a.padding_tokens(bytes) < 64, "bytes={bytes}");
         }
@@ -831,7 +906,7 @@ mod tests {
 
     #[test]
     fn padding_is_deterministic_for_a_given_length() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         assert_eq!(a.padding_text(1000), a.padding_text(1000));
     }
 
@@ -839,7 +914,7 @@ mod tests {
     fn padding_is_not_whitespace() {
         // Tokenizers collapse runs of spaces unpredictably, so whitespace would
         // not reliably occupy the tokens it appears to.
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         let text = a.padding_text(1000);
         assert!(!text.trim().is_empty());
         assert!(text.contains("pad"));
@@ -847,7 +922,7 @@ mod tests {
 
     #[test]
     fn a_zero_page_size_pads_nothing_rather_than_dividing_by_zero() {
-        let a = PageAlignment { page_size: 0 };
+        let a = PageAlignment::pages(0);
         assert_eq!(a.padding_tokens(1234), 0);
     }
 
@@ -938,7 +1013,7 @@ mod alignment_math_tests {
         // the first length that covers them overshoots, and estimated_tokens'
         // ceiling then pushes the total one token past the boundary — onto the
         // exact partial page the padding exists to avoid.
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         for prefix in (1..4000).step_by(7) {
             let padded = prefix + a.padding_bytes(prefix);
             let tokens = a.estimated_tokens(padded);
@@ -952,7 +1027,7 @@ mod alignment_math_tests {
 
     #[test]
     fn the_generated_text_is_exactly_the_computed_length() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         for prefix in [100usize, 500, 1234, 9999] {
             assert_eq!(a.padding_text(prefix).len(), a.padding_bytes(prefix));
         }
@@ -960,7 +1035,7 @@ mod alignment_math_tests {
 
     #[test]
     fn padding_costs_less_than_one_page_of_bytes() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         let page_bytes = (64.0 * PageAlignment::CHARS_PER_TOKEN) as usize;
         for prefix in [1usize, 100, 1000, 50_000] {
             assert!(a.padding_bytes(prefix) <= page_bytes, "prefix={prefix}");
@@ -969,9 +1044,82 @@ mod alignment_math_tests {
 
     #[test]
     fn an_already_aligned_prefix_gets_no_padding() {
-        let a = PageAlignment { page_size: 64 };
+        let a = PageAlignment::pages(64);
         let aligned = (64.0 * PageAlignment::CHARS_PER_TOKEN) as usize;
         assert_eq!(a.padding_bytes(aligned), 0);
         assert!(a.padding_text(aligned).is_empty());
+    }
+}
+
+
+#[cfg(test)]
+mod granularity_tests {
+    use super::*;
+
+    #[test]
+    fn a_pure_attention_model_aligns_to_the_page() {
+        assert_eq!(PageAlignment::pages(64).granularity(), 64);
+    }
+
+    #[test]
+    fn matching_chunk_and_page_change_nothing() {
+        // FreeToken's CHUNK_SIZE is 64, as is the default page: the common case
+        // is unaffected by the generalisation.
+        assert_eq!(PageAlignment::hybrid(64, 64).granularity(), 64);
+    }
+
+    #[test]
+    fn a_larger_chunk_wins() {
+        // A hybrid model's recurrence can only resume at a chunk boundary, so a
+        // prefix padded merely to a page still replays from the last chunk.
+        assert_eq!(PageAlignment::hybrid(64, 128).granularity(), 128);
+        let a = PageAlignment::hybrid(64, 128);
+        for prefix in (1..4000).step_by(11) {
+            let padded = prefix + a.padding_bytes(prefix);
+            assert_eq!(a.estimated_tokens(padded) % 128, 0, "prefix {prefix}");
+        }
+    }
+
+    #[test]
+    fn a_smaller_page_still_aligns_to_the_chunk() {
+        // page 16 under a 64-token chunk: the unit is 64, not 16.
+        assert_eq!(PageAlignment::hybrid(16, 64).granularity(), 64);
+    }
+
+    #[test]
+    fn coprime_sizes_take_the_lcm() {
+        assert_eq!(PageAlignment::hybrid(64, 96).granularity(), 192);
+    }
+
+    #[test]
+    fn a_zero_chunk_falls_back_to_the_page() {
+        assert_eq!(PageAlignment::hybrid(64, 0).granularity(), 64);
+    }
+
+    #[test]
+    fn a_misaligned_chunk_is_flagged_before_launch() {
+        // FreeToken asserts CHUNK_SIZE % page_size == 0 at startup; catching it
+        // in config beats a crash on the launch line.
+        let c = HiCacheConfig {
+            page_size: 48,
+            snapshot_chunk: Some(64),
+            ..HiCacheConfig::default()
+        };
+        assert!(c.problems().iter().any(|p| p.contains("snapshot_chunk")), "{:?}", c.problems());
+        let ok = HiCacheConfig {
+            page_size: 64,
+            snapshot_chunk: Some(128),
+            ..HiCacheConfig::default()
+        };
+        assert!(!ok.problems().iter().any(|p| p.contains("snapshot_chunk")));
+    }
+
+    #[test]
+    fn the_config_hands_the_chunk_to_the_alignment() {
+        let c = HiCacheConfig {
+            snapshot_chunk: Some(128),
+            ..HiCacheConfig::default()
+        };
+        assert_eq!(c.page_alignment().unwrap().granularity(), 128);
     }
 }
