@@ -10,6 +10,7 @@ use anyhow::{Context, Result};
 use qgi2_engine::{Endpoint, EngineKind, EngineRegistry, HiCacheConfig};
 use qgi2_spec_types::{ModelRole, Mood, Persona, Profile, Speculation};
 use qgi2_turn::SessionConfig;
+use qgi2_turn::session::SkillCandidate;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -27,6 +28,31 @@ pub struct Qgi2Config {
     /// cache and no tiering.
     #[serde(default)]
     pub hicache: Option<HiCacheConfig>,
+    /// Skills the rules may activate into segment 4.
+    ///
+    /// QGI-2's selection is graph-driven -- a skill activates when retrieval
+    /// reaches a node it covers -- which is a different signal from jcode's own
+    /// embedding-similarity activation. The two coexist: jcode keeps activating
+    /// its skills its way, and this catalogue is what the harness renders into
+    /// the volatile tail. Without it segment 4 is always empty, which was the
+    /// case before this existed.
+    #[serde(default)]
+    pub skills: Vec<SkillConfig>,
+}
+
+/// One skill the rules may activate.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SkillConfig {
+    pub name: String,
+    /// Node-name prefixes this skill covers, e.g. `file:` or `task:deploy`.
+    #[serde(default)]
+    pub subjects: Vec<String>,
+    /// Moods this applies to. Empty means every mood.
+    #[serde(default)]
+    pub moods: Vec<String>,
+    /// Skills that must also activate when this one does.
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +60,15 @@ pub struct ServerConfig {
     pub bind: String,
     /// Where fact graphs are persisted between runs.
     pub graph_dir: Option<PathBuf>,
+    /// Minutes of inactivity after which a session is ended: promoted,
+    /// decayed, its durable slice merged. A server has no natural "session
+    /// end" otherwise, and those steps were only running at shutdown.
+    #[serde(default = "default_idle_minutes")]
+    pub idle_minutes: u64,
+}
+
+fn default_idle_minutes() -> u64 {
+    30
 }
 
 impl Default for ServerConfig {
@@ -41,6 +76,7 @@ impl Default for ServerConfig {
         Self {
             bind: "127.0.0.1:8788".to_string(),
             graph_dir: default_graph_dir(),
+            idle_minutes: 30,
         }
     }
 }
@@ -126,6 +162,7 @@ impl Default for Qgi2Config {
                 },
             ],
             hicache: None,
+            skills: Vec::new(),
             embedder: Some(EngineConfig {
                 role: "embedder".into(),
                 engine: "vllm".into(),
@@ -256,6 +293,26 @@ impl Qgi2Config {
             );
         }
         Ok(r)
+    }
+
+    /// The skill catalogue as the rules consume it.
+    pub fn skills(&self) -> Result<Vec<SkillCandidate>> {
+        self.skills
+            .iter()
+            .map(|c| {
+                let moods = c
+                    .moods
+                    .iter()
+                    .map(|m| m.parse::<Mood>().map_err(|e| anyhow::anyhow!("skill {}: {e}", c.name)))
+                    .collect::<Result<Vec<_>>>()?;
+                let subjects: Vec<&str> = c.subjects.iter().map(String::as_str).collect();
+                let requires: Vec<&str> = c.requires.iter().map(String::as_str).collect();
+                Ok(SkillCandidate::new(&c.name)
+                    .covering(&subjects)
+                    .for_moods(&moods)
+                    .requiring(&requires))
+            })
+            .collect()
     }
 
     pub fn to_toml(&self) -> Result<String> {

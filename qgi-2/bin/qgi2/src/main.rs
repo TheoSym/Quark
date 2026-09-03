@@ -126,12 +126,32 @@ async fn serve(cfg: Qgi2Config, bind_override: Option<String>) -> Result<()> {
         .map_err(|e| anyhow::anyhow!("{e}"))
         .context("engine preflight failed; run `qgi2 doctor` for detail")?;
 
-    let store = Arc::new(SessionStore::new(
-        session_config,
-        registry,
-        Vec::new(),
-        cfg.server.graph_dir.clone(),
-    ));
+    let store = Arc::new(
+        SessionStore::new(
+            session_config,
+            registry,
+            cfg.skills()?,
+            cfg.server.graph_dir.clone(),
+        )
+        .with_idle_timeout(std::time::Duration::from_secs(cfg.server.idle_minutes * 60)),
+    );
+
+    // Idle sweep: sessions that go quiet are ended -- promoted, decayed, their
+    // durable slice merged -- rather than living until shutdown.
+    {
+        let store = store.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                tick.tick().await;
+                match store.sweep().await {
+                    Ok(0) => {}
+                    Ok(n) => tracing::info!(ended = n, "idle sessions ended"),
+                    Err(e) => tracing::warn!(error = %e, "idle sweep failed"),
+                }
+            }
+        });
+    }
     let app = router(AppState {
         store: store.clone(),
     });

@@ -16,6 +16,7 @@
 
 use crate::store::FactGraph;
 use qgi2_spec_types::RetrievalPolicy;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// A node chosen to start traversal from.
@@ -39,6 +40,11 @@ pub enum EntryMethod {
 }
 
 /// Picks entry points for a turn.
+///
+/// Serializable so node embeddings survive a restart: re-embedding every
+/// durable subject on the first turn of every session is an embedder call per
+/// session for no new information.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Retrieval {
     /// node -> embedding, populated by the embedder. Absent under Quick.
     embeddings: BTreeMap<String, Vec<f32>>,
@@ -66,6 +72,25 @@ impl Retrieval {
 
     pub fn has_embedding(&self, node: &str) -> bool {
         self.embeddings.contains_key(node)
+    }
+
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
+
+    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(s)
+    }
+
+    /// Merge another retrieval's embeddings in, keeping ours on conflict.
+    pub fn absorb(&mut self, other: Retrieval) {
+        for (node, v) in other.embeddings {
+            self.embeddings.entry(node).or_insert(v);
+        }
+    }
+
+    pub fn embedding_count(&self) -> usize {
+        self.embeddings.len()
     }
 
     /// Nodes in the graph that still need an embedding.

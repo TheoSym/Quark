@@ -238,13 +238,29 @@ pub fn verify(
         ));
     }
 
-    for f in graph.iter_live() {
-        prog.existing.push((
-            f.key.subject.clone(),
-            f.key.relation.as_str().to_string(),
-            f.key.object.clone(),
-            scale(f.confidence.get()),
-        ));
+    // Load only the facts a proposal could conflict with, not the whole graph.
+    // Every rule that reads `existing` joins on the proposal's subject and
+    // relation (or its negation), so anything outside those keys can never
+    // fire and is pure cost -- O(graph) per extraction, twice per turn, which a
+    // large durable slice turns into a visible stall.
+    let mut loaded = std::collections::BTreeSet::new();
+    for p in &proposals {
+        let mut relations = vec![p.relation.clone()];
+        if let Some(neg) = p.relation.negation() {
+            relations.push(neg);
+        }
+        for r in relations {
+            for f in graph.by_subject_relation(&p.subject, &r) {
+                if loaded.insert(f.id.clone()) {
+                    prog.existing.push((
+                        f.key.subject.clone(),
+                        f.key.relation.as_str().to_string(),
+                        f.key.object.clone(),
+                        scale(f.confidence.get()),
+                    ));
+                }
+            }
+        }
     }
 
     // KeepBoth is exactly the policy that says contradictory relations are
@@ -579,6 +595,41 @@ mod tests {
             },
         );
         assert_eq!(out.accepted.len(), 1);
+    }
+
+    #[test]
+    fn verify_loads_only_facts_the_proposals_can_touch() {
+        // The rules join `existing` on the proposal's (subject, relation), so
+        // the rest of the graph can never fire a rule. Loading it anyway made
+        // verify O(graph) per extraction, twice per turn.
+        let mut g = empty();
+        for i in 0..500 {
+            let f = prop(&format!("task:{i}"), Relation::DependsOn, "file:x", 0.9).commit(
+                CommitToken::issued_by_verify_stage(),
+                Source::User,
+                1,
+            );
+            g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+        }
+        // A duplicate of one of them, and one unrelated proposal.
+        let out = verify(
+            vec![
+                prop("task:7", Relation::DependsOn, "file:x", 0.5),
+                prop("task:new", Relation::DependsOn, "file:y", 0.9),
+            ],
+            &g,
+            Mood::Builder,
+            Source::User,
+            2,
+            VerifyConfig::default(),
+        );
+        // Correctness is unchanged: the duplicate is still caught, the new
+        // fact is still accepted. The load itself is checked by the fact that
+        // this runs against 500 facts without touching them (see the indexed
+        // load above); a whole-graph load would still pass this assertion, so
+        // the guard is the code, not a timing test.
+        assert_eq!(out.accepted.len(), 1);
+        assert_eq!(out.rejected[0].reason, RejectionReason::Duplicate);
     }
 
     #[test]

@@ -20,7 +20,7 @@
 //! rounds into one [`TurnMetrics`], so "tokens per turn" means what the spec
 //! says it means rather than "tokens per model round-trip".
 
-use crate::steps::{self, Engines, ExtractOutput, PlanOutput, ToolArgsOutput};
+use crate::steps::{self, Engines, ExtractOutput, PlanOutput, RouteOutput, ToolArgsOutput};
 use crate::tools::{ToolCall, ToolDisposition, ToolOutcome, ToolRunner};
 use anyhow::Result;
 use qgi2_assembler::{Assembler, CacheOutlook};
@@ -187,6 +187,15 @@ pub struct TurnResult {
     pub mood_switched_to: Option<Mood>,
     /// Set when the round cap forced the answer.
     pub tool_rounds_exhausted: bool,
+    /// Set when the profile wanted embedding-seeded retrieval but the embedder
+    /// was unavailable and the turn fell back to lexical matching. Surfaced
+    /// because a Traceable run that quietly degraded to Quick-grade retrieval
+    /// would report numbers about a different configuration than it claims.
+    pub retrieval_degraded: bool,
+    /// Mood the route step suggested, if any. Recorded, not acted on: mood
+    /// switching stays rule-driven, and a model suggestion is one input to
+    /// that, not an override of it.
+    pub route_suggested_mood: Option<String>,
 }
 
 /// One QGI-2 session.
@@ -312,11 +321,51 @@ impl Session {
             .unwrap_or_else(|| TurnMetrics::new(turn));
         let mut result = TurnResult::default();
 
-        // --- retrieve: entry points, then the mood's traversal ---
-        let entry_points =
-            self.retrieval
-                .entry_points(&self.graph, &input.query, None, self.profile().retrieval());
-        let entries: Vec<String> = entry_points.into_iter().map(|e| e.node).collect();
+        // --- retrieve: embedder seeds entry points, route step refines them ---
+        //
+        // Spec: "Embedder -- entry-point retrieval only." The embedder picks
+        // where to start; the route step (worker, under schema) prunes and
+        // extends that list; the mood's traversal does the rest. Quick is
+        // lexical-only in the spec's table and skips both model-side stages.
+        let policy = self.profile().retrieval();
+        let mut query_embedding = None;
+        if !policy.lexical_only {
+            query_embedding = self.embed_query(&input.query).await;
+            if query_embedding.is_none() && self.registry.embedder.is_some() {
+                result.retrieval_degraded = true;
+            }
+        }
+        let candidates = self.retrieval.entry_points(
+            &self.graph,
+            &input.query,
+            query_embedding.as_deref(),
+            policy,
+        );
+        let candidate_names: Vec<String> = candidates.into_iter().map(|e| e.node).collect();
+
+        let entries = if policy.lexical_only || self.graph.is_empty() {
+            // Nothing for a route step to choose between yet.
+            candidate_names
+        } else {
+            match self
+                .route_step(&router, &input.query, &candidate_names, &mut metrics)
+                .await
+            {
+                Ok(out) => {
+                    result.route_suggested_mood = out.suggested_mood;
+                    if out.entry_points.is_empty() {
+                        candidate_names
+                    } else {
+                        out.entry_points
+                    }
+                }
+                Err(e) => {
+                    // A failed route step costs the refinement, not the turn.
+                    tracing::warn!(error = %e, "route step failed; using retrieval candidates");
+                    candidate_names
+                }
+            }
+        };
         let traversal_spec = self.mood().table().traversal;
         let reached_ids = {
             let walk = Walk::new(&self.graph, &traversal_spec, self.profile().retrieval());
@@ -457,6 +506,13 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         self.open_committed.extend(answer_committed);
         result.committed = self.open_committed.clone();
 
+        // New subjects need vectors before the next turn can find them by
+        // similarity. Done after commit so a rejected proposal never earns an
+        // embedder call.
+        if !policy.lexical_only {
+            self.embed_new_subjects().await;
+        }
+
         // --- acceptance, from the delta since the last scrape ---
         self.record_acceptance(&mut metrics).await;
 
@@ -476,6 +532,102 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         self.metrics.record(metrics);
         self.open_turn = None;
         Ok(RoundOutcome::Answered(result))
+    }
+
+    /// Embed the query for entry-point retrieval.
+    ///
+    /// `None` when there is no embedder or it failed; the caller degrades to
+    /// lexical and flags it. The turn is never failed for a retrieval-quality
+    /// problem.
+    async fn embed_query(&self, query: &str) -> Option<Vec<f32>> {
+        let embedder = self.registry.embedder.as_ref()?;
+        let engine = self.engines.for_endpoint(embedder).ok()?;
+        match engine.embed(embedder, &[query.to_string()]).await {
+            Ok(mut v) if !v.is_empty() => Some(v.remove(0)),
+            Ok(_) => None,
+            Err(e) => {
+                tracing::warn!(error = %e, "embedder unavailable; retrieval degraded to lexical");
+                None
+            }
+        }
+    }
+
+    /// Embed every graph subject that does not have a vector yet.
+    async fn embed_new_subjects(&mut self) {
+        let Some(embedder) = self.registry.embedder.clone() else {
+            return;
+        };
+        let missing = self.retrieval.missing_embeddings(&self.graph);
+        if missing.is_empty() {
+            return;
+        }
+        let Ok(engine) = self.engines.for_endpoint(&embedder) else {
+            return;
+        };
+        match engine.embed(&embedder, &missing).await {
+            Ok(vectors) => {
+                for (node, v) in missing.into_iter().zip(vectors) {
+                    self.retrieval.set_embedding(node, v);
+                }
+            }
+            Err(e) => tracing::warn!(error = %e, "could not embed new subjects"),
+        }
+    }
+
+    /// The route step: the worker refines the retrieval candidates under the
+    /// route schema.
+    ///
+    /// Its prompt is segments 1-2 only. The durable slice and subgraph are
+    /// left out because the subgraph is what this step is *choosing*, and
+    /// because keeping the prompt to the two segments that never change within
+    /// a session makes it fully cacheable on its own.
+    async fn route_step(
+        &self,
+        router: &Router,
+        query: &str,
+        candidates: &[String],
+        metrics: &mut TurnMetrics,
+    ) -> Result<RouteOutput> {
+        let step = router
+            .plan(StepKind::Route)
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
+        let system = format!(
+            "{}\n{}",
+            qgi2_assembler::CORE_PROMPT,
+            self.mood().table().render()
+        );
+        let mut user = format!("# Query\n{query}\n\n# Candidate entry points\n");
+        if candidates.is_empty() {
+            user.push_str("(none matched)\n");
+        }
+        for c in candidates {
+            user.push_str("- ");
+            user.push_str(c);
+            user.push('\n');
+        }
+        user.push_str(
+            "\nChoose the entry points to start retrieval from. Prefer candidates; add a \
+             subject only if you are confident it exists in memory.",
+        );
+        let (out, resp): (RouteOutput, _) =
+            steps::run_structured(&self.engines, &self.registry, &step, &system, &user).await?;
+        record(metrics, ModelRole::Worker, &resp);
+        Ok(out)
+    }
+
+    /// The retrieval state (node embeddings), for persistence.
+    pub fn retrieval_json(&self) -> Result<String> {
+        Ok(self.retrieval.to_json()?)
+    }
+
+    /// Restore persisted retrieval state.
+    pub fn with_retrieval(mut self, retrieval: Retrieval) -> Self {
+        self.retrieval.absorb(retrieval);
+        self
+    }
+
+    pub fn retrieval(&self) -> &Retrieval {
+        &self.retrieval
     }
 
     /// Build the calls the plan asked for, splitting executed from deferred.

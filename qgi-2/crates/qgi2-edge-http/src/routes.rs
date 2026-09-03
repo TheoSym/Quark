@@ -6,7 +6,7 @@ use crate::state::AppState;
 use axum::{
     Json, Router,
     extract::State,
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{get, post},
 };
@@ -20,6 +20,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/models", get(models))
         .route("/health", get(health))
         .route("/qgi2/metrics", get(metrics))
+        .route("/qgi2/end", post(end_session))
         .with_state(state)
 }
 
@@ -39,13 +40,34 @@ pub struct ChatRequest {
     pub temperature: Option<f32>,
     #[serde(default)]
     pub stream: bool,
+    /// OpenAI's end-user identifier. Used as the session client id when no
+    /// `X-QGI2-Session` header is sent.
+    #[serde(default)]
+    pub user: Option<String>,
+}
+
+/// Which client this request belongs to.
+///
+/// Header first, then the OpenAI `user` field, then none. jcode's named-provider
+/// config can send a static header per instance (`headers = { X-QGI2-Session =
+/// "..." }`), which is the intended way to keep two jcode clients on one persona
+/// from serialising behind one session lock.
+fn client_id(headers: &HeaderMap, user: Option<&str>) -> Option<String> {
+    headers
+        .get("x-qgi2-session")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string)
+        .or_else(|| user.map(str::to_string))
 }
 
 async fn chat_completions(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<ChatRequest>,
 ) -> impl IntoResponse {
     let parsed = parse_model_name(&req.model);
+    let client = client_id(&headers, req.user.as_deref());
+    let key = crate::state::SessionStore::key(parsed.persona, client.as_deref());
     let transcript = read_transcript(&req.messages);
 
     if transcript.query.is_empty() {
@@ -66,16 +88,23 @@ async fn chat_completions(
         round: transcript.round,
     };
 
-    let session = state.store.get(parsed.persona).await;
-    let mut session = session.lock().await;
-
-    // A caller that sent no tools gets the no-tool runner, so the mood mask
-    // admits nothing and the loop never plans a call it cannot emit.
-    let outcome = if has_tools {
-        session.round(input, &runner).await
-    } else {
-        session.round(input, &NoTools).await
+    let session = state.store.get(parsed.persona, client.as_deref()).await;
+    let outcome = {
+        let mut session = session.lock().await;
+        // A caller that sent no tools gets the no-tool runner, so the mood mask
+        // admits nothing and the loop never plans a call it cannot emit.
+        if has_tools {
+            session.round(input, &runner).await
+        } else {
+            session.round(input, &NoTools).await
+        }
     };
+
+    // Crash insurance: after every turn, not just at shutdown. A server that
+    // dies mid-session now loses at most the turn in flight.
+    if let Err(e) = state.store.persist_session(&key).await {
+        tracing::warn!(error = %e, %key, "could not persist session");
+    }
 
     match outcome {
         Ok(RoundOutcome::CallTools { calls, result }) => {
@@ -144,11 +173,40 @@ fn completion_body(
             "cache_outlook": result.cache_outlook,
             "mood_switched_to": result.mood_switched_to.map(|m| m.as_str()),
             "tool_rounds_exhausted": result.tool_rounds_exhausted,
+            "retrieval_degraded": result.retrieval_degraded,
+            "route_suggested_mood": result.route_suggested_mood,
             // Breaches ride along on every response: the spec calls a threshold
             // drop a bug, and a bug nobody is shown is a bug nobody fixes.
             "breaches": result.breaches,
         }
     })
+}
+
+/// End a session now rather than waiting for the idle sweep.
+async fn end_session(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<EndRequest>,
+) -> impl IntoResponse {
+    let persona = parse_model_name(req.model.as_deref().unwrap_or_default()).persona;
+    let client = client_id(&headers, req.user.as_deref());
+    let key = crate::state::SessionStore::key(persona, client.as_deref());
+    match state.store.end(&key).await {
+        Ok(ended) => (StatusCode::OK, Json(json!({ "ended": ended, "key": key }))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(error_body(&format!("{e:#}"))),
+        )
+            .into_response(),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EndRequest {
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub user: Option<String>,
 }
 
 async fn models() -> impl IntoResponse {
@@ -164,13 +222,25 @@ async fn health() -> impl IntoResponse {
 }
 
 async fn metrics(State(state): State<AppState>) -> impl IntoResponse {
-    let session = state.store.get(qgi2_spec_types::Persona::default()).await;
-    let session = session.lock().await;
-    Json(json!({
-        "turns": session.metrics.turns.len(),
-        "thresholds": session.metrics.thresholds,
-        "latest_breaches": session.metrics.latest_breaches(),
-    }))
+    // Every live session, not just the default persona's: a metrics endpoint
+    // that reported one session while five were running was misleading.
+    let mut out = serde_json::Map::new();
+    for key in state.store.live_keys().await {
+        // `get` would create a session; read the live map directly instead.
+        let Some(session) = state.store.peek(&key).await else { continue };
+        let s = session.lock().await;
+        out.insert(
+            key,
+            json!({
+                "turns": s.metrics.turns.len(),
+                "thresholds": s.metrics.thresholds,
+                "latest_breaches": s.metrics.latest_breaches(),
+                "facts": s.graph.len(),
+                "embeddings": s.retrieval().embedding_count(),
+            }),
+        );
+    }
+    Json(json!({ "sessions": out, "idle_timeout_secs": state.store.idle_timeout().as_secs() }))
 }
 
 fn error_body(message: &str) -> Value {
