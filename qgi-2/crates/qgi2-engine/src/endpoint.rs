@@ -450,7 +450,7 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://100.107.254.57:18031/v1", "qwen3.8-27b", Speculation::DFlash2 { n: 7 })
+            Endpoint::new("http://VIDATRON_TAILNET_IP:18031/v1", "qwen3.8-27b", Speculation::DFlash2 { n: 7 })
                 .with_engine(EngineKind::Sglang),
         );
         let e = r

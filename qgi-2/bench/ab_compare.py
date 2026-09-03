@@ -102,10 +102,22 @@ def run_task(jcode, arm, task, workdir, timeout):
             # Keep the tail: the useful part of a jcode failure is at the end.
             result["error"] = (proc.stderr or proc.stdout or "")[-400:].strip()
             return None
-        try:
-            payload = json.loads(proc.stdout)
-        except json.JSONDecodeError:
-            result["error"] = "jcode --json did not emit JSON"
+        # jcode --json emits NDJSON: one event per line, with a final
+        # {"type": "done", ...} line carrying the usage. Parsing the whole
+        # stdout as one document fails on the first newline.
+        payload = None
+        for line in proc.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "done":
+                payload = event
+        if payload is None:
+            result["error"] = "jcode --json emitted no 'done' event"
             return None
 
         usage = payload.get("usage") or {}

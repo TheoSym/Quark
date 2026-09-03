@@ -20,7 +20,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Acceptance as one engine reports it.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub enum AcceptanceSnapshot {
     /// Monotonic counters (vLLM). Difference two to get a window.
     Counters {
@@ -31,13 +31,8 @@ pub enum AcceptanceSnapshot {
     /// A directly reported mean accepted length (SGLang).
     Gauge { accept_length: f64 },
     /// The engine reported nothing recognizable.
+    #[default]
     Unavailable,
-}
-
-impl Default for AcceptanceSnapshot {
-    fn default() -> Self {
-        Self::Unavailable
-    }
 }
 
 impl AcceptanceSnapshot {

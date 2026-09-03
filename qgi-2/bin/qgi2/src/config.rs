@@ -199,6 +199,7 @@ impl Qgi2Config {
             persona: self.persona()?,
             thresholds,
             allow_mood_switch: self.persona.allow_mood_switch,
+            page_alignment: self.hicache.as_ref().and_then(|h| h.page_alignment()),
             // Take the speculation each role's endpoint actually declares. The
             // spec's table assumes both models are self-hosted with a
             // speculator you control; a cloud-served planner has none, and

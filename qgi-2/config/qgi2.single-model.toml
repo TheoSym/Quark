@@ -1,3 +1,7 @@
+# ADDRESSES ARE PLACEHOLDERS. This repo is public, so tailnet IPs are not
+# committed. Substitute the real values in your local copy (~/.qgi2/config.toml
+# is gitignored) — the names match infra/naming.md.
+#
 # QGI-2 with one model doing everything.
 #
 # The spec's architecture is a big planner over a small worker. Collapsing it to
@@ -40,7 +44,7 @@ allow_mood_switch = false
 [[engines]]
 role = "planner"
 engine = "sglang"
-base_url = "http://100.107.254.57:18031/v1"
+base_url = "http://VIDATRON_TAILNET_IP:18031/v1"
 model = "QGI-3.8-27b DFlash"
 speculation = "dflash2"
 speculation_n = 7
@@ -48,7 +52,7 @@ speculation_n = 7
 [[engines]]
 role = "worker"
 engine = "sglang"
-base_url = "http://100.107.254.57:18031/v1"
+base_url = "http://VIDATRON_TAILNET_IP:18031/v1"
 model = "QGI-3.8-27b DFlash"
 speculation = "dflash2"
 speculation_n = 7
@@ -56,7 +60,7 @@ speculation_n = 7
 [embedder]
 role = "embedder"
 engine = "vllm"
-base_url = "http://100.95.12.86:11434/v1"
+base_url = "http://IRIDTRON_TAILNET_IP:11434/v1"
 model = "QGI-Embed"
 speculation = "off"
 speculation_n = 0

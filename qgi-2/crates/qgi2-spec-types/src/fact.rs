@@ -42,9 +42,18 @@ impl fmt::Display for FactId {
 /// A newtype rather than a bare `f32` because the verify stage enforces a
 /// confidence floor, and an unclamped float from model output would let a
 /// proposal claim 1.7 and sail past it.
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(from = "f32", into = "f32")]
 pub struct Confidence(f32);
+
+// PartialOrd must agree with the explicit Ord below, so it is written in terms
+// of it rather than derived from f32's (which would disagree on NaN, and which
+// clippy rejects outright).
+impl PartialOrd for Confidence {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl Confidence {
     pub const ZERO: Self = Self(0.0);

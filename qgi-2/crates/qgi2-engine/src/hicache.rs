@@ -402,7 +402,7 @@ impl HiCacheConfig {
 
     /// The alignment the assembler should pad the stable prefix to.
     pub fn page_alignment(&self) -> Option<PageAlignment> {
-        self.enabled.then(|| PageAlignment {
+        self.enabled.then_some(PageAlignment {
             page_size: self.page_size,
         })
     }

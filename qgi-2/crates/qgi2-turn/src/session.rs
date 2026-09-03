@@ -67,6 +67,10 @@ pub struct SessionConfig {
     /// asking for tools and forces the answer step, so the user gets a reply
     /// that says what happened rather than nothing at all.
     pub max_tool_rounds: u32,
+    /// Pad the stable prefix to the engine's KV page boundary. Set from the
+    /// `[hicache]` config; `None` disables alignment.
+    #[serde(default)]
+    pub page_alignment: Option<qgi2_engine::PageAlignment>,
     /// Speculation overrides for deployments that differ from the spec's table
     /// — most commonly a cloud-served planner, which has no speculator you can
     /// configure. `None` leaves the table in charge.
@@ -89,6 +93,7 @@ impl Default for SessionConfig {
             decay_floor: 0.2,
             allow_mood_switch: false,
             max_tool_rounds: 12,
+            page_alignment: None,
             planner_speculation: None,
             worker_speculation: None,
         }
@@ -212,11 +217,16 @@ impl Session {
         registry: EngineRegistry,
         skills: Vec<SkillCandidate>,
     ) -> Self {
+        // Read what the assembler needs before `config` moves into the struct.
+        let assembler = match config.page_alignment {
+            Some(a) => Assembler::with_budget(RenderBudget::default()).with_page_alignment(a),
+            None => Assembler::with_budget(RenderBudget::default()),
+        };
         Self {
             graph: FactGraph::new(),
             metrics: SessionMetrics::new(config.thresholds),
             config,
-            assembler: Assembler::with_budget(RenderBudget::default()),
+            assembler,
             retrieval: Retrieval::default(),
             engines: Engines::for_registry(&registry),
             registry,
@@ -272,18 +282,13 @@ impl Session {
     /// would loop without progress, so that case returns an error rather than
     /// spinning. The edges call [`Session::round`] directly.
     pub async fn turn(&mut self, query: &str, tools: &dyn ToolRunner) -> Result<TurnResult> {
-        let input = RoundInput::first(query);
-        loop {
-            match self.round(input.clone(), tools).await? {
-                RoundOutcome::Answered(r) => return Ok(r),
-                RoundOutcome::CallTools { calls, .. } => {
-                    anyhow::bail!(
-                        "the tool runner deferred {} call(s) but `turn` has no agent loop to \
-                         execute them; drive rounds with `Session::round` instead",
-                        calls.len()
-                    );
-                }
-            }
+        match self.round(RoundInput::first(query), tools).await? {
+            RoundOutcome::Answered(r) => Ok(r),
+            RoundOutcome::CallTools { calls, .. } => anyhow::bail!(
+                "the tool runner deferred {} call(s) but `turn` has no agent loop to \
+                 execute them; drive rounds with `Session::round` instead",
+                calls.len()
+            ),
         }
     }
 
@@ -399,10 +404,23 @@ impl Session {
                 });
             }
         } else if planned.needs_tools && !rounds_left {
-            // Answer anyway rather than looping: the user gets a reply that can
-            // say the work was cut short, instead of nothing.
+            // Answer anyway rather than looping — but the model has to be
+            // *told*, or it answers as if the work finished. Setting the flag
+            // alone informed the caller and nobody else.
             result.tool_rounds_exhausted = true;
         }
+
+        let volatile = if result.tool_rounds_exhausted {
+            format!(
+                "{volatile}
+
+# Note
+The tool budget for this turn ({} rounds) is spent.                  Answer with what you have and say plainly what was not done.",
+                self.config.max_tool_rounds
+            )
+        } else {
+            volatile
+        };
 
         // Anything the runner executed inline is context for the answer.
         let volatile = if result.tools.is_empty() {
@@ -461,6 +479,9 @@ impl Session {
     }
 
     /// Build the calls the plan asked for, splitting executed from deferred.
+    // Private, called from one place; a parameter struct would add a type to
+    // read for no reader benefit.
+    #[allow(clippy::too_many_arguments)]
     async fn build_tool_calls(
         &mut self,
         router: &Router,
@@ -577,6 +598,14 @@ impl Session {
         let mut committed = Vec::new();
         for fact in outcome.accepted {
             self.recent_relations.push(fact.relation().clone());
+            // A window, not a history: the mood check asks what the agent has
+            // been doing *lately*, and an unbounded vector both leaks and lets
+            // hour-old relations outvote the last ten minutes.
+            const MOOD_WINDOW: usize = 64;
+            if self.recent_relations.len() > MOOD_WINDOW {
+                let excess = self.recent_relations.len() - MOOD_WINDOW;
+                self.recent_relations.drain(..excess);
+            }
             let out = self.graph.commit(fact, Scope::Session, policy);
             if out.changed_graph()
                 && let Some(id) = out.id()
@@ -732,7 +761,7 @@ mod tests {
         r.register(
             ModelRole::Worker,
             Endpoint::new(
-                "http://100.107.254.57:18031/v1",
+                "http://VIDATRON_TAILNET_IP:18031/v1",
                 "QGI-3.8-27b DFlash",
                 Speculation::DFlash2 { n: 7 },
             )

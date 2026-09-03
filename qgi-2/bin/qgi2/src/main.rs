@@ -4,10 +4,10 @@
 //!
 //! - `serve`   run the OpenAI-compatible edge that stock jcode talks to
 //! - `doctor`  check that every endpoint the persona needs is up and correctly
-//!             configured, before a session discovers it on turn one
+//!   configured, before a session discovers it on turn one
 //! - `config`  print a default config, or the jcode snippet that wires it up
 //! - `plan`    show the routing table for a persona: the explicit triple for
-//!             every step, which is the spec's "nothing defaults" made visible
+//!   every step, which is the spec's "nothing defaults" made visible
 
 mod config;
 
@@ -296,8 +296,8 @@ fn plan(cfg: &Qgi2Config, mood: &str, profile: &str) -> Result<()> {
     }
     println!();
     println!(
-        "{:<10} {:<8} {:<14} {:<7} {:<6} {:<8} {}",
-        "step", "model", "speculation", "temp", "seed", "think", "schema"
+        "{:<10} {:<8} {:<14} {:<7} {:<6} {:<8} schema",
+        "step", "model", "speculation", "temp", "seed", "think"
     );
     for p in router.plan_all().map_err(|e| anyhow::anyhow!("{e}"))? {
         println!(

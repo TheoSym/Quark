@@ -1,3 +1,7 @@
+# ADDRESSES ARE PLACEHOLDERS. This repo is public, so tailnet IPs are not
+# committed. Substitute the real values in your local copy (~/.qgi2/config.toml
+# is gitignored) — the names match infra/naming.md.
+#
 # QGI-2 fully self-hosted — the topology deploy/ brings up.
 #
 # Every process is yours, so speculation, HiCache and prefix caching are all
@@ -22,7 +26,7 @@ allow_mood_switch = false
 [[engines]]
 role = "planner"
 engine = "sglang"
-base_url = "http://100.107.254.57:18033/v1"
+base_url = "http://VIDATRON_TAILNET_IP:18033/v1"
 model = "QGI-2-Planner"
 speculation = "mtp"
 speculation_n = 2
@@ -31,7 +35,7 @@ speculation_n = 2
 [[engines]]
 role = "worker"
 engine = "sglang"
-base_url = "http://100.107.254.57:18031/v1"
+base_url = "http://VIDATRON_TAILNET_IP:18031/v1"
 model = "QGI-3.8-27b DFlash"
 speculation = "dflash2"
 speculation_n = 7
@@ -49,7 +53,7 @@ speculation_n = 7
 # [[engines]]
 # role = "worker"
 # engine = "sglang"
-# base_url = "http://100.77.65.105:18034/v1"
+# base_url = "http://VEGATRON_TAILNET_IP:18034/v1"
 # model = "QGI-2-Worker-MTP"
 # speculation = "mtp"
 # speculation_n = 3
@@ -57,7 +61,7 @@ speculation_n = 7
 [embedder]
 role = "embedder"
 engine = "vllm"
-base_url = "http://100.95.12.86:11434/v1"
+base_url = "http://IRIDTRON_TAILNET_IP:11434/v1"
 model = "QGI-Embed"
 speculation = "off"
 speculation_n = 0
