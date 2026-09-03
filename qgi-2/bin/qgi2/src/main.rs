@@ -346,7 +346,7 @@ async fn hicache_cmd(
         return hicache_probe(cfg).await;
     }
 
-    let hc = match tier {
+    let preset = match tier {
         2 => HiCacheConfig::l2_only(),
         3 => match l3 {
             "file" => HiCacheConfig::with_file_l3(
@@ -361,6 +361,18 @@ async fn hicache_cmd(
             other => anyhow::bail!("unknown L3 backend {other:?}; expected file or mooncake"),
         },
         other => anyhow::bail!("unknown tier {other}; expected 2 (host memory) or 3 (store)"),
+    };
+    // A declared [hicache] block is the source of truth -- it carries page_size,
+    // the GDN state pool and anything else the user sized. The tier preset only
+    // fills in an L3 it does not name.
+    let hc = match cfg.hicache.clone() {
+        Some(mut declared) => {
+            if declared.l3.is_none() {
+                declared.l3 = preset.l3;
+            }
+            declared
+        }
+        None => preset,
     };
 
     let problems = hc.problems();

@@ -511,3 +511,23 @@ speculation_n = 2
         assert_eq!(c.engines[0].engine, "vllm");
     }
 }
+
+#[cfg(test)]
+mod shipped_configs {
+    use super::*;
+
+    #[test]
+    fn the_selfhosted_config_sizes_the_gdn_pool() {
+        // The shipped example must parse, and its [hicache.gdn] block must
+        // reach the launch flags -- the wire spelling of `speculation` inside a
+        // table is exactly what broke the first time this was written.
+        let cfg: Qgi2Config =
+            toml::from_str(include_str!("../../../config/qgi2.selfhosted.toml")).unwrap();
+        let hc = cfg.hicache.expect("[hicache] declared");
+        let g = hc.gdn.expect("[hicache.gdn] declared");
+        assert_eq!(g.slots_per_request(), 12);
+        let flags = hc.launch_flags().join(" ");
+        assert!(flags.contains("--max-mamba-cache-size 96"), "{flags}");
+        assert!(hc.problems().is_empty(), "{:?}", hc.problems());
+    }
+}
