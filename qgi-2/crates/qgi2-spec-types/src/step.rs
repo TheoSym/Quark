@@ -49,8 +49,18 @@ impl fmt::Display for ModelRole {
 pub enum Speculation {
     /// Multi-token prediction head. Supports greedy decoding.
     Mtp { n: u8 },
-    /// DFlash2 draft model. Faster, but cannot produce greedy output, so it is
-    /// unusable under the Deterministic profile.
+    /// DFlash2 draft model.
+    ///
+    /// The spec's profile table says "DFlash2 can't do greedy" and routes the
+    /// Deterministic profile to MTP on that basis. Measured, it can: on the
+    /// exact worker model (syv-ai/qwen38-27b-rtx3090, single-user tables) the
+    /// greedy column runs DFlash2 at **2.90-3.45 tokens/step**, alongside
+    /// 2.75-3.37 under model-default sampling. Verification is
+    /// distribution-preserving by construction; the spec's claim reflects an
+    /// engine limitation at the time, not the method. The Deterministic default
+    /// stays MTP per the table, but a DFlash2 worker is no longer *refused*
+    /// there -- refusing a measured-working configuration is the same mistake
+    /// as the SGLang/DFlash2 veto removed earlier.
     DFlash2 { n: u8 },
     /// EAGLE-3 draft head. SGLang's headline speculator; vLLM does not serve it
     /// under this name.
@@ -86,18 +96,19 @@ pub enum Speculation {
 impl Speculation {
     /// Whether this method can produce greedy (`T = 0`) output.
     ///
-    /// The one place the DFlash2 limitation is encoded. Everything that pairs
-    /// sampling with speculation asks here rather than matching on the variant.
+    /// Every verified drafter reproduces the target distribution including the
+    /// greedy case. This used to return `false` for DFlash2 on the spec's word;
+    /// see the variant's docs for the measurement that overturned it. Kept as a
+    /// method rather than a constant `true` so a future method that genuinely
+    /// cannot decode greedily has one place to say so.
     pub const fn supports_greedy(self) -> bool {
         match self {
-            // EAGLE verifies by exact rejection sampling, so it reproduces the
-            // target distribution including the greedy case.
             Self::Mtp { .. }
+            | Self::DFlash2 { .. }
             | Self::NGram { .. }
             | Self::Eagle3 { .. }
             | Self::DSpark { .. }
             | Self::Off => true,
-            Self::DFlash2 { .. } => false,
         }
     }
 
@@ -127,10 +138,12 @@ impl Speculation {
     /// The acceptance floor this method is held to, from the spec's success
     /// metrics: planner MTP >= 1.8 tokens/step, worker DFlash2 >= 2.0.
     ///
-    /// Measured against those floors on the exact worker model
-    /// (SamSammane/qwen38-27b-nvfp4-sm121-vllm, 17/17 runs): MTP K=3 runs at
-    /// 1.97x AR, clearing 1.8; DSpark K=7 at 3.5 (thinking on) / ~2.1
-    /// (thinking off), clearing 2.0 in both regimes.
+    /// Measured against those floors on the exact worker model:
+    /// - MTP K=3: 1.97x AR, clearing the 1.8 planner floor
+    ///   (SamSammane/qwen38-27b-nvfp4-sm121-vllm, 17/17 runs)
+    /// - DSpark K=7: 3.5 thinking-on / ~2.1 thinking-off, clearing 2.0 (same)
+    /// - DFlash2 k=7: 2.75-3.45 tokens/step across C1-C8, greedy included,
+    ///   clearing 2.0 (syv-ai/qwen38-27b-rtx3090, single-user tables)
     pub const fn acceptance_floor(self, role: ModelRole) -> Option<f64> {
         match (self, role) {
             (Self::Mtp { .. }, ModelRole::Planner) => Some(1.8),
@@ -315,11 +328,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_dflash2_refuses_greedy() {
-        assert!(!Speculation::DFlash2 { n: 7 }.supports_greedy());
-        assert!(Speculation::Mtp { n: 3 }.supports_greedy());
-        assert!(Speculation::NGram { n: 4 }.supports_greedy());
-        assert!(Speculation::Off.supports_greedy());
+    fn every_verified_drafter_is_greedy_safe() {
+        // DFlash2 included: measured at 2.90-3.45 tokens/step greedy on the
+        // worker model. The spec's "can't do greedy" was an engine limitation.
+        for s in [
+            Speculation::DFlash2 { n: 7 },
+            Speculation::Mtp { n: 3 },
+            Speculation::NGram { n: 4 },
+            Speculation::Eagle3 { n: 5 },
+            Speculation::DSpark { n: 7 },
+            Speculation::Off,
+        ] {
+            assert!(s.supports_greedy(), "{s}");
+        }
     }
 
     #[test]
@@ -390,13 +411,15 @@ mod tests {
     }
 
     #[test]
-    fn validate_rejects_greedy_with_dflash2() {
+    fn validate_accepts_greedy_with_dflash2() {
+        // It used to refuse this on the spec's word. A measured-working config
+        // must not be vetoed by a table.
         let p = plan(
             StepKind::Extract,
             Speculation::DFlash2 { n: 7 },
             Sampling { temperature: 0.0, ..Sampling::at_temperature(0.0) },
         );
-        assert!(p.validate().unwrap_err().contains("cannot produce greedy"));
+        assert!(p.validate().is_ok(), "{:?}", p.validate());
     }
 
     #[test]

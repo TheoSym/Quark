@@ -10,10 +10,13 @@
 //! | Retrieval | full chain + reranker | full chain, turn-based decay | exact-key + lexical, BFS depth 1 |
 //! | Logging | prompts, segment hashes, rule firings, acceptance rates | hashes + seeds + engine build | errors only |
 //!
-//! The Deterministic row is the load-bearing one: DFlash2 cannot produce greedy
-//! output, so a profile that promises `T 0` must switch the worker to MTP. That
-//! coupling lives in [`Profile::worker_speculation`] rather than in the router,
-//! so it cannot be forgotten at a call site.
+//! The Deterministic row is transcribed as written, including its parenthetical.
+//! That parenthetical is measured false: DFlash2 runs greedy at 2.90-3.45
+//! tokens/step on the worker model (syv-ai/qwen38-27b-rtx3090). So MTP is the
+//! Deterministic *default* here, not a necessity -- the router accepts a
+//! DFlash2 worker under Deterministic if the deployment declares one. The
+//! default still lives in [`Profile::worker_speculation`] rather than in the
+//! router, so the table has one home.
 
 use crate::step::{Sampling, Speculation};
 use serde::{Deserialize, Serialize};
@@ -44,9 +47,10 @@ impl Profile {
 
     /// The worker's speculation method under this profile.
     ///
-    /// Deterministic returns MTP, not DFlash2: DFlash2 cannot do greedy
-    /// decoding, and the spec's "speculation never changes output
-    /// distribution" invariant means a `T 0` profile cannot use it.
+    /// Deterministic returns MTP per the spec's table. The table's stated reason
+    /// ("DFlash2 can't do greedy") is measured false on the worker model, so
+    /// this is now a default rather than a necessity: a DFlash2 worker is
+    /// accepted under Deterministic if the deployment declares one.
     pub const fn worker_speculation(self) -> Speculation {
         match self {
             Self::Traceable => Speculation::DFlash2 { n: 7 },

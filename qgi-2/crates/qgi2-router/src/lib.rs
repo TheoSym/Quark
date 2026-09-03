@@ -425,13 +425,23 @@ mod override_tests {
     }
 
     #[test]
-    fn overriding_the_worker_cannot_break_the_greedy_invariant() {
-        // Deterministic forces T=0. An override to DFlash2 would pair greedy
-        // sampling with a speculator that cannot produce it — validate must
-        // still catch that rather than the override bypassing the check.
+    fn a_dflash2_worker_is_accepted_under_deterministic() {
+        // Deterministic forces T=0. DFlash2 runs greedy (measured 2.90-3.45
+        // tokens/step on the worker model), so an override to it is a valid
+        // deployment, not a violation. The default stays MTP per the table.
         let r = router(Mood::Builder, Profile::Deterministic)
             .with_speculation(None, Some(Speculation::DFlash2 { n: 7 }));
-        assert!(r.plan(StepKind::Extract).is_err());
+        let p = r.plan(StepKind::Extract).expect("measured-working config must route");
+        assert!(p.sampling.is_greedy());
+        assert_eq!(p.speculation, Speculation::DFlash2 { n: 7 });
+        assert_eq!(
+            router(Mood::Builder, Profile::Deterministic)
+                .plan(StepKind::Extract)
+                .unwrap()
+                .speculation,
+            Speculation::Mtp { n: 3 },
+            "the table's default is unchanged"
+        );
     }
 
     #[test]
