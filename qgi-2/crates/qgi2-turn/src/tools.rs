@@ -77,12 +77,60 @@ impl ToolOutcome {
     /// Render for the model, tagged so the answer step can tell a failure from
     /// a successful call that happened to print the word "error".
     pub fn render(&self) -> String {
-        if self.is_error {
-            format!("{} [FAILED] -> {}", self.call.tool, self.output)
+        self.render_capped(usize::MAX)
+    }
+
+    /// Render with the output windowed to at most `limit` bytes.
+    ///
+    /// A single `read` of a large file otherwise lands in full in the extract
+    /// prompt *and* the answer prompt -- twice per round, on the two most
+    /// expensive steps -- when the model needs the shape of it, not every byte.
+    /// The head carries most of a file's structure (imports, signatures) and the
+    /// tail its most recent state, so the window keeps three quarters from the
+    /// front and one from the back, and says exactly how much it dropped.
+    pub fn render_capped(&self, limit: usize) -> String {
+        let body = if self.output.len() <= limit {
+            self.output.clone()
         } else {
-            format!("{} -> {}", self.call.tool, self.output)
+            let head_len = floor_char_boundary(&self.output, limit * 3 / 4);
+            let tail_start = ceil_char_boundary(&self.output, self.output.len() - limit / 4);
+            let omitted = tail_start - head_len;
+            format!(
+                "{}\n\u{2026} [{omitted} bytes omitted] \u{2026}\n{}",
+                &self.output[..head_len],
+                &self.output[tail_start..]
+            )
+        };
+        if self.is_error {
+            format!("{} [FAILED] -> {}", self.call.tool, body)
+        } else {
+            format!("{} -> {}", self.call.tool, body)
         }
     }
+
+    /// Whether `render_capped(limit)` would drop anything.
+    pub fn exceeds(&self, limit: usize) -> bool {
+        self.output.len() > limit
+    }
+}
+
+/// Largest index `<= i` that is a char boundary. (`str::floor_char_boundary`
+/// is unstable at this toolchain.)
+fn floor_char_boundary(s: &str, mut i: usize) -> usize {
+    i = i.min(s.len());
+    while i > 0 && !s.is_char_boundary(i) {
+        i -= 1;
+    }
+    i
+}
+
+/// Smallest index `>= i` that is a char boundary.
+fn ceil_char_boundary(s: &str, mut i: usize) -> usize {
+    i = i.min(s.len());
+    while i < s.len() && !s.is_char_boundary(i) {
+        i += 1;
+    }
+    i
 }
 
 /// Whether a runner executed a call or left it to the caller.
@@ -185,6 +233,37 @@ mod tests {
     fn call_ids_are_deterministic() {
         assert_eq!(ToolCall::id_for(1, 2, "edit"), ToolCall::id_for(1, 2, "edit"));
         assert_ne!(ToolCall::id_for(1, 2, "edit"), ToolCall::id_for(1, 3, "edit"));
+    }
+
+    #[test]
+    fn oversized_output_is_windowed_head_and_tail() {
+        let big = format!("{}MIDDLE{}", "a".repeat(600), "z".repeat(600));
+        let o = ToolOutcome::ok(call(), big);
+        let r = o.render_capped(400);
+        assert!(r.len() < 600, "len {}", r.len());
+        assert!(r.contains("bytes omitted"));
+        assert!(r.contains(&"a".repeat(100)), "head kept");
+        assert!(r.contains(&"z".repeat(50)), "tail kept");
+        assert!(!r.contains("MIDDLE"), "middle dropped");
+        assert!(o.exceeds(400));
+        assert!(!o.exceeds(10_000));
+    }
+
+    #[test]
+    fn windowing_never_splits_a_multibyte_character() {
+        // Every byte of this is inside a 3-byte char; any cut that is not on a
+        // boundary would panic at the slice.
+        let big = "\u{20ac}".repeat(500);
+        let o = ToolOutcome::ok(call(), big);
+        let r = o.render_capped(101);
+        assert!(r.contains("bytes omitted"));
+        assert!(r.chars().all(|c| c != '\u{fffd}'));
+    }
+
+    #[test]
+    fn output_within_the_limit_is_untouched() {
+        let o = ToolOutcome::ok(call(), "short");
+        assert_eq!(o.render_capped(1000), o.render());
     }
 
     #[test]

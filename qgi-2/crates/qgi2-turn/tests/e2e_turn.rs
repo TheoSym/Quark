@@ -356,3 +356,148 @@ async fn the_stable_prefix_survives_across_turns() {
     assert_eq!(systems.len(), 2);
     assert_eq!(systems[0], systems[1]);
 }
+
+
+// ---------- per-process optimisations ----------
+
+#[tokio::test]
+async fn the_query_is_embedded_once_per_turn_not_once_per_round() {
+    // A two-round turn: tool call, then answer. The query is the same string
+    // in both rounds, so a second embedder call would return the same vector.
+    let script = Script {
+        plans: vec![
+            Script::plan_calling("read", "read it"),
+            Script::plan_answering(),
+        ],
+        ..Script::default()
+    };
+    let (mut s, engine) = session_with(script, SessionConfig::default());
+
+    let out = s.round(RoundInput::first("read auth"), &tools()).await.unwrap();
+    let RoundOutcome::CallTools { calls, .. } = out else { panic!() };
+    let results = vec![ToolOutcome::ok(calls[0].clone(), "fn login() {}")];
+    s.round(RoundInput::continuation("read auth", 1, results), &tools())
+        .await
+        .unwrap();
+
+    let query_embeds = engine
+        .embed_calls()
+        .into_iter()
+        .filter(|batch| batch == &vec!["read auth".to_string()])
+        .count();
+    assert_eq!(query_embeds, 1, "the query vector is computed once per turn");
+
+    // And a new turn embeds again -- the cache is per turn, not per session.
+    s.round(RoundInput::first("read auth"), &tools()).await.unwrap();
+    let query_embeds = engine
+        .embed_calls()
+        .into_iter()
+        .filter(|batch| batch == &vec!["read auth".to_string()])
+        .count();
+    assert_eq!(query_embeds, 2);
+}
+
+#[tokio::test]
+async fn a_multi_tool_plan_produces_every_call() {
+    // Argument decodes are issued concurrently and joined; the observable
+    // contract is that all of them happen and come back in plan order.
+    let script = Script {
+        plans: vec![serde_json::json!({
+            "needs_tools": true,
+            "steps": [
+                { "intent": "read a", "tool": "read" },
+                { "intent": "read b", "tool": "read" },
+                { "intent": "read c", "tool": "read" }
+            ]
+        })],
+        tool_args: vec![
+            serde_json::json!({ "tool": "read", "arguments": { "path": "a.rs" } }),
+            serde_json::json!({ "tool": "read", "arguments": { "path": "b.rs" } }),
+            serde_json::json!({ "tool": "read", "arguments": { "path": "c.rs" } }),
+        ],
+        ..Script::default()
+    };
+    let (mut s, engine) = session_with(script, SessionConfig::default());
+
+    let out = s.round(RoundInput::first("read all three"), &tools()).await.unwrap();
+    let RoundOutcome::CallTools { calls, .. } = out else { panic!() };
+    assert_eq!(calls.len(), 3);
+    assert_eq!(
+        calls.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+        vec!["qgi2-0-0-read", "qgi2-0-1-read", "qgi2-0-2-read"],
+        "plan order is preserved whatever order the decodes finished in"
+    );
+    assert_eq!(
+        engine.steps_called().iter().filter(|s| **s == SeenStep::ToolArgs).count(),
+        3
+    );
+}
+
+#[tokio::test]
+async fn oversized_tool_output_is_windowed_before_it_reaches_the_model() {
+    let script = Script {
+        plans: vec![
+            Script::plan_calling("read", "read the big file"),
+            Script::plan_answering(),
+        ],
+        ..Script::default()
+    };
+    let config = SessionConfig {
+        max_tool_output_bytes: 200,
+        ..SessionConfig::default()
+    };
+    let (mut s, engine) = session_with(script, config);
+
+    let out = s.round(RoundInput::first("read big"), &tools()).await.unwrap();
+    let RoundOutcome::CallTools { calls, .. } = out else { panic!() };
+    let big = format!("HEAD{}TAIL", "x".repeat(5000));
+    let results = vec![ToolOutcome::ok(calls[0].clone(), big)];
+    let out = s
+        .round(RoundInput::continuation("read big", 1, results), &tools())
+        .await
+        .unwrap();
+    let RoundOutcome::Answered(r) = out else { panic!() };
+    assert_eq!(r.tool_outputs_truncated, 1);
+
+    for step in [SeenStep::Extract, SeenStep::Answer] {
+        let prompt = engine
+            .seen()
+            .into_iter()
+            .find(|x| x.step == step)
+            .unwrap_or_else(|| panic!("no {step:?} call"))
+            .user;
+        assert!(prompt.len() < 2000, "{step:?} prompt was {} bytes", prompt.len());
+        assert!(prompt.contains("bytes omitted"), "{step:?} prompt does not say what it dropped");
+        assert!(prompt.contains("HEAD"), "{step:?}: head kept");
+        assert!(prompt.contains("TAIL"), "{step:?}: tail kept");
+    }
+}
+
+#[tokio::test]
+async fn the_route_step_can_be_skipped_on_an_exact_key_hit() {
+    let script = Script {
+        plans: vec![Script::plan_answering()],
+        extracts: vec![Script::extracting(&[("task:auth", "depends_on", "file:auth.rs", 0.9)])],
+        ..Script::default()
+    };
+
+    // Default: route runs even when the user named the node.
+    let (mut s, engine) = session_with(script.clone(), SessionConfig::default());
+    s.round(RoundInput::first("seed"), &tools()).await.unwrap();
+    s.round(RoundInput::first("tell me about task:auth"), &tools()).await.unwrap();
+    assert!(engine.steps_called().contains(&SeenStep::Route));
+
+    // Opted in: an exact-key hit makes the worker call redundant.
+    let config = SessionConfig {
+        skip_route_on_exact_hit: true,
+        ..SessionConfig::default()
+    };
+    let (mut s, engine) = session_with(script, config);
+    s.round(RoundInput::first("seed"), &tools()).await.unwrap();
+    s.round(RoundInput::first("tell me about task:auth"), &tools()).await.unwrap();
+    assert!(!engine.steps_called().contains(&SeenStep::Route));
+
+    // ...but a query with no exact hit still routes.
+    s.round(RoundInput::first("what depends on what?"), &tools()).await.unwrap();
+    assert!(engine.steps_called().contains(&SeenStep::Route));
+}

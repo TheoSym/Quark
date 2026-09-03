@@ -25,6 +25,7 @@ use crate::tools::{ToolCall, ToolDisposition, ToolOutcome, ToolRunner};
 use anyhow::Result;
 use qgi2_assembler::{Assembler, CacheOutlook};
 use qgi2_engine::EngineRegistry;
+use qgi2_factgraph::retrieval::EntryMethod;
 use qgi2_factgraph::{FactGraph, RenderBudget, Retrieval, Scope, Walk};
 use qgi2_metrics::{Breach, SessionMetrics, TurnMetrics};
 use qgi2_router::{Router, schemas};
@@ -71,6 +72,17 @@ pub struct SessionConfig {
     /// `[hicache]` config; `None` disables alignment.
     #[serde(default)]
     pub page_alignment: Option<qgi2_engine::PageAlignment>,
+    /// Bytes of each tool result fed to the extract and answer steps. Larger
+    /// results are windowed (head + tail) with the omission stated. A single
+    /// large `read` otherwise lands in full in both prompts, twice per round.
+    #[serde(default = "default_max_tool_output_bytes")]
+    pub max_tool_output_bytes: usize,
+    /// Skip the route step when retrieval already has an exact-key hit -- the
+    /// user named a node verbatim, and a worker call to confirm it adds
+    /// latency for little. Off by default because the spec lists route as a
+    /// step; turn it on once you have measured what it saves.
+    #[serde(default)]
+    pub skip_route_on_exact_hit: bool,
     /// Speculation overrides for deployments that differ from the spec's table
     /// — most commonly a cloud-served planner, which has no speculator you can
     /// configure. `None` leaves the table in charge.
@@ -78,6 +90,10 @@ pub struct SessionConfig {
     pub planner_speculation: Option<qgi2_spec_types::Speculation>,
     #[serde(default)]
     pub worker_speculation: Option<qgi2_spec_types::Speculation>,
+}
+
+fn default_max_tool_output_bytes() -> usize {
+    16 * 1024
 }
 
 impl Default for SessionConfig {
@@ -94,6 +110,8 @@ impl Default for SessionConfig {
             allow_mood_switch: false,
             max_tool_rounds: 12,
             page_alignment: None,
+            max_tool_output_bytes: default_max_tool_output_bytes(),
+            skip_route_on_exact_hit: false,
             planner_speculation: None,
             worker_speculation: None,
         }
@@ -196,6 +214,8 @@ pub struct TurnResult {
     /// switching stays rule-driven, and a model suggestion is one input to
     /// that, not an override of it.
     pub route_suggested_mood: Option<String>,
+    /// Tool results that were windowed before reaching the model this round.
+    pub tool_outputs_truncated: usize,
 }
 
 /// One QGI-2 session.
@@ -215,6 +235,10 @@ pub struct Session {
     open_committed: Vec<FactId>,
     /// Relations seen this session, feeding the mood check.
     recent_relations: Vec<Relation>,
+    /// The query's embedding for the turn in flight. The query is constant
+    /// across a turn's rounds, so embedding it once per round was one embedder
+    /// call per tool round for the same vector.
+    turn_query_embedding: Option<Vec<f32>>,
     /// Last acceptance scrape per endpoint, so the reported number describes
     /// this turn rather than the server's lifetime.
     last_acceptance: std::collections::BTreeMap<String, qgi2_engine::AcceptanceSnapshot>,
@@ -244,6 +268,7 @@ impl Session {
             open_turn: None,
             open_committed: Vec::new(),
             recent_relations: Vec::new(),
+            turn_query_embedding: None,
             last_acceptance: std::collections::BTreeMap::new(),
         }
     }
@@ -322,6 +347,7 @@ impl Session {
             self.turn += 1;
             self.open_turn = Some(TurnMetrics::new(self.turn));
             self.open_committed.clear();
+            self.turn_query_embedding = None;
         }
         let turn = self.turn;
         let router = self.router();
@@ -341,7 +367,14 @@ impl Session {
         let policy = self.profile().retrieval();
         let mut query_embedding = None;
         if !policy.lexical_only {
-            query_embedding = self.embed_query(&input.query).await;
+            query_embedding = match &self.turn_query_embedding {
+                Some(v) => Some(v.clone()),
+                None => {
+                    let v = self.embed_query(&input.query).await;
+                    self.turn_query_embedding = v.clone();
+                    v
+                }
+            };
             if query_embedding.is_none() && self.registry.embedder.is_some() {
                 result.retrieval_degraded = true;
             }
@@ -352,9 +385,11 @@ impl Session {
             query_embedding.as_deref(),
             policy,
         );
+        let has_exact_hit = candidates.iter().any(|e| e.how == EntryMethod::ExactKey);
         let candidate_names: Vec<String> = candidates.into_iter().map(|e| e.node).collect();
 
-        let entries = if policy.lexical_only || self.graph.is_empty() {
+        let skip_route = self.config.skip_route_on_exact_hit && has_exact_hit;
+        let entries = if policy.lexical_only || self.graph.is_empty() || skip_route {
             // Nothing for a route step to choose between yet.
             candidate_names
         } else {
@@ -410,13 +445,16 @@ impl Session {
         // through a (subject, relation, object) triple, so the answer step needs
         // them verbatim; the graph gets the *structure* the extract step finds
         // in them.
+        let cap = self.config.max_tool_output_bytes;
         let volatile = if input.tool_results.is_empty() {
             base_volatile.clone()
         } else {
+            result.tool_outputs_truncated +=
+                input.tool_results.iter().filter(|o| o.exceeds(cap)).count();
             let observed = input
                 .tool_results
                 .iter()
-                .map(|o| o.render())
+                .map(|o| o.render_capped(cap))
                 .collect::<Vec<_>>()
                 .join("\n");
             format!("{base_volatile}\n\n# Tool results\n{observed}")
@@ -486,10 +524,11 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         let volatile = if result.tools.is_empty() {
             volatile
         } else {
+            result.tool_outputs_truncated += result.tools.iter().filter(|o| o.exceeds(cap)).count();
             let observed = result
                 .tools
                 .iter()
-                .map(|o| o.render())
+                .map(|o| o.render_capped(cap))
                 .collect::<Vec<_>>()
                 .join("\n");
             format!("{volatile}\n\n# Tool results\n{observed}")
@@ -642,11 +681,17 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
     }
 
     /// Build the calls the plan asked for, splitting executed from deferred.
+    ///
+    /// The argument decodes for a multi-tool plan are independent of each
+    /// other, so they are issued concurrently and joined. Serial decodes made a
+    /// three-tool plan three worker round-trips long for no reason; the
+    /// dispositions are then applied in plan order so `deferred` stays
+    /// deterministic.
     // Private, called from one place; a parameter struct would add a type to
     // read for no reader benefit.
     #[allow(clippy::too_many_arguments)]
     async fn build_tool_calls(
-        &mut self,
+        &self,
         router: &Router,
         planned: &PlanOutput,
         tools: &dyn ToolRunner,
@@ -661,6 +706,8 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
 
         let mut deferred = Vec::new();
         let mut executed = Vec::new();
+        // (index, tool name, spec, intent) for every call that passed the mask.
+        let mut pending: Vec<(usize, String, &crate::tools::ToolSpec, &str)> = Vec::new();
 
         for (index, step) in planned.steps.iter().enumerate() {
             let Some(wanted) = &step.tool else { continue };
@@ -685,26 +732,30 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
             let Some(spec) = available.iter().find(|t| &t.name == wanted) else {
                 continue;
             };
+            pending.push((index, wanted.clone(), spec, step.intent.as_str()));
+        }
 
-            // Constrain decoding to this tool's own parameter schema, so a
-            // malformed call is impossible rather than merely unlikely.
+        // Decode every tool's arguments concurrently. Each is constrained to
+        // that tool's own parameter schema, so a malformed call is impossible
+        // rather than merely unlikely.
+        let decodes = pending.iter().map(|(index, wanted, spec, intent)| async move {
             let mut args_step = router
                 .plan(StepKind::ToolArgs)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             args_step.schema = Some(schemas::tool_args_schema_for(&spec.name, &spec.parameters));
+            let user = format!("{volatile}\n\n# Next step\n{intent}");
+            let (args, resp): (ToolArgsOutput, _) =
+                steps::run_structured(&self.engines, &self.registry, &args_step, system, &user)
+                    .await?;
+            Ok::<_, anyhow::Error>((*index, wanted.clone(), args, resp))
+        });
+        let decoded = futures::future::join_all(decodes).await;
 
-            let (args, args_resp): (ToolArgsOutput, _) = steps::run_structured(
-                &self.engines,
-                &self.registry,
-                &args_step,
-                system,
-                &format!("{volatile}\n\n# Next step\n{}", step.intent),
-            )
-            .await?;
-            record(metrics, ModelRole::Worker, &args_resp);
-
+        for item in decoded {
+            let (index, wanted, args, resp) = item?;
+            record(metrics, ModelRole::Worker, &resp);
             let call = ToolCall {
-                id,
+                id: ToolCall::id_for(round, index, &wanted),
                 tool: args.tool,
                 arguments: args.arguments,
             };
