@@ -143,9 +143,19 @@ struct Consistency<'a> {
     /// Relations allowed regardless of mood (structural).
     structural: BTreeSet<Relation>,
     floor: u32,
+    /// Indices the pre-pass rejected as malformed.
+    malformed: Vec<bool>,
 }
 
 impl Consistency<'_> {
+    /// Survives every rule that does not depend on other proposals. Only an
+    /// eligible proposal can win a sibling conflict: a malformed or
+    /// below-floor sibling is going to be rejected anyway, and letting it
+    /// knock out a valid one would lose both.
+    fn eligible(&self, i: usize) -> bool {
+        !self.malformed[i] && !self.below_floor(i) && !self.outside_mood(i) && !self.duplicate(i)
+    }
+
     /// Confidence strictly below the floor.
     fn below_floor(&self, i: usize) -> bool {
         self.proposed[i].confidence < self.floor
@@ -184,10 +194,15 @@ impl Consistency<'_> {
     /// The sibling `i` lost to on confidence, if any. Ties are broken by index
     /// so the outcome does not depend on batch iteration order. When several
     /// siblings beat `i`, the strongest (then lowest-indexed) is named.
+    ///
+    /// Only an [`eligible`](Self::eligible) sibling can win. Siblings are not
+    /// chased transitively: if `j` beats `i` and `k` beats `j`, `i` is out
+    /// either way when all three share a key, and the negation case has no
+    /// sound transitive reading.
     fn lost_sibling(&self, i: usize) -> Option<usize> {
         let ci = self.proposed[i].confidence;
         (0..self.proposed.len())
-            .filter(|&j| self.sibling_conflict(i, j))
+            .filter(|&j| self.eligible(j) && self.sibling_conflict(i, j))
             .filter(|&j| {
                 let cj = self.proposed[j].confidence;
                 cj > ci || (cj == ci && j < i)
@@ -309,6 +324,7 @@ pub fn verify(
         mood_relation,
         structural,
         floor: scale(config.confidence_floor),
+        malformed: malformed.iter().map(Option::is_some).collect(),
     };
 
     // Decide every index before consuming the proposals: the rules borrow them.
@@ -566,6 +582,38 @@ mod tests {
                 RejectionReason::LostToSiblingProposal("proposal 1 was more confident".into())
             );
         }
+    }
+
+    #[test]
+    fn a_sibling_that_is_itself_rejected_cannot_knock_out_a_valid_one() {
+        // The old rule set let a malformed or below-floor sibling win the
+        // conflict and then get rejected itself, losing both proposals.
+        let long = "x".repeat(500);
+        let out = verify(
+            vec![
+                prop("task:a", Relation::DependsOn, "file:x", 0.6),
+                prop("task:a", Relation::DependsOn, &long, 0.9), // malformed
+                prop("task:a", Relation::DependsOn, "file:z", 0.99), // duplicate below
+            ],
+            &{
+                let mut g = empty();
+                let f = prop("task:a", Relation::DependsOn, "file:z", 0.99).commit(
+                    CommitToken::issued_by_verify_stage(),
+                    Source::User,
+                    1,
+                );
+                g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+                g
+            },
+            Mood::Builder,
+            Source::User,
+            2,
+            VerifyConfig::default(),
+        );
+        assert_eq!(out.accepted.len(), 1, "{:?}", out.rejected);
+        assert_eq!(out.accepted[0].object(), "file:x");
+        assert!(matches!(out.rejected[0].reason, RejectionReason::Malformed(_)));
+        assert_eq!(out.rejected[1].reason, RejectionReason::Duplicate);
     }
 
     #[test]

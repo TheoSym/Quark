@@ -41,7 +41,7 @@ Obligations active: borrower must-repay loan-2201 (unmet)
 Goal chain: task:close-loan ← depends_on ← task:verify-income ← [MISSING]
 ```
 
-- **Pre-pass** in `qgi2-rules` (Datalog, `crepe`/`ascent` per spec): over candidates only —
+- **Pre-pass** in `qgi2-rules` (plain rule functions, one per rule; the Datalog engine was removed — 15 rules, one recursive, did not justify it): over candidates only —
   1. **Conflicts** — `Relation::negation()` pairs plus modality clash (obligation vs prohibition on same subject/object).
   2. **Dependency closure** — transitive `depends_on` from the current goal; report the first unmet link.
   3. **Obligation activation** — deontic facts whose condition-facts are present ⇒ "active"; these also feed the existing tool mask (a `prohibition` on an action gates the tool).
@@ -55,7 +55,7 @@ Goal chain: task:close-loan ← depends_on ← task:verify-income ← [MISSING]
 | :---- | :---- |
 | 1 | `qgi2-spec-types`: `Modality`, role derivation table, CNL templates; byte-stability tests |
 | 2 | `qgi2-factgraph`: `render_qlang()` + Focus-block renderer; `sym-ingest` rules loader |
-| 3 | `qgi2-rules`: Datalog pre-pass (conflicts, dep-closure, obligation activation) → `DerivedFinding` → trusted commit |
+| 3 | `qgi2-rules`: rule pre-pass (conflicts, dep-closure as a worklist, obligation activation) → `DerivedFinding` → trusted commit |
 | 4 | Hyperedge overlay; assembler wiring; tool-mask hookup from prohibitions |
 | 5 | End-to-end: `sym-ingest` a real doc → load → agentic session; measure tokens/turn + cache-hit before/after |
 | 6–7 | Buffer: QLang↔fact round-trip eval (reuse QHP-Research 35-sentence gold set), Deterministic-profile check (T0, fixed seed, byte-identical prompts) |
@@ -64,7 +64,7 @@ Goal chain: task:close-loan ← depends_on ← task:verify-income ← [MISSING]
 
 - Durable slice tokens for an ingested document ≤ 25% of the raw document tokens at equal task accuracy.
 - Focus block ≤ 512 bytes rendered, and prefix-cache hit stays ≥ 85%.
-- Pre-pass wall time ≤ 5 ms per turn at 10k facts (in-RAM Datalog; if not, cut candidate set, not the rules).
+- Pre-pass wall time ≤ 5 ms per turn at 10k facts (indexed in-RAM rules over candidates only; if not, cut candidate set, not the rules).
 - Round-trip: fact → QLang sentence → worker extract → same `FactKey` ≥ 95% on the gold set.
 
 ## Non-goals (this week)
