@@ -11,6 +11,10 @@
 //! off-mood fact. [`MoodDecision`] always reports the cache consequence so the
 //! caller can surface it rather than discovering it in the next turn's hit
 //! rate.
+//!
+//! One rule: `evidence(i, m) <- observed(i, r), belongs(r, m)` — each
+//! observation is evidence for every mood whose traversal set contains its
+//! relation. See [`evidence`].
 
 use qgi2_spec_types::{Mood, Relation};
 use serde::{Deserialize, Serialize};
@@ -71,25 +75,23 @@ impl MoodDecision {
     }
 }
 
-ascent::ascent! {
-    /// Which moods the recently observed relations belong to.
-    pub struct MoodEvidence;
-
-    /// (relation, mood) — the mood's traversal set contains this relation
-    relation belongs(String, String);
-    /// A relation observed this session, once per observation
-    relation observed(usize, String);
-
-    /// (observation index, mood) — this observation is evidence for that mood
-    relation evidence(usize, String);
-    evidence(i, m) <-- observed(i, r), belongs(r, m);
+/// `evidence`: how many recent observations belong to each mood's traversal
+/// set. A relation shared by several moods (none are, in the default tables,
+/// but a configured mood could overlap) counts as evidence for each.
+fn evidence(recent: &[Relation]) -> BTreeMap<&'static str, usize> {
+    let mut counts = BTreeMap::new();
+    for m in Mood::ALL {
+        let belongs = &m.table().traversal.relations;
+        let n = recent.iter().filter(|r| belongs.contains(r)).count();
+        counts.insert(m.as_str(), n);
+    }
+    counts
 }
 
 /// Decide whether to switch mood.
 ///
 /// `recent` is the relations extracted over the recent window, most recent
-/// last. A relation shared by several moods (none are, in the default tables,
-/// but a configured mood could overlap) counts as evidence for each.
+/// last.
 pub fn mood_check(
     current: Mood,
     recent: &[Relation],
@@ -106,23 +108,7 @@ pub fn mood_check(
         };
     }
 
-    let mut prog = MoodEvidence::default();
-    for m in Mood::ALL {
-        for r in &m.table().traversal.relations {
-            prog.belongs
-                .push((r.as_str().to_string(), m.as_str().to_string()));
-        }
-    }
-    for (i, r) in recent.iter().enumerate() {
-        prog.observed.push((i, r.as_str().to_string()));
-    }
-    prog.run();
-
-    let mut counts: BTreeMap<String, usize> = BTreeMap::new();
-    for (_, m) in prog.evidence.iter() {
-        *counts.entry(m.clone()).or_insert(0) += 1;
-    }
-
+    let counts = evidence(recent);
     let total = recent.len() as f32;
     let share = |m: Mood| counts.get(m.as_str()).copied().unwrap_or(0) as f32 / total;
     let current_share = share(current);

@@ -11,11 +11,19 @@
 //! Gating is more than a mood lookup because facts can deny a tool the mood
 //! would otherwise allow — a `repo is_a read_only` fact takes write tools away
 //! from Builder without changing the mood.
+//!
+//! Three rules, each a named function below:
+//!
+//! ```text
+//! allowed(t)         <- available(t), mood_admits(t), !denied(t, _)
+//! rule_blocked(t, r) <- available(t), mood_admits(t), denied(t, r)
+//! mood_blocked(t)    <- available(t), !mood_admits(t)
+//! ```
 
 use qgi2_factgraph::FactGraph;
 use qgi2_spec_types::{Mood, Relation};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// The tools a turn may use, and why the rest were removed.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,53 +54,16 @@ impl ToolMask {
     }
 }
 
-ascent::ascent! {
-    /// Tool gating over the mood's tool classes and the graph's policy facts.
-    pub struct Gating;
-
-    /// A tool the harness offers.
-    relation available(String);
-    /// A tool name the current mood's classes cover.
-    relation mood_admits(String);
-    /// (tool, rule name) — a fact-driven denial.
-    relation denied(String, String);
-
-    /// Tools the model will be shown.
-    relation allowed(String);
-    allowed(t) <-- available(t), mood_admits(t), !denied(t, _);
-
-    /// Available, mood-admitted, but denied by a rule.
-    relation rule_blocked(String, String);
-    rule_blocked(t, r) <-- available(t), mood_admits(t), denied(t, r);
-
-    /// Available but outside the mood.
-    relation mood_blocked(String);
-    mood_blocked(t) <-- available(t), !mood_admits(t);
-}
-
 /// Tools that write to the filesystem or run commands. A read-only rule
 /// removes exactly these.
 const MUTATING_TOOLS: &[&str] = &["write", "edit", "multiedit", "patch", "apply_patch", "bash", "bg"];
 
-/// Compute the tool mask for a turn.
-///
-/// `available` is the harness's full tool list (for the jcode edge, the tool
-/// names jcode advertises). Facts consulted:
+/// `denied(tool, rule)`: the fact-driven denials the live graph implies.
 ///
 /// - `<anything> is_a read_only` — removes [`MUTATING_TOOLS`].
 /// - `tool:<name> is_a forbidden` — removes that tool by name.
-pub fn tool_mask(available: &[String], mood: Mood, graph: &FactGraph) -> ToolMask {
-    let table = mood.table();
-    let admitted: BTreeSet<&str> = table.allowed_tool_names().into_iter().collect();
-
-    let mut prog = Gating::default();
-    for t in available {
-        prog.available.push((t.clone(),));
-        if admitted.contains(t.as_str()) {
-            prog.mood_admits.push((t.clone(),));
-        }
-    }
-
+fn denied(graph: &FactGraph) -> BTreeMap<String, BTreeSet<String>> {
+    let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for fact in graph.iter_live() {
         if *fact.relation() != Relation::IsA {
             continue;
@@ -100,37 +71,65 @@ pub fn tool_mask(available: &[String], mood: Mood, graph: &FactGraph) -> ToolMas
         match fact.object() {
             "read_only" => {
                 for t in MUTATING_TOOLS {
-                    prog.denied
-                        .push(((*t).to_string(), "read_only".to_string()));
+                    out.entry((*t).to_string())
+                        .or_default()
+                        .insert("read_only".to_string());
                 }
             }
             "forbidden" => {
                 if let Some(name) = fact.subject().strip_prefix("tool:") {
-                    prog.denied
-                        .push((name.to_string(), "forbidden_tool".to_string()));
+                    out.entry(name.to_string())
+                        .or_default()
+                        .insert("forbidden_tool".to_string());
                 }
             }
             _ => {}
         }
     }
+    out
+}
 
-    prog.run();
+/// Compute the tool mask for a turn.
+///
+/// `available` is the harness's full tool list (for the jcode edge, the tool
+/// names jcode advertises).
+pub fn tool_mask(available: &[String], mood: Mood, graph: &FactGraph) -> ToolMask {
+    let table = mood.table();
+    let admitted: BTreeSet<&str> = table.allowed_tool_names().into_iter().collect();
+    let denied = denied(graph);
 
     // BTreeSet rather than sort-after: the mask is rendered into the mood
     // segment on some paths, and duplicate or reordered entries would move
     // bytes in the cached prefix.
-    let allowed: BTreeSet<String> = prog.allowed.iter().map(|(t,)| t.clone()).collect();
-    let denied_by_mood: BTreeSet<String> = prog.mood_blocked.iter().map(|(t,)| t.clone()).collect();
-    let denied_by_rule: BTreeSet<(String, String)> = prog
-        .rule_blocked
-        .iter()
-        .map(|(t, r)| (t.clone(), r.clone()))
-        .collect();
+    let mut allowed = BTreeSet::new();
+    let mut mood_blocked = BTreeSet::new();
+    let mut rule_blocked = BTreeSet::new();
+
+    for t in available {
+        let mood_admits = admitted.contains(t.as_str());
+        if !mood_admits {
+            // mood_blocked(t) <- available(t), !mood_admits(t)
+            mood_blocked.insert(t.clone());
+            continue;
+        }
+        match denied.get(t) {
+            // rule_blocked(t, r) <- available(t), mood_admits(t), denied(t, r)
+            Some(rules) => {
+                for r in rules {
+                    rule_blocked.insert((t.clone(), r.clone()));
+                }
+            }
+            // allowed(t) <- available(t), mood_admits(t), !denied(t, _)
+            None => {
+                allowed.insert(t.clone());
+            }
+        }
+    }
 
     ToolMask {
         allowed: allowed.into_iter().collect(),
-        denied_by_mood: denied_by_mood.into_iter().collect(),
-        denied_by_rule: denied_by_rule.into_iter().collect(),
+        denied_by_mood: mood_blocked.into_iter().collect(),
+        denied_by_rule: rule_blocked.into_iter().collect(),
     }
 }
 
@@ -228,5 +227,29 @@ mod tests {
         let dupes = vec!["read".to_string(), "read".to_string(), "bash".to_string()];
         let m = tool_mask(&dupes, Mood::Builder, &FactGraph::new());
         assert_eq!(m.allowed, vec!["bash".to_string(), "read".to_string()]);
+    }
+
+    #[test]
+    fn two_rules_denying_one_tool_are_both_reported() {
+        // read_only and forbidden_tool both hit `bash`; the mask keeps both
+        // reasons rather than whichever rule ran last.
+        let mut g = graph_with("repo", "read_only");
+        let f = ProposedFact {
+            subject: "tool:bash".into(),
+            relation: Relation::IsA,
+            object: "forbidden".into(),
+            confidence: Confidence::new(0.99),
+            evidence: None,
+        }
+        .commit(CommitToken::issued_by_verify_stage(), Source::Rule("test".into()), 1);
+        g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+        let m = tool_mask(&tools(), Mood::Builder, &g);
+        let rules: Vec<&str> = m
+            .denied_by_rule
+            .iter()
+            .filter(|(t, _)| t == "bash")
+            .map(|(_, r)| r.as_str())
+            .collect();
+        assert_eq!(rules, vec!["forbidden_tool", "read_only"]);
     }
 }

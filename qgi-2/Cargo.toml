@@ -51,7 +51,6 @@ jcode-config-types = { path = "../crates/jcode-config-types" }
 # --- third party (versions aligned with jcode's lockfile where shared) ---
 anyhow = "1"
 async-trait = "0.1"
-ascent = "0.8"
 axum = { version = "0.8", default-features = false, features = ["http1", "json", "tokio"] }
 blake3 = "1"
 chrono = { version = "0.4", features = ["serde"] }

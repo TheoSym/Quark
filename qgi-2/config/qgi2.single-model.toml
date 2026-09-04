@@ -10,7 +10,7 @@
 # and needs no gateway, no Cloudflare Access headers, and no new machine.
 #
 # WHAT YOU KEEP — which is most of what QGI-2 is:
-#   - the typed fact graph and the Datalog rules
+#   - the typed fact graph and the verify/gating rules
 #   - cache-shaped segment assembly and prefix-stability reporting
 #   - constrained decoding on every structured step
 #   - the tool-round loop

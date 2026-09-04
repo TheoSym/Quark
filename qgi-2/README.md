@@ -27,7 +27,7 @@ jcode is consumed through three extension points it already offers:
 crates/
   qgi2-spec-types/     segments, moods, profiles, typed facts, the step triple
   qgi2-factgraph/      the typed graph: store, traversal, deterministic render, retrieval
-  qgi2-rules/          compiled Datalog (ascent): verify, tool gating, skills, mood switch
+  qgi2-rules/          rules as plain functions: verify, tool gating, skills, mood switch
   qgi2-assembler/      cache-shaped assembly + per-segment BLAKE3 hashes
   qgi2-router/         per-step (model, speculation, sampling) + JSON schemas
   qgi2-engine-vllm/    vLLM client: guided decoding, cached_tokens, acceptance scraping

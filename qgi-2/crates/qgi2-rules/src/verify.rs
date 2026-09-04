@@ -16,6 +16,20 @@
 //! verify ≤ 10%"*. A high rejection rate is a signal about the extract step's
 //! prompt or schema, not a reason to loosen the rules here — so
 //! [`VerifyOutcome::rejection_rate`] is reported rather than acted on.
+//!
+//! The rules, over one batch of proposals plus the facts they could touch.
+//! Each is a method on [`Consistency`] with the rule's name, so a Traceable
+//! log names the rule that fired:
+//!
+//! ```text
+//! below_floor(i)         <- proposed(i, c), c < floor
+//! duplicate(i)           <- proposed(i, s, r, o, c), existing(s, r, o, ec), ec >= c
+//! outside_mood(i)        <- proposed(i, r), !mood_relation(r), !structural(r)
+//! sibling_conflict(i, j) <- proposed(i, s, r, o1), proposed(j, s, r, o2), o1 != o2
+//! sibling_conflict(i, j) <- proposed(i, s, r1, o), proposed(j, s, r2, o), negates(r1, r2)
+//! lost_sibling(i, j)     <- sibling_conflict(i, j), cj > ci or (cj == ci and j < i)
+//! accepted(i)            <- proposed(i), none of the above, !malformed(i)
+//! ```
 
 use crate::{scale, unscale};
 use qgi2_factgraph::FactGraph;
@@ -23,6 +37,7 @@ use qgi2_spec_types::{
     CommitToken, ConflictPolicy, Fact, Mood, ProposedFact, Relation, Source, TurnIndex,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Thresholds the verify rules apply.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -102,86 +117,83 @@ impl VerifyOutcome {
     }
 }
 
-ascent::ascent! {
-    /// Consistency rules over one batch of proposals plus the live graph.
-    ///
-    /// Indices into the caller's proposal vector are carried as `usize` so the
-    /// program reasons about identity without cloning strings around.
-    pub struct Consistency;
+/// One proposal as the rules see it: confidence scaled to the integer domain
+/// so comparisons are exact at 1/1000 resolution.
+struct Proposed<'a> {
+    subject: &'a str,
+    relation: &'a Relation,
+    object: &'a str,
+    confidence: u32,
+}
 
-    // --- inputs ---
+/// Consistency rules over one batch of proposals plus the live graph.
+///
+/// Proposals are addressed by index into the caller's vector, so the rules
+/// reason about identity without cloning strings around.
+struct Consistency<'a> {
+    proposed: Vec<Proposed<'a>>,
+    /// `(subject, relation, object) -> highest scaled confidence` already live
+    /// in the graph, for the keys a proposal could touch.
+    existing: BTreeMap<(&'a str, &'a str, &'a str), u32>,
+    /// `(relation, its negation)` — populated only when the mood's conflict
+    /// policy treats them as conflicting.
+    negates: BTreeSet<(Relation, Relation)>,
+    /// Relations the current mood traverses.
+    mood_relation: BTreeSet<Relation>,
+    /// Relations allowed regardless of mood (structural).
+    structural: BTreeSet<Relation>,
+    floor: u32,
+}
 
-    /// (index, subject, relation, object, scaled confidence)
-    relation proposed(usize, String, String, String, u32);
-    /// (subject, relation, object, scaled confidence) already live in the graph
-    relation existing(String, String, String, u32);
-    /// (relation, its negation) — supplied for the relations that have one
-    relation negates(String, String);
-    /// Relations the current mood traverses
-    relation mood_relation(String);
-    /// Relations allowed regardless of mood (structural)
-    relation structural(String);
-    /// Scaled confidence floor
-    relation floor(u32);
-    /// Indices already rejected by the pre-pass (malformed input)
-    relation malformed(usize);
-
-    // --- derived ---
-
+impl Consistency<'_> {
     /// Confidence strictly below the floor.
-    relation below_floor(usize);
-    below_floor(i) <-- proposed(i, _, _, _, c), floor(f), if c < f;
+    fn below_floor(&self, i: usize) -> bool {
+        self.proposed[i].confidence < self.floor
+    }
 
     /// The graph already holds this triple at least as confidently.
-    relation duplicate(usize);
-    duplicate(i) <--
-        proposed(i, s, r, o, c),
-        existing(s, r, o, ec),
-        if ec >= c;
+    fn duplicate(&self, i: usize) -> bool {
+        let p = &self.proposed[i];
+        self.existing
+            .get(&(p.subject, p.relation.as_str(), p.object))
+            .is_some_and(|ec| *ec >= p.confidence)
+    }
 
     /// The relation is neither in the mood's traversal set nor structural.
-    relation outside_mood(usize);
-    outside_mood(i) <--
-        proposed(i, _, r, _, _),
-        !mood_relation(r),
-        !structural(r);
+    fn outside_mood(&self, i: usize) -> bool {
+        let r = self.proposed[i].relation;
+        !self.mood_relation.contains(r) && !self.structural.contains(r)
+    }
 
-    /// Two proposals in this batch assert the same (subject, relation) with
-    /// different objects: they cannot both be the answer.
-    relation sibling_conflict(usize, usize);
-    sibling_conflict(i, j) <--
-        proposed(i, s, r, o1, _),
-        proposed(j, s, r, o2, _),
-        if i != j,
-        if o1 != o2;
+    /// Two proposals in this batch cannot both be the answer: same
+    /// `(subject, relation)` with different objects, or a relation and its
+    /// negation over the same pair.
+    fn sibling_conflict(&self, i: usize, j: usize) -> bool {
+        if i == j {
+            return false;
+        }
+        let (a, b) = (&self.proposed[i], &self.proposed[j]);
+        if a.subject != b.subject {
+            return false;
+        }
+        (a.relation == b.relation && a.object != b.object)
+            || (a.object == b.object
+                && self.negates.contains(&(a.relation.clone(), b.relation.clone())))
+    }
 
-    // Two proposals in this batch assert a relation and its negation over the
-    // same pair. (ascent only accepts doc comments on relation declarations,
-    // so rule-level notes are line comments.)
-    sibling_conflict(i, j) <--
-        proposed(i, s, r1, o, _),
-        proposed(j, s, r2, o, _),
-        negates(r1, r2),
-        if i != j;
-
-    /// A proposal that lost a sibling conflict on confidence. Ties are broken
-    /// by index so the outcome does not depend on batch iteration order.
-    relation lost_sibling(usize, usize);
-    lost_sibling(i, j) <--
-        sibling_conflict(i, j),
-        proposed(i, _, _, _, ci),
-        proposed(j, _, _, _, cj),
-        if (cj > ci) || (cj == ci && j < i);
-
-    /// Survived every rule.
-    relation accepted(usize);
-    accepted(i) <--
-        proposed(i, _, _, _, _),
-        !below_floor(i),
-        !duplicate(i),
-        !outside_mood(i),
-        !malformed(i),
-        !lost_sibling(i, _);
+    /// The sibling `i` lost to on confidence, if any. Ties are broken by index
+    /// so the outcome does not depend on batch iteration order. When several
+    /// siblings beat `i`, the strongest (then lowest-indexed) is named.
+    fn lost_sibling(&self, i: usize) -> Option<usize> {
+        let ci = self.proposed[i].confidence;
+        (0..self.proposed.len())
+            .filter(|&j| self.sibling_conflict(i, j))
+            .filter(|&j| {
+                let cj = self.proposed[j].confidence;
+                cj > ci || (cj == ci && j < i)
+            })
+            .max_by_key(|&j| (self.proposed[j].confidence, std::cmp::Reverse(j)))
+    }
 }
 
 /// Run the verify rules over a batch of proposals.
@@ -199,51 +211,50 @@ pub fn verify(
     config: VerifyConfig,
 ) -> VerifyOutcome {
     let table = mood.table();
-    let mut prog = Consistency::default();
 
-    // Pre-pass: structural well-formedness, which is cheaper to check in Rust
-    // than to express as a rule and produces a better error message.
-    let mut malformed_detail: Vec<Option<String>> = vec![None; proposals.len()];
-    for (i, p) in proposals.iter().enumerate() {
-        let bad = if p.subject.trim().is_empty() {
-            Some("empty subject".to_string())
-        } else if p.object.trim().is_empty() {
-            Some("empty object".to_string())
-        } else if p.subject.len() > config.max_term_len {
-            Some(format!(
-                "subject is {} bytes, over the {} limit",
-                p.subject.len(),
-                config.max_term_len
-            ))
-        } else if p.object.len() > config.max_term_len {
-            Some(format!(
-                "object is {} bytes, over the {} limit",
-                p.object.len(),
-                config.max_term_len
-            ))
-        } else {
-            None
-        };
-        if bad.is_some() {
-            prog.malformed.push((i,));
-        }
-        malformed_detail[i] = bad;
+    // Pre-pass: structural well-formedness, which produces a better error
+    // message than a rule would and is reported ahead of every other reason.
+    let malformed: Vec<Option<String>> = proposals
+        .iter()
+        .map(|p| {
+            if p.subject.trim().is_empty() {
+                Some("empty subject".to_string())
+            } else if p.object.trim().is_empty() {
+                Some("empty object".to_string())
+            } else if p.subject.len() > config.max_term_len {
+                Some(format!(
+                    "subject is {} bytes, over the {} limit",
+                    p.subject.len(),
+                    config.max_term_len
+                ))
+            } else if p.object.len() > config.max_term_len {
+                Some(format!(
+                    "object is {} bytes, over the {} limit",
+                    p.object.len(),
+                    config.max_term_len
+                ))
+            } else {
+                None
+            }
+        })
+        .collect();
 
-        prog.proposed.push((
-            i,
-            p.subject.clone(),
-            p.relation.as_str().to_string(),
-            p.object.clone(),
-            scale(p.confidence.get()),
-        ));
-    }
+    let proposed: Vec<Proposed<'_>> = proposals
+        .iter()
+        .map(|p| Proposed {
+            subject: &p.subject,
+            relation: &p.relation,
+            object: &p.object,
+            confidence: scale(p.confidence.get()),
+        })
+        .collect();
 
     // Load only the facts a proposal could conflict with, not the whole graph.
-    // Every rule that reads `existing` joins on the proposal's subject and
-    // relation (or its negation), so anything outside those keys can never
-    // fire and is pure cost -- O(graph) per extraction, twice per turn, which a
+    // `duplicate` joins on the proposal's exact key, so anything outside the
+    // proposals' (subject, relation) pairs -- or their negations -- can never
+    // fire and is pure cost: O(graph) per extraction, twice per turn, which a
     // large durable slice turns into a visible stall.
-    let mut loaded = std::collections::BTreeSet::new();
+    let mut existing: BTreeMap<(&str, &str, &str), u32> = BTreeMap::new();
     for p in &proposals {
         let mut relations = vec![p.relation.clone()];
         if let Some(neg) = p.relation.negation() {
@@ -251,20 +262,19 @@ pub fn verify(
         }
         for r in relations {
             for f in graph.by_subject_relation(&p.subject, &r) {
-                if loaded.insert(f.id.clone()) {
-                    prog.existing.push((
-                        f.key.subject.clone(),
-                        f.key.relation.as_str().to_string(),
-                        f.key.object.clone(),
-                        scale(f.confidence.get()),
-                    ));
-                }
+                let key = (f.key.subject.as_str(), f.key.relation.as_str(), f.key.object.as_str());
+                let c = scale(f.confidence.get());
+                existing
+                    .entry(key)
+                    .and_modify(|e| *e = (*e).max(c))
+                    .or_insert(c);
             }
         }
     }
 
     // KeepBoth is exactly the policy that says contradictory relations are
-    // evidence rather than error, so the negation rules are not loaded for it.
+    // evidence rather than error, so the negation pairs are not loaded for it.
+    let mut negates = BTreeSet::new();
     if table.conflict != ConflictPolicy::KeepBoth {
         for r in [
             Relation::Supports,
@@ -273,72 +283,70 @@ pub fn verify(
             Relation::Dislikes,
         ] {
             if let Some(n) = r.negation() {
-                prog.negates
-                    .push((r.as_str().to_string(), n.as_str().to_string()));
+                negates.insert((r, n));
             }
         }
     }
 
-    if config.enforce_mood_relations {
-        for r in &table.traversal.relations {
-            prog.mood_relation.push((r.as_str().to_string(),));
-        }
-        for r in [Relation::IsA, Relation::PartOf] {
-            prog.structural.push((r.as_str().to_string(),));
-        }
+    let (mood_relation, structural) = if config.enforce_mood_relations {
+        (
+            table.traversal.relations.iter().cloned().collect(),
+            BTreeSet::from([Relation::IsA, Relation::PartOf]),
+        )
     } else {
         // With enforcement off, every proposed relation counts as structural,
         // so `outside_mood` derives nothing.
-        for p in &proposals {
-            prog.structural.push((p.relation.as_str().to_string(),));
-        }
-    }
+        (
+            BTreeSet::new(),
+            proposals.iter().map(|p| p.relation.clone()).collect(),
+        )
+    };
 
-    prog.floor.push((scale(config.confidence_floor),));
-    prog.run();
+    let rules = Consistency {
+        proposed,
+        existing,
+        negates,
+        mood_relation,
+        structural,
+        floor: scale(config.confidence_floor),
+    };
 
-    let accepted_idx: std::collections::BTreeSet<usize> =
-        prog.accepted.iter().map(|(i,)| *i).collect();
-    let below: std::collections::BTreeSet<usize> =
-        prog.below_floor.iter().map(|(i,)| *i).collect();
-    let dup: std::collections::BTreeSet<usize> = prog.duplicate.iter().map(|(i,)| *i).collect();
-    let outside: std::collections::BTreeSet<usize> =
-        prog.outside_mood.iter().map(|(i,)| *i).collect();
-    let lost: std::collections::BTreeMap<usize, usize> =
-        prog.lost_sibling.iter().map(|(i, j)| (*i, *j)).collect();
+    // Decide every index before consuming the proposals: the rules borrow them.
+    let decisions: Vec<Option<RejectionReason>> = (0..proposals.len())
+        .map(|i| {
+            // Report the most specific reason. Order matters: a malformed fact
+            // that is also below the floor should read as malformed.
+            if let Some(detail) = &malformed[i] {
+                Some(RejectionReason::Malformed(detail.clone()))
+            } else if rules.below_floor(i) {
+                Some(RejectionReason::BelowFloor)
+            } else if rules.outside_mood(i) {
+                Some(RejectionReason::OutsideMood(format!(
+                    "{} is not traversed by the {} mood",
+                    proposals[i].relation, mood
+                )))
+            } else if rules.duplicate(i) {
+                Some(RejectionReason::Duplicate)
+            } else {
+                rules.lost_sibling(i).map(|winner| {
+                    RejectionReason::LostToSiblingProposal(format!(
+                        "proposal {winner} was more confident"
+                    ))
+                })
+            }
+        })
+        .collect();
+    drop(rules);
 
     let mut outcome = VerifyOutcome::default();
-    for (i, p) in proposals.into_iter().enumerate() {
-        if accepted_idx.contains(&i) {
-            outcome
+    for (p, decision) in proposals.into_iter().zip(decisions) {
+        match decision {
+            None => outcome
                 .accepted
-                .push(p.commit(CommitToken::issued_by_verify_stage(), source.clone(), turn));
-            continue;
+                .push(p.commit(CommitToken::issued_by_verify_stage(), source.clone(), turn)),
+            Some(reason) => outcome.rejected.push(Rejection { fact: p, reason }),
         }
-
-        // Report the most specific reason. Order matters: a malformed fact that
-        // is also below the floor should read as malformed.
-        let reason = if let Some(detail) = malformed_detail[i].clone() {
-            RejectionReason::Malformed(detail)
-        } else if below.contains(&i) {
-            RejectionReason::BelowFloor
-        } else if outside.contains(&i) {
-            RejectionReason::OutsideMood(format!(
-                "{} is not traversed by the {} mood",
-                p.relation, mood
-            ))
-        } else if dup.contains(&i) {
-            RejectionReason::Duplicate
-        } else if let Some(winner) = lost.get(&i) {
-            RejectionReason::LostToSiblingProposal(format!("proposal {winner} was more confident"))
-        } else {
-            // Unreachable given the rule set, but a silent drop here would be
-            // invisible in the rejection-rate metric.
-            RejectionReason::Malformed("rejected by an unnamed rule".into())
-        };
-        outcome.rejected.push(Rejection { fact: p, reason });
     }
-
     outcome
 }
 
@@ -480,6 +488,27 @@ mod tests {
     }
 
     #[test]
+    fn an_equally_confident_re_extraction_is_a_duplicate() {
+        // `ec >= c`: equal confidence is a no-op reinforcement, rejected as such.
+        let mut g = empty();
+        let f = prop("task:a", Relation::DependsOn, "file:x", 0.7).commit(
+            CommitToken::issued_by_verify_stage(),
+            Source::User,
+            1,
+        );
+        g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+        let out = verify(
+            vec![prop("task:a", Relation::DependsOn, "file:x", 0.7)],
+            &g,
+            Mood::Builder,
+            Source::User,
+            2,
+            VerifyConfig::default(),
+        );
+        assert_eq!(out.rejected[0].reason, RejectionReason::Duplicate);
+    }
+
+    #[test]
     fn the_more_confident_of_two_sibling_proposals_wins() {
         let out = verify(
             vec![
@@ -513,6 +542,30 @@ mod tests {
         assert_eq!(a.accepted.len(), 1);
         assert_eq!(a.accepted[0].object(), b.accepted[0].object());
         assert_eq!(a.accepted[0].object(), "file:x", "lower index wins ties");
+    }
+
+    #[test]
+    fn three_siblings_leave_exactly_one_and_name_the_real_winner() {
+        let out = verify(
+            vec![
+                prop("task:a", Relation::DependsOn, "file:x", 0.5),
+                prop("task:a", Relation::DependsOn, "file:y", 0.9),
+                prop("task:a", Relation::DependsOn, "file:z", 0.7),
+            ],
+            &empty(),
+            Mood::Builder,
+            Source::User,
+            1,
+            VerifyConfig::default(),
+        );
+        assert_eq!(out.accepted.len(), 1);
+        assert_eq!(out.accepted[0].object(), "file:y");
+        for r in &out.rejected {
+            assert_eq!(
+                r.reason,
+                RejectionReason::LostToSiblingProposal("proposal 1 was more confident".into())
+            );
+        }
     }
 
     #[test]
@@ -599,9 +652,9 @@ mod tests {
 
     #[test]
     fn verify_loads_only_facts_the_proposals_can_touch() {
-        // The rules join `existing` on the proposal's (subject, relation), so
-        // the rest of the graph can never fire a rule. Loading it anyway made
-        // verify O(graph) per extraction, twice per turn.
+        // `duplicate` joins on the proposal's (subject, relation), so the rest
+        // of the graph can never fire a rule. Loading it anyway made verify
+        // O(graph) per extraction, twice per turn.
         let mut g = empty();
         for i in 0..500 {
             let f = prop(&format!("task:{i}"), Relation::DependsOn, "file:x", 0.9).commit(
