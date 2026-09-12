@@ -27,4 +27,6 @@ pub mod steps;
 pub mod tools;
 
 pub use session::{RoundInput, RoundOutcome, Session, SessionConfig, SessionEnd, TurnResult};
-pub use tools::{DeferToCaller, NoTools, ToolCall, ToolDisposition, ToolOutcome, ToolRunner, ToolSpec};
+pub use tools::{
+    DeferToCaller, NoTools, ToolCall, ToolDisposition, ToolOutcome, ToolRunner, ToolSpec,
+};

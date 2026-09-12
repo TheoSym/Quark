@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -49,12 +50,24 @@ class Arm:
         self.model = model
         self.extra_env = extra_env or {}
 
-    def jcode_args(self):
+    def jcode_args(self, session=None):
         args = []
         if self.provider:
-            args += ["--provider", self.provider]
+            # A `[providers.<name>]` profile is selected with --provider-profile;
+            # --provider only accepts jcode's built-in provider list (measured:
+            # `--provider qgi2` is rejected as an invalid value).
+            args += ["--provider-profile", self.provider]
         if self.model:
-            args += ["--model", self.model]
+            model = self.model
+            # One harness session per task run. Without this every jcode
+            # invocation on a persona shares one session, and facts from one
+            # task's calc.py leaked into the next task's calc.py (measured:
+            # the planner believed the fix was already made). The `@client`
+            # suffix is QGI-2's per-run session channel; other providers
+            # never see it.
+            if session and self.label == "qgi2":
+                model = f"{model}@{session}"
+            args += ["--model", model]
         return args
 
 
@@ -79,8 +92,10 @@ def run_task(jcode, arm, task, workdir, timeout):
         "error": None,
     }
 
+    session = f"{task.name}-{uuid.uuid4().hex[:8]}"
+
     def one_turn(prompt):
-        cmd = [jcode, "run", "--json", *arm.jcode_args(), prompt]
+        cmd = [jcode, "run", "--json", *arm.jcode_args(session), prompt]
         t0 = time.time()
         try:
             proc = subprocess.run(
@@ -102,24 +117,35 @@ def run_task(jcode, arm, task, workdir, timeout):
             # Keep the tail: the useful part of a jcode failure is at the end.
             result["error"] = (proc.stderr or proc.stdout or "")[-400:].strip()
             return None
-        # jcode --json emits NDJSON: one event per line, with a final
-        # {"type": "done", ...} line carrying the usage. Parsing the whole
-        # stdout as one document fails on the first newline.
+        # jcode --json has emitted two shapes across versions: NDJSON with a
+        # final {"type": "done", ...} event, and (v0.81.x, measured) one
+        # pretty-printed JSON document {session_id, provider, model, text,
+        # usage}. Accept both.
         payload = None
-        for line in proc.stdout.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if event.get("type") == "done":
-                payload = event
+        try:
+            doc = json.loads(proc.stdout)
+            if isinstance(doc, dict) and "usage" in doc:
+                payload = doc
+        except json.JSONDecodeError:
+            pass
         if payload is None:
-            result["error"] = "jcode --json emitted no 'done' event"
+            for line in proc.stdout.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if event.get("type") == "done":
+                    payload = event
+        if payload is None:
+            result["error"] = "jcode --json emitted neither a 'done' event nor a usage document"
             return None
 
+        # The tail of the final message, for diagnosing a failed task without
+        # re-running it.
+        result["last_text"] = (payload.get("text") or "")[-300:]
         usage = payload.get("usage") or {}
         result["input_tokens"] += usage.get("input_tokens") or 0
         result["output_tokens"] += usage.get("output_tokens") or 0

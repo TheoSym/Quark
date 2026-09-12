@@ -31,7 +31,9 @@ pub mod sglang;
 pub mod types;
 pub mod vllm;
 
-pub use endpoint::{Endpoint, EngineKind, EngineRegistry, EngineRegistryError, engine_typically_supports};
+pub use endpoint::{
+    Endpoint, EngineKind, EngineRegistry, EngineRegistryError, engine_typically_supports,
+};
 pub use hicache::{
     GdnStatePool, HiCacheConfig, HiCacheStats, L2Sizing, L3Backend, PageAlignment, Tier,
     VramBudget, scrape_hicache,
@@ -89,6 +91,49 @@ pub trait Engine: Send + Sync {
     fn launch_hint(&self, speculation: Speculation) -> String;
 }
 
+/// The OpenAI-style literal for a 1-100 effort.
+///
+/// DeepSeek's model card describes the dial as an integer, but the servers we
+/// talk to validate the OpenAI enum: SGLang at the dsv41 commit rejects
+/// `reasoning_effort: 20` with a literal_error listing
+/// `none|minimal|low|medium|high|xhigh|max` (measured on the B200 bringup),
+/// and vLLM's OpenAI frontend takes the same set. So the harness keeps its
+/// numeric table -- it is what the profile reasons in -- and maps at the wire.
+/// `1` becomes `none`: the Quick profile's structured steps want thinking
+/// actually off, not merely minimal.
+pub fn effort_literal(effort: u8) -> &'static str {
+    match effort {
+        0..=1 => "none",
+        2..=10 => "minimal",
+        11..=30 => "low",
+        31..=60 => "medium",
+        61..=85 => "high",
+        86..=95 => "xhigh",
+        _ => "max",
+    }
+}
+
+/// Add the step's `reasoning_effort` to the body, but only for an endpoint
+/// that declared it accepts the field.
+///
+/// The router states an effort for every model step; whether the wire carries
+/// it is the endpoint's call. A server that does not know the field may reject
+/// the request rather than ignore it, so the default is to drop it.
+pub fn apply_reasoning_effort(
+    endpoint: &Endpoint,
+    req: &ChatRequest,
+    body: &mut serde_json::Map<String, serde_json::Value>,
+) {
+    if endpoint.reasoning_effort
+        && let Some(effort) = req.sampling.reasoning_effort
+    {
+        body.insert(
+            "reasoning_effort".into(),
+            serde_json::json!(effort_literal(effort)),
+        );
+    }
+}
+
 /// Send a prepared chat body, streaming when the endpoint asks for it.
 ///
 /// Shared by both backends: the wire body differs (guided_json vs
@@ -100,7 +145,11 @@ pub async fn send_chat(
 ) -> Result<ChatResponse> {
     use anyhow::Context;
 
-    if !body.get("stream").and_then(|v| v.as_bool()).unwrap_or(false) {
+    if !body
+        .get("stream")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
         let text = http.post_json(endpoint, "/chat/completions", body).await?;
         return serde_json::from_str(&text)
             .with_context(|| format!("decoding chat response from {}", endpoint.base_url));

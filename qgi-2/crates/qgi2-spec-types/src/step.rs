@@ -185,6 +185,12 @@ pub struct Sampling {
     pub batch_invariant: bool,
     /// Whether extended thinking is enabled. Quick turns it off.
     pub thinking: bool,
+    /// Reasoning effort, 1-100, for models with a continuous dial (DeepSeek
+    /// V4.1's `reasoning_effort`). Set per step by the router from the
+    /// profile's table; sent only to endpoints that declare they accept it.
+    /// `None` means the step never stated one, which the router does not
+    /// allow for a model step.
+    pub reasoning_effort: Option<u8>,
     pub max_tokens: Option<u32>,
 }
 
@@ -197,6 +203,7 @@ impl Sampling {
             seed: None,
             batch_invariant: false,
             thinking: true,
+            reasoning_effort: None,
             max_tokens: None,
         }
     }
@@ -323,7 +330,10 @@ impl StepPlan {
             ));
         }
         if !self.step.is_structured() && self.schema.is_some() {
-            return Err(format!("{} is free-text and must not carry a schema", self.step));
+            return Err(format!(
+                "{} is free-text and must not carry a schema",
+                self.step
+            ));
         }
         Ok(())
     }
@@ -431,7 +441,9 @@ mod tests {
             role: ModelRole::Worker,
             speculation: spec,
             sampling,
-            schema: step.is_structured().then(|| serde_json::json!({"type": "object"})),
+            schema: step
+                .is_structured()
+                .then(|| serde_json::json!({"type": "object"})),
         }
     }
 
@@ -442,7 +454,10 @@ mod tests {
         let p = plan(
             StepKind::Extract,
             Speculation::DFlash2 { n: 7 },
-            Sampling { temperature: 0.0, ..Sampling::at_temperature(0.0) },
+            Sampling {
+                temperature: 0.0,
+                ..Sampling::at_temperature(0.0)
+            },
         );
         assert!(p.validate().is_ok(), "{:?}", p.validate());
     }

@@ -50,12 +50,28 @@ resp=$(curl -sf -X POST "$BASE/v1/responses" -H 'Content-Type: application/json'
   \"max_output_tokens\": 2048
 }" 2>/dev/null || echo '{}')
 if printf '%s' "$resp" | grep -q '"function_call"'; then
-  echo "ok: function_call present"
+  echo "ok: function_call present (/v1/responses)"
 else
-  echo "FAIL: no function_call item — text-only output"
-  echo "      -> missing --tool-call-parser qwen3_coder (qwen25 is the JSON"
-  echo "         dialect and silently fails on the <function=...> XML one)"
-  fail=1
+  # QGI-2's edge and jcode both consume /v1/chat/completions, so a parser that
+  # yields tool_calls there is agent-ready for this harness even when the
+  # Responses API path does not (measured on DeepSeek-V4.1 at the dsv41
+  # commit: chat completions returned a proper tool_calls item while
+  # /v1/responses returned text). Check the path we actually use.
+  resp=$(curl -sf -X POST "$BASE/v1/chat/completions" -H 'Content-Type: application/json' -d "{
+    \"model\": \"$NAME\",
+    \"messages\": [{\"role\":\"user\",\"content\":\"list /tmp using the shell tool\"}],
+    \"tools\": [{\"type\":\"function\",\"function\":{\"name\":\"shell\",\"description\":\"run a shell command\",
+                \"parameters\":{\"type\":\"object\",\"properties\":{\"cmd\":{\"type\":\"string\"}},\"required\":[\"cmd\"]}}}],
+    \"max_tokens\": 2048
+  }" 2>/dev/null || echo '{}')
+  if printf '%s' "$resp" | grep -q '"tool_calls"'; then
+    echo "ok: tool_calls present (/v1/chat/completions; /v1/responses gave text)"
+  else
+    echo "FAIL: no tool call on either API — text-only output"
+    echo "      -> missing or wrong --tool-call-parser (qwen25 is the JSON"
+    echo "         dialect and silently fails on the <function=...> XML one)"
+    fail=1
+  fi
 fi
 
 echo

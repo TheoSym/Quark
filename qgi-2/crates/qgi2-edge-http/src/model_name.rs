@@ -9,12 +9,23 @@
 use qgi2_spec_types::{Mood, Persona, Profile};
 
 /// A parsed model name.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModelName {
     pub persona: Persona,
+    /// A client/session id carried after `@`: `qgi2/builder-traceable@run-7`.
+    ///
+    /// The model name is the one field every OpenAI-compatible client lets a
+    /// caller set per run (`jcode run --model ...`), where a header needs a
+    /// config edit. Without a per-run id every jcode invocation on one
+    /// persona shares one harness session, and on the first bench run facts
+    /// from an earlier task's `calc.py` leaked into the next task's
+    /// `calc.py`: the planner believed the fix was already made.
+    pub client: Option<String>,
 }
 
 impl ModelName {
+    /// The persona name, without the client suffix: what `/v1/models` lists
+    /// and what the response echoes.
     pub fn render(&self) -> String {
         format!(
             "qgi2/{}-{}",
@@ -32,6 +43,7 @@ pub fn all_model_names() -> Vec<String> {
             out.push(
                 ModelName {
                     persona: Persona::new(mood, profile),
+                    client: None,
                 }
                 .render(),
             );
@@ -48,6 +60,11 @@ pub fn all_model_names() -> Vec<String> {
 /// echoed back in the response's `model` field so the fallback is visible
 /// rather than silent.
 pub fn parse_model_name(name: &str) -> ModelName {
+    // `@client` first, so a suffix never disturbs the persona parse.
+    let (name, client) = match name.split_once('@') {
+        Some((n, c)) if !c.trim().is_empty() => (n, Some(c.trim().to_string())),
+        _ => (name, None),
+    };
     let stripped = name.strip_prefix("qgi2/").unwrap_or(name);
 
     // `split_once` on the *first* hyphen: moods and profiles contain none, so
@@ -58,10 +75,13 @@ pub fn parse_model_name(name: &str) -> ModelName {
     };
 
     let mood = mood_part.parse::<Mood>().unwrap_or(Mood::Builder);
-    let profile = profile_part.parse::<Profile>().unwrap_or(Profile::Traceable);
+    let profile = profile_part
+        .parse::<Profile>()
+        .unwrap_or(Profile::Traceable);
 
     ModelName {
         persona: Persona::new(mood, profile),
+        client,
     }
 }
 
@@ -100,6 +120,18 @@ mod tests {
     }
 
     #[test]
+    fn a_client_suffix_selects_a_session_without_touching_the_persona() {
+        let m = parse_model_name("qgi2/researcher-deterministic@bench-task-3");
+        assert_eq!(m.persona.mood, Mood::Researcher);
+        assert_eq!(m.persona.profile, Profile::Deterministic);
+        assert_eq!(m.client.as_deref(), Some("bench-task-3"));
+        // The echoed model name stays the listed persona name.
+        assert_eq!(m.render(), "qgi2/researcher-deterministic");
+        // An empty suffix is no suffix.
+        assert_eq!(parse_model_name("qgi2/builder-quick@").client, None);
+    }
+
+    #[test]
     fn every_persona_round_trips() {
         for name in all_model_names() {
             let parsed = parse_model_name(&name);
@@ -109,6 +141,9 @@ mod tests {
 
     #[test]
     fn the_listing_covers_every_combination() {
-        assert_eq!(all_model_names().len(), Mood::ALL.len() * Profile::ALL.len());
+        assert_eq!(
+            all_model_names().len(),
+            Mood::ALL.len() * Profile::ALL.len()
+        );
     }
 }

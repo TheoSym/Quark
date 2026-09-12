@@ -14,9 +14,9 @@
 //! router and rules read fields off it. Adding a mood means adding a row.
 
 use crate::fact::Relation;
-use std::borrow::Cow;
 use crate::step::{Sampling, Speculation};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fmt;
 
 /// What the agent is currently doing. Orthogonal to [`crate::Profile`].
@@ -46,7 +46,11 @@ impl Mood {
                 mood: self,
                 traversal: TraversalSpec {
                     root_type: Cow::Borrowed("Task"),
-                    relations: vec![Relation::DependsOn, Relation::Implements, Relation::Modifies],
+                    relations: vec![
+                        Relation::DependsOn,
+                        Relation::Implements,
+                        Relation::Modifies,
+                    ],
                     leaf_type: Cow::Borrowed("File"),
                 },
                 conflict: ConflictPolicy::LatestWins,
@@ -171,7 +175,16 @@ impl ToolClass {
     /// seam, by masking the tool list before it reaches the model.
     pub fn jcode_tools(self) -> &'static [&'static str] {
         match self {
-            Self::Fs => &["read", "write", "edit", "multiedit", "patch", "apply_patch", "ls", "agentgrep"],
+            Self::Fs => &[
+                "read",
+                "write",
+                "edit",
+                "multiedit",
+                "patch",
+                "apply_patch",
+                "ls",
+                "agentgrep",
+            ],
             Self::Shell => &["bash", "bg"],
             Self::Git => &["bash"],
             Self::Web => &["browser", "websearch"],
@@ -273,7 +286,10 @@ mod tests {
         // The spec's worker-spec row is DFlash2 across all three moods; the
         // profile, not the mood, is what can change it.
         for m in Mood::ALL {
-            assert!(matches!(m.table().worker_speculation, Speculation::DFlash2 { .. }));
+            assert!(matches!(
+                m.table().worker_speculation,
+                Speculation::DFlash2 { .. }
+            ));
         }
     }
 

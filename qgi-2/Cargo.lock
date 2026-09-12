@@ -1123,9 +1123,9 @@ dependencies = [
  "axum",
  "clap",
  "qgi2-edge-http",
- "qgi2-edge-provider",
  "qgi2-engine",
  "qgi2-factgraph",
+ "qgi2-memory",
  "qgi2-router",
  "qgi2-rules",
  "qgi2-spec-types",
@@ -1155,12 +1155,16 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "blake3",
+ "futures",
  "qgi2-engine",
  "qgi2-factgraph",
+ "qgi2-memory",
  "qgi2-metrics",
  "qgi2-rules",
  "qgi2-spec-types",
  "qgi2-turn",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -1214,6 +1218,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "qgi2-memory"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "qgi2-metrics"
 version = "0.1.0"
 dependencies = [
@@ -1262,6 +1274,7 @@ dependencies = [
  "qgi2-assembler",
  "qgi2-engine",
  "qgi2-factgraph",
+ "qgi2-memory",
  "qgi2-metrics",
  "qgi2-router",
  "qgi2-rules",

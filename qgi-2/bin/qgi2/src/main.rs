@@ -22,7 +22,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(Parser)]
-#[command(name = "qgi2", version, about = "Inference-first agent harness on jcode")]
+#[command(
+    name = "qgi2",
+    version,
+    about = "Inference-first agent harness on jcode"
+)]
 struct Cli {
     /// Path to the QGI-2 config file (default: ~/.qgi2/config.toml).
     #[arg(long, global = true)]
@@ -39,6 +43,24 @@ enum Command {
         /// Override the configured bind address.
         #[arg(long)]
         bind: Option<String>,
+        /// Memory-only mode: forward every request to the planner endpoint
+        /// untouched except for one inserted memory message; extract the
+        /// transcript into the line store; compact on budget events. No
+        /// plan/route/tool-args/extract steps -- the client's own agent loop
+        /// (jcode) does everything else natively.
+        #[arg(long)]
+        proxy: bool,
+        /// In proxy mode, when the compactor narrows the memory: `off` (cut
+        /// by recency, count the hits), `events` (only when the budget is
+        /// hit; a bare `--compact` means this), or `every-turn` (the
+        /// prototype's incremental policy: each turn the compactor judges
+        /// only never-judged candidates; the kept set persists).
+        #[arg(long, default_value = "off", num_args = 0..=1, default_missing_value = "events")]
+        compact: qgi2_edge_http::CompactMode,
+        /// In proxy mode, the sym-tools spaCy service the deterministic
+        /// ingester parses with. `off` disables it (lexicon fallback, logged).
+        #[arg(long, default_value = "http://127.0.0.1:8100")]
+        sym_tools: String,
     },
     /// Check every endpoint the configured persona needs.
     Doctor {
@@ -92,7 +114,18 @@ async fn main() -> Result<()> {
     let cfg = Qgi2Config::load_or_default(config_path.as_deref())?;
 
     match cli.command {
-        Command::Serve { bind } => serve(cfg, bind).await,
+        Command::Serve {
+            bind,
+            proxy,
+            compact,
+            sym_tools,
+        } => {
+            if proxy {
+                serve_proxy(cfg, bind, compact, sym_tools).await
+            } else {
+                serve(cfg, bind).await
+            }
+        }
         Command::Doctor { mood, profile } => doctor(cfg, mood, profile).await,
         Command::Config { jcode } => {
             if jcode {
@@ -103,10 +136,70 @@ async fn main() -> Result<()> {
             Ok(())
         }
         Command::Plan { mood, profile } => plan(&cfg, &mood, &profile),
-        Command::Hicache { probe, tier, l3, store } => {
-            hicache_cmd(cfg, probe, tier, &l3, store).await
-        }
+        Command::Hicache {
+            probe,
+            tier,
+            l3,
+            store,
+        } => hicache_cmd(cfg, probe, tier, &l3, store).await,
     }
+}
+
+/// Memory-only mode. See `qgi2_edge_http::proxy`.
+async fn serve_proxy(
+    cfg: Qgi2Config,
+    bind_override: Option<String>,
+    compact: qgi2_edge_http::CompactMode,
+    sym_tools: String,
+) -> Result<()> {
+    use qgi2_edge_http::{ProxyConfig, ProxyState, Upstream};
+    let sym_tools = (!matches!(sym_tools.trim().to_lowercase().as_str(), "off" | "none" | ""))
+        .then_some(sym_tools);
+    let bind = bind_override.unwrap_or_else(|| cfg.server.bind.clone());
+    let planner = cfg
+        .engines
+        .iter()
+        .find(|e| e.role == "planner")
+        .or_else(|| cfg.engines.first())
+        .context("proxy mode needs one [[engines]] entry to forward to")?;
+    let session = cfg.session_config()?;
+    let state = ProxyState::new(ProxyConfig {
+        upstream: Upstream {
+            base_url: planner.base_url.clone(),
+            api_key: planner.api_key.clone(),
+        },
+        budget: qgi2_memory::RetrieveBudget {
+            max_lines: session.memory_lines,
+            max_bytes: session.memory_bytes,
+            ..qgi2_memory::RetrieveBudget::default()
+        },
+        compact,
+        memory_dir: cfg.server.graph_dir.clone(),
+        max_chars_per_message: 12_000,
+        sym_tools,
+    });
+    match state.sym_tools() {
+        Some(sym) if sym.healthy().await => {
+            tracing::info!(url = sym.base_url(), "sym-tools ingester ready")
+        }
+        Some(sym) => tracing::warn!(
+            url = sym.base_url(),
+            "sym-tools not answering; prose will use the lexicon fallback until it is"
+        ),
+        None => tracing::warn!("sym-tools off; prose will use the lexicon fallback"),
+    }
+    let app = qgi2_edge_http::proxy::router(state);
+    let listener = tokio::net::TcpListener::bind(&bind)
+        .await
+        .with_context(|| format!("binding {bind}"))?;
+    tracing::info!(%bind, upstream = %planner.base_url, model = %planner.model, %compact, "QGI-2 memory proxy listening");
+    tracing::info!("point jcode at it with model `{}@<session>`", planner.model);
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async {
+            let _ = tokio::signal::ctrl_c().await;
+        })
+        .await?;
+    Ok(())
 }
 
 async fn serve(cfg: Qgi2Config, bind_override: Option<String>) -> Result<()> {
@@ -326,9 +419,17 @@ fn plan(cfg: &Qgi2Config, mood: &str, profile: &str) -> Result<()> {
             p.role.as_str(),
             p.speculation.to_string(),
             p.sampling.temperature,
-            if p.sampling.seed.is_some() { "fixed" } else { "-" },
+            if p.sampling.seed.is_some() {
+                "fixed"
+            } else {
+                "-"
+            },
             if p.sampling.thinking { "on" } else { "off" },
-            if p.schema.is_some() { "yes" } else { "free text" }
+            if p.schema.is_some() {
+                "yes"
+            } else {
+                "free text"
+            }
         );
     }
     Ok(())
@@ -385,8 +486,14 @@ async fn hicache_cmd(
         anyhow::bail!("{} problem(s) in the HiCache configuration", problems.len());
     }
 
-    println!("# HiCache tiers: {}", 
-        hc.tiers().iter().map(|t| t.to_string()).collect::<Vec<_>>().join(" -> "));
+    println!(
+        "# HiCache tiers: {}",
+        hc.tiers()
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>()
+            .join(" -> ")
+    );
     println!(
         "# The harness pads its stable prefix to {}-token pages when this is enabled.",
         hc.page_size
@@ -500,13 +607,7 @@ fn sglang_spec_flags(e: &config::EngineConfig) -> Vec<String> {
 }
 
 fn port_of(base_url: &str) -> Option<u16> {
-    base_url
-        .rsplit(':')
-        .next()?
-        .split('/')
-        .next()?
-        .parse()
-        .ok()
+    base_url.rsplit(':').next()?.split('/').next()?.parse().ok()
 }
 
 fn hostname() -> Option<String> {

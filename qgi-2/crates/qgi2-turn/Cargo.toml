@@ -13,6 +13,7 @@ qgi2-assembler.workspace = true
 qgi2-router.workspace = true
 qgi2-engine.workspace = true
 qgi2-metrics.workspace = true
+qgi2-memory.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 futures.workspace = true

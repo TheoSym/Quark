@@ -268,7 +268,12 @@ mod tests {
     fn lexical_matching_works_without_embeddings() {
         let g = graph();
         let r = Retrieval::default();
-        let entries = r.entry_points(&g, "tell me about the database", None, Profile::Quick.retrieval());
+        let entries = r.entry_points(
+            &g,
+            "tell me about the database",
+            None,
+            Profile::Quick.retrieval(),
+        );
         assert!(entries.iter().any(|e| e.node == "task:database"));
     }
 
@@ -277,7 +282,12 @@ mod tests {
         let g = graph();
         let mut r = Retrieval::default();
         r.set_embedding("person:sam", vec![1.0, 0.0]);
-        let entries = r.entry_points(&g, "unrelated words", Some(&[1.0, 0.0]), Profile::Quick.retrieval());
+        let entries = r.entry_points(
+            &g,
+            "unrelated words",
+            Some(&[1.0, 0.0]),
+            Profile::Quick.retrieval(),
+        );
         assert!(
             !entries.iter().any(|e| e.how == EntryMethod::Embedding),
             "Quick must not use the embedder: {entries:?}"
@@ -289,8 +299,17 @@ mod tests {
         let g = graph();
         let mut r = Retrieval::default();
         r.set_embedding("person:sam", vec![1.0, 0.0]);
-        let entries = r.entry_points(&g, "unrelated words", Some(&[1.0, 0.0]), Profile::Traceable.retrieval());
-        assert!(entries.iter().any(|e| e.node == "person:sam" && e.how == EntryMethod::Embedding));
+        let entries = r.entry_points(
+            &g,
+            "unrelated words",
+            Some(&[1.0, 0.0]),
+            Profile::Traceable.retrieval(),
+        );
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.node == "person:sam" && e.how == EntryMethod::Embedding)
+        );
     }
 
     #[test]

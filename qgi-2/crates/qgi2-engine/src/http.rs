@@ -90,7 +90,10 @@ impl HttpClient {
         if let Some(key) = &endpoint.api_key {
             req = req.bearer_auth(key);
         }
-        let resp = req.send().await.with_context(|| format!("POST {url} (stream)"))?;
+        let resp = req
+            .send()
+            .await
+            .with_context(|| format!("POST {url} (stream)"))?;
         let status = resp.status();
         if !status.is_success() {
             let text = resp.text().await.unwrap_or_default();
@@ -111,9 +114,11 @@ impl HttpClient {
             buf.push_str(&String::from_utf8_lossy(&chunk));
             // Events are separated by a blank line, and a network chunk can
             // split one, so only complete events are consumed.
-            while let Some(idx) = buf.find("
+            while let Some(idx) = buf.find(
+                "
 
-") {
+",
+            ) {
                 let event = buf[..idx].to_string();
                 buf.drain(..idx + 2);
                 collect_event(&event, &mut text, &mut usage);
@@ -214,7 +219,10 @@ mod tests {
     #[test]
     fn paths_join_onto_the_endpoint_base() {
         let e = Endpoint::new("http://127.0.0.1:30000/v1", "m", Speculation::Off);
-        assert_eq!(e.url("/chat/completions"), "http://127.0.0.1:30000/v1/chat/completions");
+        assert_eq!(
+            e.url("/chat/completions"),
+            "http://127.0.0.1:30000/v1/chat/completions"
+        );
         assert_eq!(e.url("/embeddings"), "http://127.0.0.1:30000/v1/embeddings");
     }
 }
@@ -319,7 +327,8 @@ mod sse_tests {
     #[test]
     fn a_null_usage_field_is_not_mistaken_for_usage() {
         // vLLM sends "usage": null on every non-final chunk.
-        let (_, usage) = collect(&[r#"data: {"choices":[{"delta":{"content":"x"}}],"usage":null}"#]);
+        let (_, usage) =
+            collect(&[r#"data: {"choices":[{"delta":{"content":"x"}}],"usage":null}"#]);
         assert!(usage.is_none());
     }
 }

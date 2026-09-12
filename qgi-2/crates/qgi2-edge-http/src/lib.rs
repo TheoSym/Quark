@@ -24,10 +24,12 @@
 
 pub mod model_name;
 pub mod openai;
+pub mod proxy;
 pub mod routes;
 pub mod state;
 
 pub use model_name::{ModelName, parse_model_name};
 pub use openai::{Message, ToolDeclaration, read_transcript};
+pub use proxy::{CompactMode, ProxyConfig, ProxyState, SymTools, Upstream};
 pub use routes::router;
 pub use state::{AppState, SessionStore};

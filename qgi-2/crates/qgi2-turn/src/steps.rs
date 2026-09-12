@@ -11,10 +11,10 @@
 
 use anyhow::{Context, Result, bail};
 use qgi2_engine::{ChatMessage, ChatRequest, ChatResponse, Engine, EngineRegistry};
-use std::sync::Arc;
 use qgi2_spec_types::{ProposedFact, StepPlan};
 use serde::Deserialize;
 use serde_json::Value;
+use std::sync::Arc;
 
 /// The plan step's output.
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -135,7 +135,9 @@ impl Engines {
 
 impl std::fmt::Debug for Engines {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Engines").field("kinds", &self.kinds()).finish()
+        f.debug_struct("Engines")
+            .field("kinds", &self.kinds())
+            .finish()
     }
 }
 

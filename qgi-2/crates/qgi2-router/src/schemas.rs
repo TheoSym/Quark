@@ -14,18 +14,54 @@
 //! append plausible-looking extra keys that the harness silently drops, which is
 //! precisely the free-text bookkeeping the invariant rules out.
 
-use qgi2_spec_types::StepKind;
+use qgi2_spec_types::{Mood, Relation, StepKind};
 use serde_json::{Value, json};
 
 /// The schema for a step, or `None` for the free-text answer step.
+///
+/// Mood-agnostic: the extract schema offers every relation. Prefer
+/// [`for_step_in`], which narrows it to what the mood's verify rules accept.
 pub fn for_step(step: StepKind) -> Option<Value> {
     match step {
         StepKind::Plan => Some(plan_schema()),
-        StepKind::Extract => Some(extract_schema()),
+        StepKind::Extract => Some(extract_schema(relation_enum())),
         StepKind::ToolArgs => Some(tool_args_schema()),
         StepKind::Route => Some(route_schema()),
         StepKind::Answer | StepKind::Verify | StepKind::Commit | StepKind::MoodCheck => None,
     }
+}
+
+/// The schema for a step under a mood.
+///
+/// The extract schema's relation enum is the mood's traversal relations plus
+/// the structural ones -- exactly the set verify accepts. On the first live
+/// run the builder mood's extractor proposed `cited_by`, a researcher-mood
+/// relation that the rules then rejected; with every relation on offer the
+/// model spends tokens on facts that can never commit and the rejection-rate
+/// metric reports a defect that is really a schema that promised too much.
+pub fn for_step_in(step: StepKind, mood: Mood) -> Option<Value> {
+    match step {
+        StepKind::Extract => Some(extract_schema(mood_relation_enum(mood))),
+        other => for_step(other),
+    }
+}
+
+/// Relation names the mood's verify rules will accept, in the wire spelling.
+pub fn mood_relations(mood: Mood) -> Vec<String> {
+    let mut out: Vec<String> = mood
+        .table()
+        .traversal
+        .relations
+        .iter()
+        .chain(Relation::STRUCTURAL.iter())
+        .map(|r| r.as_str().to_string())
+        .collect();
+    out.dedup();
+    out
+}
+
+fn mood_relation_enum(mood: Mood) -> Value {
+    json!(mood_relations(mood))
 }
 
 /// Relation names the extractor may use.
@@ -75,7 +111,7 @@ fn plan_schema() -> Value {
     })
 }
 
-fn extract_schema() -> Value {
+fn extract_schema(relations: Value) -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
@@ -93,7 +129,7 @@ fn extract_schema() -> Value {
                     "required": ["subject", "relation", "object", "confidence"],
                     "properties": {
                         "subject": { "type": "string", "minLength": 1, "maxLength": 128 },
-                        "relation": { "type": "string", "enum": relation_enum() },
+                        "relation": { "type": "string", "enum": relations },
                         "object": { "type": "string", "minLength": 1, "maxLength": 128 },
                         "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
                         "evidence": { "type": "string", "maxLength": 300 }
@@ -159,6 +195,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn the_extract_schema_offers_only_relations_the_mood_accepts() {
+        let s = for_step_in(StepKind::Extract, Mood::Builder).unwrap();
+        let offered: Vec<&str> =
+            s["properties"]["facts"]["items"]["properties"]["relation"]["enum"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap())
+                .collect();
+        assert!(offered.contains(&"depends_on"));
+        assert!(offered.contains(&"is_a"), "structural relations stay");
+        assert!(
+            !offered.contains(&"cited_by"),
+            "a researcher relation must not be offered to the builder extractor: {offered:?}"
+        );
+        // Every mood's offered set is exactly what its verify rules accept.
+        for mood in Mood::ALL {
+            let offered = mood_relations(mood);
+            for r in &mood.table().traversal.relations {
+                assert!(offered.contains(&r.as_str().to_string()), "{mood}: {r:?}");
+            }
+        }
+        // The other steps are unchanged by the mood.
+        assert_eq!(
+            for_step_in(StepKind::Plan, Mood::Builder),
+            for_step(StepKind::Plan)
+        );
+    }
+
+    #[test]
     fn every_structured_step_has_a_schema() {
         for s in StepKind::ALL {
             assert_eq!(
@@ -185,7 +251,7 @@ mod tests {
 
     #[test]
     fn the_extract_schema_pins_relations_to_a_closed_set() {
-        let schema = extract_schema();
+        let schema = extract_schema(relation_enum());
         let rels = &schema["properties"]["facts"]["items"]["properties"]["relation"]["enum"];
         assert!(rels.is_array());
         assert!(rels.as_array().unwrap().contains(&json!("depends_on")));
@@ -194,7 +260,7 @@ mod tests {
 
     #[test]
     fn the_extract_schema_bounds_confidence() {
-        let schema = extract_schema();
+        let schema = extract_schema(relation_enum());
         let c = &schema["properties"]["facts"]["items"]["properties"]["confidence"];
         assert_eq!(c["minimum"], json!(0.0));
         assert_eq!(c["maximum"], json!(1.0));
@@ -202,7 +268,10 @@ mod tests {
 
     #[test]
     fn the_extract_schema_caps_the_batch_size() {
-        assert_eq!(extract_schema()["properties"]["facts"]["maxItems"], json!(16));
+        assert_eq!(
+            extract_schema(relation_enum())["properties"]["facts"]["maxItems"],
+            json!(16)
+        );
     }
 
     #[test]
@@ -210,7 +279,7 @@ mod tests {
         // The schema's maxLength must not be looser than the verify stage's
         // max_term_len, or the model spends tokens on facts guaranteed to be
         // rejected as malformed.
-        let schema = extract_schema();
+        let schema = extract_schema(relation_enum());
         let props = &schema["properties"]["facts"]["items"]["properties"];
         assert_eq!(props["subject"]["maxLength"], json!(128));
         assert_eq!(props["object"]["maxLength"], json!(128));

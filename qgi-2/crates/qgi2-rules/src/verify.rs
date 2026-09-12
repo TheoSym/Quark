@@ -105,15 +105,35 @@ impl VerifyOutcome {
         self.accepted.len() + self.rejected.len()
     }
 
-    /// Fraction of proposals rejected. Spec target: <= 0.10.
+    /// Proposals that restated a fact already live at equal or higher
+    /// confidence. Harmless -- the graph already knows -- and reported
+    /// separately because they are the model wasting extraction tokens, not
+    /// the model being wrong.
+    pub fn duplicates(&self) -> usize {
+        self.rejected
+            .iter()
+            .filter(|r| r.reason == RejectionReason::Duplicate)
+            .count()
+    }
+
+    /// Fraction of proposals rejected for cause. Spec target: <= 0.10.
+    ///
+    /// Duplicates are excluded from both sides of the ratio. On the first
+    /// live run every rejection after turn one was a duplicate: the subgraph
+    /// shows the model its own facts and it proposes them again. Counting
+    /// that against the 10% ceiling reported a defect in an extractor that
+    /// had simply nothing new to say. The metric is about extraction
+    /// *quality*; [`Self::duplicates`] tracks the token waste on its own.
     ///
     /// Returns 0.0 for an empty batch rather than NaN, so a turn that extracted
     /// nothing does not poison the rolling average.
     pub fn rejection_rate(&self) -> f64 {
-        if self.total() == 0 {
+        let for_cause = self.rejected.len() - self.duplicates();
+        let judged = self.accepted.len() + for_cause;
+        if judged == 0 {
             return 0.0;
         }
-        self.rejected.len() as f64 / self.total() as f64
+        for_cause as f64 / judged as f64
     }
 }
 
@@ -188,7 +208,9 @@ impl Consistency<'_> {
         }
         (a.relation == b.relation && a.object != b.object)
             || (a.object == b.object
-                && self.negates.contains(&(a.relation.clone(), b.relation.clone())))
+                && self
+                    .negates
+                    .contains(&(a.relation.clone(), b.relation.clone())))
     }
 
     /// The sibling `i` lost to on confidence, if any. Ties are broken by index
@@ -277,7 +299,11 @@ pub fn verify(
         }
         for r in relations {
             for f in graph.by_subject_relation(&p.subject, &r) {
-                let key = (f.key.subject.as_str(), f.key.relation.as_str(), f.key.object.as_str());
+                let key = (
+                    f.key.subject.as_str(),
+                    f.key.relation.as_str(),
+                    f.key.object.as_str(),
+                );
                 let c = scale(f.confidence.get());
                 existing
                     .entry(key)
@@ -306,7 +332,7 @@ pub fn verify(
     let (mood_relation, structural) = if config.enforce_mood_relations {
         (
             table.traversal.relations.iter().cloned().collect(),
-            BTreeSet::from([Relation::IsA, Relation::PartOf]),
+            BTreeSet::from(Relation::STRUCTURAL),
         )
     } else {
         // With enforcement off, every proposed relation counts as structural,
@@ -357,9 +383,11 @@ pub fn verify(
     let mut outcome = VerifyOutcome::default();
     for (p, decision) in proposals.into_iter().zip(decisions) {
         match decision {
-            None => outcome
-                .accepted
-                .push(p.commit(CommitToken::issued_by_verify_stage(), source.clone(), turn)),
+            None => outcome.accepted.push(p.commit(
+                CommitToken::issued_by_verify_stage(),
+                source.clone(),
+                turn,
+            )),
             Some(reason) => outcome.rejected.push(Rejection { fact: p, reason }),
         }
     }
@@ -553,8 +581,22 @@ mod tests {
             prop("task:a", Relation::DependsOn, "file:x", 0.8),
             prop("task:a", Relation::DependsOn, "file:y", 0.8),
         ];
-        let a = verify(batch.clone(), &empty(), Mood::Builder, Source::User, 1, VerifyConfig::default());
-        let b = verify(batch, &empty(), Mood::Builder, Source::User, 1, VerifyConfig::default());
+        let a = verify(
+            batch.clone(),
+            &empty(),
+            Mood::Builder,
+            Source::User,
+            1,
+            VerifyConfig::default(),
+        );
+        let b = verify(
+            batch,
+            &empty(),
+            Mood::Builder,
+            Source::User,
+            1,
+            VerifyConfig::default(),
+        );
         assert_eq!(a.accepted.len(), 1);
         assert_eq!(a.accepted[0].object(), b.accepted[0].object());
         assert_eq!(a.accepted[0].object(), "file:x", "lower index wins ties");
@@ -612,7 +654,10 @@ mod tests {
         );
         assert_eq!(out.accepted.len(), 1, "{:?}", out.rejected);
         assert_eq!(out.accepted[0].object(), "file:x");
-        assert!(matches!(out.rejected[0].reason, RejectionReason::Malformed(_)));
+        assert!(matches!(
+            out.rejected[0].reason,
+            RejectionReason::Malformed(_)
+        ));
         assert_eq!(out.rejected[1].reason, RejectionReason::Duplicate);
     }
 
@@ -643,7 +688,11 @@ mod tests {
                 1,
                 VerifyConfig::default(),
             );
-            assert_eq!(out.accepted.len(), 1, "{mood} rejected a structural relation");
+            assert_eq!(
+                out.accepted.len(),
+                1,
+                "{mood} rejected a structural relation"
+            );
         }
     }
 
@@ -731,6 +780,51 @@ mod tests {
         // the guard is the code, not a timing test.
         assert_eq!(out.accepted.len(), 1);
         assert_eq!(out.rejected[0].reason, RejectionReason::Duplicate);
+    }
+
+    #[test]
+    fn duplicates_are_counted_but_not_held_against_the_rate() {
+        // The live run's steady state: the extractor restates what the
+        // subgraph showed it. That is wasted tokens, not wrong extraction.
+        let mut g = empty();
+        let f = prop("task:a", Relation::DependsOn, "file:x", 0.9).commit(
+            CommitToken::issued_by_verify_stage(),
+            Source::User,
+            1,
+        );
+        g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+        let out = verify(
+            vec![
+                prop("task:a", Relation::DependsOn, "file:x", 0.9), // duplicate
+                prop("task:b", Relation::DependsOn, "file:y", 0.9), // new, accepted
+                prop("task:c", Relation::Prefers, "topic:z", 0.9),  // off-mood, for cause
+            ],
+            &g,
+            Mood::Builder,
+            Source::User,
+            2,
+            VerifyConfig::default(),
+        );
+        assert_eq!(out.duplicates(), 1);
+        assert_eq!(out.accepted.len(), 1);
+        // One accepted, one rejected for cause: 50%, the duplicate ignored.
+        assert!(
+            (out.rejection_rate() - 0.5).abs() < 1e-9,
+            "{}",
+            out.rejection_rate()
+        );
+
+        // Only duplicates: nothing was judged wrong, so the rate is zero.
+        let out = verify(
+            vec![prop("task:a", Relation::DependsOn, "file:x", 0.9)],
+            &g,
+            Mood::Builder,
+            Source::User,
+            2,
+            VerifyConfig::default(),
+        );
+        assert_eq!(out.duplicates(), 1);
+        assert_eq!(out.rejection_rate(), 0.0);
     }
 
     #[test]

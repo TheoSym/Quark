@@ -335,7 +335,10 @@ mod tests {
             String::new(),
             String::new(),
         );
-        assert_ne!(s.get(SegmentId::Skills).hash, s.get(SegmentId::Subgraph).hash);
+        assert_ne!(
+            s.get(SegmentId::Skills).hash,
+            s.get(SegmentId::Subgraph).hash
+        );
     }
 
     #[test]

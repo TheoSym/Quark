@@ -269,7 +269,11 @@ mod tests {
         );
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://127.0.0.1:8001/v1", "w", Speculation::DFlash2 { n: 7 }),
+            Endpoint::new(
+                "http://127.0.0.1:8001/v1",
+                "w",
+                Speculation::DFlash2 { n: 7 },
+            ),
         );
         Qgi2Provider::new(
             SessionConfig {
@@ -305,7 +309,12 @@ mod tests {
 
     #[test]
     fn every_persona_is_listed() {
-        assert_eq!(provider(Persona::default()).available_models_display().len(), 9);
+        assert_eq!(
+            provider(Persona::default())
+                .available_models_display()
+                .len(),
+            9
+        );
     }
 
     #[tokio::test]
@@ -373,7 +382,10 @@ mod tests {
             .filter(|e| matches!(e, StreamEvent::ToolUseEnd))
             .count();
         assert_eq!(starts, 2);
-        assert_eq!(ends, 2, "an unmatched start leaves jcode with a partial call");
+        assert_eq!(
+            ends, 2,
+            "an unmatched start leaves jcode with a partial call"
+        );
     }
 
     #[test]

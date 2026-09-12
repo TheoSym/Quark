@@ -124,6 +124,12 @@ pub struct EngineConfig {
     /// harness raises a false alarm on the spec's key metric.
     #[serde(default)]
     pub cache_control: bool,
+    /// The model accepts an OpenAI-style `reasoning_effort` field (DeepSeek
+    /// V4.1: integer 1-100). The router states an effort for every step; it is
+    /// sent only to endpoints that declare this, so a model without the dial
+    /// never sees an unknown field.
+    #[serde(default)]
+    pub reasoning_effort: bool,
 }
 
 fn default_spec_method() -> String {
@@ -149,6 +155,7 @@ impl Default for Qgi2Config {
                     speculation_n: 2,
                     api_key: None,
                     cache_control: false,
+                    reasoning_effort: false,
                 },
                 EngineConfig {
                     role: "worker".into(),
@@ -159,6 +166,7 @@ impl Default for Qgi2Config {
                     speculation_n: 7,
                     api_key: None,
                     cache_control: false,
+                    reasoning_effort: false,
                 },
             ],
             hicache: None,
@@ -172,6 +180,7 @@ impl Default for Qgi2Config {
                 speculation_n: 0,
                 api_key: None,
                 cache_control: false,
+                reasoning_effort: false,
             }),
         }
     }
@@ -193,8 +202,8 @@ fn home() -> Option<PathBuf> {
 
 impl Qgi2Config {
     pub fn load(path: &Path) -> Result<Self> {
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))
     }
 
@@ -214,7 +223,11 @@ impl Qgi2Config {
     }
 
     pub fn persona(&self) -> Result<Persona> {
-        let mood: Mood = self.persona.mood.parse().map_err(|e: String| anyhow::anyhow!(e))?;
+        let mood: Mood = self
+            .persona
+            .mood
+            .parse()
+            .map_err(|e: String| anyhow::anyhow!(e))?;
         let profile: Profile = self
             .persona
             .profile
@@ -281,7 +294,8 @@ impl Qgi2Config {
             let endpoint = Endpoint::new(&e.base_url, &e.model, spec)
                 .with_engine(kind)
                 .with_api_key(e.api_key.clone())
-                .with_cache_control(e.cache_control);
+                .with_cache_control(e.cache_control)
+                .with_reasoning_effort(e.reasoning_effort);
             r.register(role, endpoint);
         }
         if let Some(e) = &self.embedder {
@@ -303,7 +317,10 @@ impl Qgi2Config {
                 let moods = c
                     .moods
                     .iter()
-                    .map(|m| m.parse::<Mood>().map_err(|e| anyhow::anyhow!("skill {}: {e}", c.name)))
+                    .map(|m| {
+                        m.parse::<Mood>()
+                            .map_err(|e| anyhow::anyhow!("skill {}: {e}", c.name))
+                    })
                     .collect::<Result<Vec<_>>>()?;
                 let subjects: Vec<&str> = c.subjects.iter().map(String::as_str).collect();
                 let requires: Vec<&str> = c.requires.iter().map(String::as_str).collect();
@@ -385,8 +402,7 @@ mod tests {
         // DFlash2. Better to fail preflight than to report acceptance numbers
         // for a configuration nobody chose.
         let c = Qgi2Config::default();
-        let router =
-            qgi2_router::Router::new(Persona::new(Mood::Builder, Profile::Deterministic));
+        let router = qgi2_router::Router::new(Persona::new(Mood::Builder, Profile::Deterministic));
         assert!(
             c.registry()
                 .unwrap()
@@ -441,6 +457,7 @@ mod sglang_tests {
                     speculation_n: 2,
                     api_key: None,
                     cache_control: false,
+                    reasoning_effort: false,
                 },
                 EngineConfig {
                     role: "worker".into(),
@@ -451,6 +468,7 @@ mod sglang_tests {
                     speculation_n: 5,
                     api_key: None,
                     cache_control: false,
+                    reasoning_effort: false,
                 },
             ],
             embedder: None,
@@ -529,5 +547,30 @@ mod shipped_configs {
         let flags = hc.launch_flags().join(" ");
         assert!(flags.contains("--max-mamba-cache-size 96"), "{flags}");
         assert!(hc.problems().is_empty(), "{:?}", hc.problems());
+    }
+
+    #[test]
+    fn the_v41_single_model_config_routes_every_step_to_one_dspark_endpoint() {
+        // One DeepSeek-V4.1-Flash process serves both roles: single-model mode
+        // must be detected, the DSpark override must reach the router (the
+        // table would otherwise plan MTP for the planner and nothing would
+        // route), and the effort dial must be declared on the endpoint.
+        let cfg: Qgi2Config =
+            toml::from_str(include_str!("../../../config/qgi2.v41-single.toml")).unwrap();
+        let registry = cfg.registry().unwrap();
+        assert!(registry.is_single_model());
+        assert!(cfg.embedder.is_none(), "no embedder in this layout");
+
+        let session = cfg.session_config().unwrap();
+        let router = qgi2_router::Router::new(session.persona)
+            .with_speculation(session.planner_speculation, session.worker_speculation);
+        let plans = router.plan_all().unwrap();
+        registry.preflight(&plans).expect("every step routes");
+        for p in &plans {
+            assert_eq!(p.speculation, Speculation::DSpark { n: 5 }, "{}", p.step);
+            let e = registry.resolve(p.role, p.speculation).unwrap();
+            assert!(e.reasoning_effort, "{}", p.step);
+        }
+        assert!(session.thresholds.max_planner_worker_ratio.is_none());
     }
 }

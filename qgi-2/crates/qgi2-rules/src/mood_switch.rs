@@ -46,10 +46,7 @@ impl Default for MoodSwitchConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum MoodDecision {
     /// No change.
-    Stay {
-        mood: Mood,
-        reason: String,
-    },
+    Stay { mood: Mood, reason: String },
     /// Switch, at the cost of the cached prefix from segment 2 onward.
     Switch {
         from: Mood,
@@ -92,11 +89,7 @@ fn evidence(recent: &[Relation]) -> BTreeMap<&'static str, usize> {
 ///
 /// `recent` is the relations extracted over the recent window, most recent
 /// last.
-pub fn mood_check(
-    current: Mood,
-    recent: &[Relation],
-    config: MoodSwitchConfig,
-) -> MoodDecision {
+pub fn mood_check(current: Mood, recent: &[Relation], config: MoodSwitchConfig) -> MoodDecision {
     if recent.len() < config.min_observations {
         return MoodDecision::Stay {
             mood: current,
@@ -125,7 +118,10 @@ pub fn mood_check(
     if best == current {
         return MoodDecision::Stay {
             mood: current,
-            reason: format!("{current} still leads at {:.0}% of recent relations", best_share * 100.0),
+            reason: format!(
+                "{current} still leads at {:.0}% of recent relations",
+                best_share * 100.0
+            ),
         };
     }
     if best_share < config.threshold {
@@ -173,7 +169,11 @@ mod tests {
 
     #[test]
     fn too_few_observations_never_switches() {
-        let d = mood_check(Mood::Builder, &rep(Relation::Supports, 2), MoodSwitchConfig::default());
+        let d = mood_check(
+            Mood::Builder,
+            &rep(Relation::Supports, 2),
+            MoodSwitchConfig::default(),
+        );
         assert!(!d.is_switch());
         assert_eq!(d.mood(), Mood::Builder);
     }
@@ -199,7 +199,11 @@ mod tests {
             MoodSwitchConfig::default(),
         );
         match d {
-            MoodDecision::Switch { invalidates_prefix, to, .. } => {
+            MoodDecision::Switch {
+                invalidates_prefix,
+                to,
+                ..
+            } => {
                 assert!(invalidates_prefix);
                 assert_eq!(to, Mood::Companion);
             }
@@ -261,7 +265,11 @@ mod tests {
     fn structural_relations_are_evidence_for_no_mood() {
         // is_a / part_of belong to no traversal set, so a session full of them
         // must not drag the mood anywhere.
-        let d = mood_check(Mood::Builder, &rep(Relation::IsA, 10), MoodSwitchConfig::default());
+        let d = mood_check(
+            Mood::Builder,
+            &rep(Relation::IsA, 10),
+            MoodSwitchConfig::default(),
+        );
         assert!(!d.is_switch(), "{d:?}");
     }
 

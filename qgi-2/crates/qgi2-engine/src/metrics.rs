@@ -57,9 +57,7 @@ impl AcceptanceSnapshot {
                 Some(*accepted_tokens as f64 / *num_steps as f64 + 1.0)
             }
             // SGLang's accept_length already counts the verified token.
-            Self::Gauge { accept_length } => {
-                (*accept_length > 0.0).then_some(*accept_length)
-            }
+            Self::Gauge { accept_length } => (*accept_length > 0.0).then_some(*accept_length),
             Self::Unavailable => None,
         }
     }

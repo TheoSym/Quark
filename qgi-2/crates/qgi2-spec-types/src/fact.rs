@@ -152,6 +152,11 @@ pub enum Relation {
 }
 
 impl Relation {
+    /// Relations every mood accepts at verify regardless of its traversal
+    /// set. One definition, used by the verify rules and by the extract
+    /// schema, so the model is never offered a relation the rules reject.
+    pub const STRUCTURAL: [Relation; 2] = [Relation::IsA, Relation::PartOf];
+
     pub fn as_str(&self) -> &str {
         match self {
             Self::DependsOn => "depends_on",
@@ -389,7 +394,10 @@ mod tests {
     fn fact_ids_are_deterministic() {
         let k = FactKey::new("task:auth", Relation::DependsOn, "file:auth.rs");
         assert_eq!(k.id(), k.id());
-        assert_eq!(k.id(), FactKey::new("task:auth", Relation::DependsOn, "file:auth.rs").id());
+        assert_eq!(
+            k.id(),
+            FactKey::new("task:auth", Relation::DependsOn, "file:auth.rs").id()
+        );
     }
 
     #[test]
@@ -422,7 +430,12 @@ mod tests {
 
     #[test]
     fn negation_pairs_are_symmetric() {
-        for r in [Relation::Supports, Relation::Contradicts, Relation::Prefers, Relation::Dislikes] {
+        for r in [
+            Relation::Supports,
+            Relation::Contradicts,
+            Relation::Prefers,
+            Relation::Dislikes,
+        ] {
             let n = r.negation().expect("has negation");
             assert_eq!(n.negation().as_ref(), Some(&r));
         }

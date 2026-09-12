@@ -153,10 +153,7 @@ impl ChatRequest {
             body.insert("stream".into(), json!(true));
             // Without this the final chunk carries no usage, and the cache-hit
             // metric reads zero for every streamed turn.
-            body.insert(
-                "stream_options".into(),
-                json!({ "include_usage": true }),
-            );
+            body.insert("stream_options".into(), json!({ "include_usage": true }));
         }
         for (k, v) in &self.extra {
             body.insert(k.clone(), v.clone());
@@ -325,7 +322,8 @@ mod tests {
 
     #[test]
     fn deterministic_sampling_reaches_the_body() {
-        let s = Profile::Deterministic.apply_sampling(qgi2_spec_types::Sampling::at_temperature(0.7));
+        let s =
+            Profile::Deterministic.apply_sampling(qgi2_spec_types::Sampling::at_temperature(0.7));
         let body = ChatRequest::new(vec![ChatMessage::user("hi")])
             .with_sampling(s)
             .to_openai_body("m");
@@ -338,8 +336,8 @@ mod tests {
     fn the_schema_does_not_serialize_itself() {
         // Each engine names it differently; a shared field would pick one and be
         // silently wrong on the other.
-        let req = ChatRequest::new(vec![ChatMessage::user("hi")])
-            .with_schema(json!({"type": "object"}));
+        let req =
+            ChatRequest::new(vec![ChatMessage::user("hi")]).with_schema(json!({"type": "object"}));
         let body = req.to_openai_body("m");
         assert!(body.get("guided_json").is_none());
         assert!(body.get("response_format").is_none());

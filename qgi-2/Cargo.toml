@@ -8,7 +8,6 @@
 resolver = "3"
 members = [
     "crates/qgi2-spec-types",
-    # TODO(restore): re-enable as each crate lands.
     "crates/qgi2-factgraph",
     "crates/qgi2-rules",
     "crates/qgi2-assembler",
@@ -16,12 +15,11 @@ members = [
     "crates/qgi2-engine",
     "crates/qgi2-metrics",
     "crates/qgi2-turn",
+    "crates/qgi2-memory",
     "crates/qgi2-edge-http",
     "crates/qgi2-edge-provider",
     "bin/qgi2",
 ]
-# Left over from a dependency probe; not part of the product.
-exclude = ["crates/_probe"]
 
 [workspace.package]
 version = "0.1.0"
@@ -39,6 +37,7 @@ qgi2-router = { path = "crates/qgi2-router" }
 qgi2-engine = { path = "crates/qgi2-engine" }
 qgi2-metrics = { path = "crates/qgi2-metrics" }
 qgi2-turn = { path = "crates/qgi2-turn" }
+qgi2-memory = { path = "crates/qgi2-memory" }
 qgi2-edge-http = { path = "crates/qgi2-edge-http" }
 qgi2-edge-provider = { path = "crates/qgi2-edge-provider" }
 

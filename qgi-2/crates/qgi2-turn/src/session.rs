@@ -27,6 +27,7 @@ use qgi2_assembler::{Assembler, CacheOutlook};
 use qgi2_engine::EngineRegistry;
 use qgi2_factgraph::retrieval::EntryMethod;
 use qgi2_factgraph::{FactGraph, RenderBudget, Retrieval, Scope, Walk};
+use qgi2_memory::{LineStore, RetrieveBudget, Speaker};
 use qgi2_metrics::{Breach, SessionMetrics, TurnMetrics};
 use qgi2_router::{Router, schemas};
 use qgi2_rules::{
@@ -90,10 +91,27 @@ pub struct SessionConfig {
     pub planner_speculation: Option<qgi2_spec_types::Speculation>,
     #[serde(default)]
     pub worker_speculation: Option<qgi2_spec_types::Speculation>,
+    /// Line-store memory retrieved into segment 5 per turn: at most this many
+    /// lines and this many bytes. The prototype's chat default is 120 lines;
+    /// the harness starts at a quarter of that because its whole premise is a
+    /// short volatile tail, and `memory_budget_hit` on the response says when
+    /// to grow it.
+    #[serde(default = "default_memory_lines")]
+    pub memory_lines: usize,
+    #[serde(default = "default_memory_bytes")]
+    pub memory_bytes: usize,
 }
 
 fn default_max_tool_output_bytes() -> usize {
     16 * 1024
+}
+
+fn default_memory_lines() -> usize {
+    30
+}
+
+fn default_memory_bytes() -> usize {
+    6_000
 }
 
 impl Default for SessionConfig {
@@ -114,6 +132,8 @@ impl Default for SessionConfig {
             skip_route_on_exact_hit: false,
             planner_speculation: None,
             worker_speculation: None,
+            memory_lines: default_memory_lines(),
+            memory_bytes: default_memory_bytes(),
         }
     }
 }
@@ -216,6 +236,14 @@ pub struct TurnResult {
     pub route_suggested_mood: Option<String>,
     /// Tool results that were windowed before reaching the model this round.
     pub tool_outputs_truncated: usize,
+    /// The answer step emitted raw tool-call markup instead of prose. The
+    /// user would otherwise see engine syntax; the flag makes it countable.
+    pub answer_contained_tool_markup: bool,
+    /// Verbatim memory lines retrieved into this round's prompt.
+    pub memory_lines: usize,
+    /// More lines matched than the memory budget allowed. The counter the
+    /// compaction event waits on: until it fires, compaction has no work.
+    pub memory_budget_hit: bool,
 }
 
 /// One QGI-2 session.
@@ -242,6 +270,16 @@ pub struct Session {
     /// Last acceptance scrape per endpoint, so the reported number describes
     /// this turn rather than the server's lifetime.
     last_acceptance: std::collections::BTreeMap<String, qgi2_engine::AcceptanceSnapshot>,
+    /// The line store: every turn's query, answer and tool output, verbatim,
+    /// role-tagged, retrieved deterministically into segment 5. The graph
+    /// keeps structure; this keeps content, so a file read once is not read
+    /// again for want of memory.
+    memory: LineStore,
+    /// The previous round's tool results, verbatim and capped: the working
+    /// window. A `read` in one round and the `edit` it feeds in the next are
+    /// the commonest pair in a coding turn, and the edit needs the bytes
+    /// exactly. Cleared when a turn ends.
+    last_round_results: Option<String>,
 }
 
 impl Session {
@@ -270,6 +308,30 @@ impl Session {
             recent_relations: Vec::new(),
             turn_query_embedding: None,
             last_acceptance: std::collections::BTreeMap::new(),
+            memory: LineStore::new(),
+            last_round_results: None,
+        }
+    }
+
+    /// Load a persisted line store.
+    pub fn with_memory(mut self, memory: LineStore) -> Self {
+        self.memory = memory;
+        self
+    }
+
+    pub fn memory(&self) -> &LineStore {
+        &self.memory
+    }
+
+    pub fn memory_json(&self) -> Result<String> {
+        Ok(self.memory.to_json()?)
+    }
+
+    fn memory_budget(&self) -> RetrieveBudget {
+        RetrieveBudget {
+            max_lines: self.config.memory_lines,
+            max_bytes: self.config.memory_bytes,
+            ..RetrieveBudget::default()
         }
     }
 
@@ -315,7 +377,10 @@ impl Session {
 
     /// Check every endpoint the current persona will need, before turn one.
     pub fn preflight(&self) -> Result<()> {
-        let plans = self.router().plan_all().map_err(|e| anyhow::anyhow!("{e}"))?;
+        let plans = self
+            .router()
+            .plan_all()
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
         self.registry
             .preflight(&plans)
             .map_err(|e| anyhow::anyhow!("{e}"))
@@ -343,9 +408,17 @@ impl Session {
         input: RoundInput,
         tools: &dyn ToolRunner,
     ) -> Result<RoundOutcome> {
+        // The engine's page granularity bounds what a prompt can cache, so the
+        // metrics carry it: a cache floor above the ceiling would report a
+        // defect in a prefix that is doing everything a prefix can.
+        let page = self
+            .config
+            .page_alignment
+            .map(|a| a.granularity())
+            .unwrap_or(0);
         if input.round == 0 {
             self.turn += 1;
-            self.open_turn = Some(TurnMetrics::new(self.turn));
+            self.open_turn = Some(TurnMetrics::new(self.turn).with_page_size(page));
             self.open_committed.clear();
             self.turn_query_embedding = None;
         }
@@ -355,7 +428,7 @@ impl Session {
         let mut metrics = self
             .open_turn
             .take()
-            .unwrap_or_else(|| TurnMetrics::new(turn));
+            .unwrap_or_else(|| TurnMetrics::new(turn).with_page_size(page));
         let mut result = TurnResult::default();
 
         // --- retrieve: embedder seeds entry points, route step refines them ---
@@ -415,7 +488,18 @@ impl Session {
         let traversal_spec = self.mood().table().traversal;
         let reached_ids = {
             let walk = Walk::new(&self.graph, &traversal_spec, self.profile().retrieval());
-            walk.from_entries(&entries).facts
+            let out = walk.from_entries(&entries);
+            // Traceable logging: which nodes retrieval started from and how
+            // much of memory it reached. A turn that answers "I know nothing"
+            // about a subject with committed facts is diagnosed from this line.
+            tracing::info!(
+                entries = ?entries,
+                unmatched = ?out.unmatched_entries,
+                reached = out.facts.len(),
+                graph = self.graph.len(),
+                "retrieval"
+            );
+            out.facts
         };
         let reached_nodes: Vec<String> = reached_ids
             .iter()
@@ -425,6 +509,20 @@ impl Session {
         let active_skills =
             select_skills(&self.skills, &reached_nodes, self.mood(), &[], &self.graph);
 
+        // --- memory: verbatim lines for this query, deterministic ---
+        let memory = self.memory.retrieve(&input.query, self.memory_budget());
+        result.memory_lines = memory.lines.len();
+        result.memory_budget_hit = memory.budget_hit();
+        if !memory.is_empty() {
+            tracing::info!(
+                lines = memory.lines.len(),
+                candidates = memory.candidates,
+                store = self.memory.len(),
+                budget_hit = memory.budget_hit(),
+                "memory"
+            );
+        }
+
         // --- assemble ---
         let assembled = self.assembler.assemble(
             &self.graph,
@@ -432,6 +530,7 @@ impl Session {
             self.profile(),
             &active_skills,
             &reached_ids,
+            &memory.text,
             &input.query,
         );
         result.segment_hashes = assembled.hash_log();
@@ -439,6 +538,12 @@ impl Session {
 
         let system = assembled.system();
         let base_volatile = assembled.volatile();
+        // The cache floor for this turn's requests is the stable prefix, in
+        // tokens, so the metric asks for what the harness controls and not
+        // for the step-specific tails.
+        if let Some(align) = self.config.page_alignment {
+            metrics.stable_prefix_tokens = align.estimated_tokens(system.len()) as u64;
+        }
 
         // Tool output is appended to the volatile tail rather than folded into
         // the graph and re-rendered. File contents do not survive the trip
@@ -446,8 +551,17 @@ impl Session {
         // them verbatim; the graph gets the *structure* the extract step finds
         // in them.
         let cap = self.config.max_tool_output_bytes;
+        // The previous round's results ride along verbatim as the working
+        // window, then this round's replace them. A read in one round and the
+        // edit it feeds in the next need the same bytes.
+        let previous = self
+            .last_round_results
+            .take()
+            .filter(|_| input.round > 0)
+            .map(|p| format!("\n\n# Previous round's tool results\n{p}"))
+            .unwrap_or_default();
         let volatile = if input.tool_results.is_empty() {
-            base_volatile.clone()
+            format!("{base_volatile}{previous}")
         } else {
             result.tool_outputs_truncated +=
                 input.tool_results.iter().filter(|o| o.exceeds(cap)).count();
@@ -457,11 +571,25 @@ impl Session {
                 .map(|o| o.render_capped(cap))
                 .collect::<Vec<_>>()
                 .join("\n");
-            format!("{base_volatile}\n\n# Tool results\n{observed}")
+            self.last_round_results = Some(observed.clone());
+            format!("{base_volatile}{previous}\n\n# Tool results\n{observed}")
         };
 
         // --- extract from the previous round's tool results ---
         if !input.tool_results.is_empty() {
+            // Tool output enters the line store verbatim (blocks whole, prose
+            // by sentence), capped per observation as the note's default.
+            for o in &input.tool_results {
+                let rendered = o.render_capped(cap);
+                tracing::info!(
+                    tool = %o.call.tool,
+                    head = %rendered.chars().take(160).collect::<String>(),
+                    bytes = rendered.len(),
+                    "tool result"
+                );
+                self.memory
+                    .add_block(turn as u32, Speaker::Tool, &rendered, 12_000);
+            }
             let committed = self
                 .extract_verify_commit(
                     &router,
@@ -475,17 +603,100 @@ impl Session {
         }
 
         // --- plan ---
-        let plan_step = router.plan(StepKind::Plan).map_err(|e| anyhow::anyhow!("{e}"))?;
-        let (planned, plan_resp): (PlanOutput, _) =
-            steps::run_structured(&self.engines, &self.registry, &plan_step, &system, &volatile)
-                .await?;
+        //
+        // The plan step must see the caller's exact tool names. The mood
+        // table only names tool *families* ("fs, shell, git"), and on the
+        // first live jcode run the planner invented `fs.read` for a tool the
+        // caller had registered as `read`; the mask then reported it
+        // unavailable, six rounds in a row, and the task was never touched.
+        let plan_step = router
+            .plan(StepKind::Plan)
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
+        // Only tools the mood mask will admit are offered. Listing a tool
+        // and then refusing it is worse than not listing it: on the A/B bench
+        // the planner chose jcode's `batch`, the mask denied it as outside the
+        // mood, and the planner concluded it had no file access and gave up.
+        let mut available_tools = tools.available().await?;
+        {
+            let names: Vec<String> = available_tools.iter().map(|t| t.name.clone()).collect();
+            let mask = tool_mask(&names, self.mood(), &self.graph);
+            available_tools.retain(|t| mask.permits(&t.name));
+        }
+        let plan_input = if available_tools.is_empty() {
+            format!(
+                "{volatile}\n\n# Tools available\n(none in this session: set needs_tools to false)"
+            )
+        } else {
+            let mut s =
+                format!("{volatile}\n\n# Tools available\nUse these exact names in `tool`:\n");
+            for t in &available_tools {
+                s.push_str("- ");
+                s.push_str(&t.name);
+                if !t.description.is_empty() {
+                    s.push_str(": ");
+                    s.push_str(t.description.lines().next().unwrap_or(""));
+                }
+                s.push('\n');
+            }
+            s
+        };
+        let (mut planned, plan_resp): (PlanOutput, _) = steps::run_structured(
+            &self.engines,
+            &self.registry,
+            &plan_step,
+            &system,
+            &plan_input,
+        )
+        .await?;
         record(&mut metrics, ModelRole::Planner, &plan_resp);
+        // A step whose intent *starts with* a tool name but names no tool is
+        // taken as a call to that tool. The schema leaves `tool` optional so a
+        // plan can hold non-tool steps; on the bench the planner wrote
+        // `{"intent": "read app/models.py and app/util.py"}` with no tool,
+        // the loop had nothing to run, and the turn ended in an answer.
+        let tool_names: Vec<&str> = available_tools.iter().map(|t| t.name.as_str()).collect();
+        for step in &mut planned.steps {
+            if step.tool.is_none()
+                && let Some(first) = step.intent.split_whitespace().next()
+                && let Some(name) = tool_names.iter().find(|n| {
+                    n.eq_ignore_ascii_case(
+                        first.trim_matches(|c: char| !c.is_alphanumeric() && c != '_'),
+                    )
+                })
+            {
+                step.tool = Some(name.to_string());
+            }
+        }
 
         // --- tool calls, masked by the rules ---
         let rounds_left = input.round < self.config.max_tool_rounds;
-        if planned.needs_tools && rounds_left {
+        // A step that names a tool *is* a request for tools, whatever the
+        // separate flag says. On the A/B bench the planner produced
+        // `needs_tools: false` beside a `bash:` step, the loop took the flag's
+        // word, answered without running anything, and the task failed.
+        let wants_tools = planned.needs_tools || planned.steps.iter().any(|s| s.tool.is_some());
+        tracing::info!(
+            round = input.round,
+            needs_tools = planned.needs_tools,
+            wants_tools,
+            steps = ?planned
+                .steps
+                .iter()
+                .map(|s| format!("{}:{}", s.tool.as_deref().unwrap_or("-"), s.intent))
+                .collect::<Vec<_>>(),
+            "plan"
+        );
+        if wants_tools && rounds_left {
             let (deferred, executed) = self
-                .build_tool_calls(&router, &planned, tools, &system, &volatile, input.round, &mut metrics)
+                .build_tool_calls(
+                    &router,
+                    &planned,
+                    tools,
+                    &system,
+                    &volatile,
+                    input.round,
+                    &mut metrics,
+                )
                 .await?;
             result.tools = executed;
 
@@ -535,13 +746,51 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         };
 
         // --- answer ---
+        //
+        // The answer request carries no tool definitions, so the engine's
+        // tool-call parser does not run on it: a model that emits a call here
+        // leaks raw call markup into the user-facing text. On the first live
+        // run a DeepSeek planner did exactly that (`<｜DSML｜ calls>` in the
+        // answer) after its plan asked for a shell tool the caller did not
+        // offer. Say so in the prompt, and flag it when it happens anyway.
         let answer_step = router
             .plan(StepKind::Answer)
             .map_err(|e| anyhow::anyhow!("{e}"))?;
-        let answer_resp =
-            steps::run_step(&self.engines, &self.registry, &answer_step, &system, &volatile).await?;
+        // The request is restated here because after several tool rounds the
+        // query segment sits above kilobytes of tool output, and on the first
+        // live jcode run the planner -- having fixed the file -- answered that
+        // it had been given no task.
+        let answer_input = format!(
+            "{volatile}\n\n# Answer\nThe user's request was:\n{}\n\nWrite the final answer to \
+             that request now, for the user. No tool can be called from this step; if \
+             something needed a tool you did not have, say what is missing instead of \
+             calling it.",
+            input.query
+        );
+        let answer_resp = steps::run_step(
+            &self.engines,
+            &self.registry,
+            &answer_step,
+            &system,
+            &answer_input,
+        )
+        .await?;
         record(&mut metrics, ModelRole::Planner, &answer_resp);
         result.answer = answer_resp.text().to_string();
+        // The turn leaves the window: its query and answer join the store,
+        // and the working window of tool results closes with it.
+        self.memory
+            .add(turn as u32, Speaker::User, &input.query, 12_000);
+        self.memory
+            .add(turn as u32, Speaker::Assistant, &result.answer, 12_000);
+        self.last_round_results = None;
+        if answer_contains_tool_markup(&result.answer) {
+            result.answer_contained_tool_markup = true;
+            tracing::warn!(
+                head = %result.answer.chars().take(80).collect::<String>(),
+                "answer step emitted tool-call markup instead of prose"
+            );
+        }
 
         // --- extract answer facts, verify, commit ---
         let answer_committed = self
@@ -659,9 +908,15 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
             "\nChoose the entry points to start retrieval from. Prefer candidates; add a \
              subject only if you are confident it exists in memory.",
         );
-        let (out, resp): (RouteOutput, _) =
+        let (mut out, resp): (RouteOutput, _) =
             steps::run_structured(&self.engines, &self.registry, &step, &system, &user).await?;
         record(metrics, ModelRole::Worker, &resp);
+        // The route step may name a subject that is not in memory -- the
+        // prompt invites it to add one "if confident" -- and a walk from a
+        // node that does not exist reaches nothing. Keep only entry points
+        // the graph actually has; an empty survivor list falls back to the
+        // retrieval candidates at the call site.
+        out.entry_points = retain_known_entries(&self.graph, out.entry_points);
         Ok(out)
     }
 
@@ -716,7 +971,15 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
             if !mask.permits(wanted) {
                 // Surfaced as a failed result rather than dropped: the model
                 // needs to see the tool is unavailable, or it keeps planning
-                // around it round after round.
+                // around it round after round. Logged too: on the A/B bench
+                // the harness arm failed three tasks with "I could not read
+                // the files" and nothing said which name was refused or why.
+                tracing::warn!(
+                    tool = %wanted,
+                    reason = ?mask.denial_reason(wanted),
+                    available = ?names,
+                    "tool mask denied a planned call"
+                );
                 executed.push(ToolOutcome::error(
                     ToolCall {
                         id,
@@ -738,17 +1001,42 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         // Decode every tool's arguments concurrently. Each is constrained to
         // that tool's own parameter schema, so a malformed call is impossible
         // rather than merely unlikely.
-        let decodes = pending.iter().map(|(index, wanted, spec, intent)| async move {
-            let mut args_step = router
-                .plan(StepKind::ToolArgs)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
-            args_step.schema = Some(schemas::tool_args_schema_for(&spec.name, &spec.parameters));
-            let user = format!("{volatile}\n\n# Next step\n{intent}");
-            let (args, resp): (ToolArgsOutput, _) =
-                steps::run_structured(&self.engines, &self.registry, &args_step, system, &user)
-                    .await?;
-            Ok::<_, anyhow::Error>((*index, wanted.clone(), args, resp))
-        });
+        let decodes = pending
+            .iter()
+            .map(|(index, wanted, spec, intent)| async move {
+                let mut args_step = router
+                    .plan(StepKind::ToolArgs)
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                args_step.schema =
+                    Some(schemas::tool_args_schema_for(&spec.name, &spec.parameters));
+                // The schema constrains the shape; the description says what
+                // the fields mean. Without it the worker filled jcode's
+                // `agentgrep` with a plausible-looking mix of fields the tool
+                // rejected, twice in a row.
+                // Memory retrieved by the *step's* intent, not the turn's
+                // query: a step that reads "the app source files" needs the
+                // listing an earlier round produced, which the query-keyed
+                // retrieval has no reason to surface. On the bench, two
+                // parallel `read` steps both decoded to the test file because
+                // the worker had never seen a file name.
+                let step_memory = self.memory.retrieve(intent, self.memory_budget());
+                let memory_block = if step_memory.is_empty() {
+                    String::new()
+                } else {
+                    format!("\n\n# Memory for this step\n{}", step_memory.text)
+                };
+                let user = format!(
+                    "{volatile}{memory_block}\n\n# Next step\n{intent}\n\n# Tool\n{}: {}\nFill \
+                     only the arguments this tool needs for the step above; leave optional \
+                     fields out unless the step requires them.",
+                    spec.name,
+                    spec.description.trim()
+                );
+                let (args, resp): (ToolArgsOutput, _) =
+                    steps::run_structured(&self.engines, &self.registry, &args_step, system, &user)
+                        .await?;
+                Ok::<_, anyhow::Error>((*index, wanted.clone(), args, resp))
+            });
         let decoded = futures::future::join_all(decodes).await;
 
         for item in decoded {
@@ -759,6 +1047,11 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
                 tool: args.tool,
                 arguments: args.arguments,
             };
+            tracing::info!(
+                tool = %call.tool,
+                arguments = %call.arguments.to_string().chars().take(200).collect::<String>(),
+                "tool call"
+            );
             match tools.run(call).await? {
                 ToolDisposition::Executed(outcome) => executed.push(outcome),
                 ToolDisposition::Deferred(call) => deferred.push(call),
@@ -781,8 +1074,19 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
         let step = router
             .plan(StepKind::Extract)
             .map_err(|e| anyhow::anyhow!("{e}"))?;
+        // The schema constrains the shape; this line constrains the content.
+        // Without it the extractor re-proposes the facts the subgraph just
+        // showed it, every turn -- harmless at verify (they are duplicates)
+        // but a worker call spent on nothing new.
+        let user = format!(
+            "{user}\n\n# Extract\nPropose only facts that are NEW relative to the `subgraph` \
+             and `durable` sections above. Do not restate a fact already shown there. Return \
+             an empty list if nothing new was established. `subject relation object` reads as \
+             a sentence: `src/auth.rs depends_on jsonwebtoken` means auth.rs needs \
+             jsonwebtoken, not the reverse."
+        );
         let (extracted, resp): (ExtractOutput, _) =
-            steps::run_structured(&self.engines, &self.registry, &step, system, user).await?;
+            steps::run_structured(&self.engines, &self.registry, &step, system, &user).await?;
         record(metrics, ModelRole::Worker, &resp);
 
         if extracted.facts.is_empty() {
@@ -797,6 +1101,21 @@ The tool budget for this turn ({} rounds) is spent.                  Answer with
             self.turn,
             self.config.verify,
         );
+
+        // Traceable-profile logging: the rejection *rate* is a metric, but the
+        // rejection *reasons* are what someone tuning the extract prompt needs.
+        // Without this line the first live run reported a 67% rejection rate
+        // and no way to tell a confidence-floor miss from an off-mood relation.
+        for r in &outcome.rejected {
+            tracing::info!(
+                subject = %r.fact.subject,
+                relation = ?r.fact.relation,
+                object = %r.fact.object,
+                confidence = r.fact.confidence.get(),
+                reason = ?r.reason,
+                "verify rejected a proposed fact"
+            );
+        }
 
         // The rejection rate is per turn, so batches within a turn accumulate
         // rather than the last one overwriting the first.
@@ -907,6 +1226,26 @@ fn record(metrics: &mut TurnMetrics, role: ModelRole, resp: &qgi2_engine::ChatRe
     metrics.record_usage(role, prompt, completion, cached);
 }
 
+/// Whether an answer carries raw tool-call markup the engine did not parse.
+///
+/// Recognises the DeepSeek DSML wrapper and the Qwen/Hermes XML form, the two
+/// dialects this harness has been pointed at. Cheap and conservative: a false
+/// positive only sets a flag and logs.
+fn answer_contains_tool_markup(answer: &str) -> bool {
+    answer.contains("<｜DSML｜")
+        || answer.contains("<tool_call>")
+        || answer.contains("<function=")
+        || answer.contains("<|tool_call|>")
+}
+
+/// Drop route-step entry points that name no node in the graph.
+fn retain_known_entries(graph: &FactGraph, entries: Vec<String>) -> Vec<String> {
+    entries
+        .into_iter()
+        .filter(|e| graph.by_subject(e).next().is_some() || graph.by_object(e).next().is_some())
+        .collect()
+}
+
 /// Combine two rejection rates weighted by how many proposals each saw.
 fn blend_rate(rate_a: f64, count_a: usize, rate_b: f64, count_b: usize) -> f64 {
     let total = count_a + count_b;
@@ -927,11 +1266,19 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Planner,
-            Endpoint::new("http://127.0.0.1:8000/v1", "planner", Speculation::Mtp { n: 2 }),
+            Endpoint::new(
+                "http://127.0.0.1:8000/v1",
+                "planner",
+                Speculation::Mtp { n: 2 },
+            ),
         );
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://127.0.0.1:8001/v1", "worker", Speculation::DFlash2 { n: 7 }),
+            Endpoint::new(
+                "http://127.0.0.1:8001/v1",
+                "worker",
+                Speculation::DFlash2 { n: 7 },
+            ),
         );
         r
     }
@@ -943,6 +1290,34 @@ mod tests {
     #[test]
     fn preflight_passes_when_every_endpoint_is_registered() {
         assert!(session().preflight().is_ok());
+    }
+
+    #[test]
+    fn route_entry_points_that_name_no_node_are_dropped() {
+        use qgi2_spec_types::{CommitToken, Confidence, ConflictPolicy, ProposedFact};
+        let mut g = FactGraph::new();
+        let f = ProposedFact {
+            subject: "file:auth.rs".into(),
+            relation: Relation::DependsOn,
+            object: "crate:jsonwebtoken".into(),
+            confidence: Confidence::new(0.9),
+            evidence: None,
+        }
+        .commit(CommitToken::issued_by_verify_stage(), Source::User, 1);
+        g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+        let kept = retain_known_entries(
+            &g,
+            vec![
+                "ghost:node".into(),
+                "crate:jsonwebtoken".into(),
+                "file:auth.rs".into(),
+            ],
+        );
+        assert_eq!(
+            kept,
+            vec!["crate:jsonwebtoken".to_string(), "file:auth.rs".to_string()]
+        );
+        assert!(retain_known_entries(&g, vec!["ghost:node".into()]).is_empty());
     }
 
     #[test]
@@ -970,7 +1345,11 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Planner,
-            Endpoint::new("https://llm.qgi.dev/v1", "QGI 3.8 Flash", Speculation::Mtp { n: 2 }),
+            Endpoint::new(
+                "https://llm.qgi.dev/v1",
+                "QGI 3.8 Flash",
+                Speculation::Mtp { n: 2 },
+            ),
         );
         r.register(
             ModelRole::Worker,
@@ -982,7 +1361,8 @@ mod tests {
             .with_engine(EngineKind::Sglang),
         );
         let s = Session::new(SessionConfig::default(), r, vec![]);
-        s.preflight().expect("the live fleet's traceable profile must route");
+        s.preflight()
+            .expect("the live fleet's traceable profile must route");
     }
 
     #[tokio::test]
@@ -1014,8 +1394,11 @@ mod tests {
                 evidence: None,
             }
             .commit(CommitToken::issued_by_verify_stage(), Source::User, t);
-            s.graph
-                .commit(f, Scope::Session, qgi2_spec_types::ConflictPolicy::LatestWins);
+            s.graph.commit(
+                f,
+                Scope::Session,
+                qgi2_spec_types::ConflictPolicy::LatestWins,
+            );
         }
         let end = s.end_session();
         assert_eq!(end.promoted, 1);

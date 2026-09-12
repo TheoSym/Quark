@@ -89,6 +89,12 @@ pub struct Endpoint {
     /// was correct all along. Set this for Anthropic and Qwen routes.
     #[serde(default)]
     pub cache_control: bool,
+    /// The model accepts an OpenAI-style `reasoning_effort` request field
+    /// (DeepSeek V4.1: integer 1-100). When set, the per-step effort the router
+    /// chose is sent; otherwise it is dropped, since a server that does not
+    /// know the field may reject the request rather than ignore it.
+    #[serde(default)]
+    pub reasoning_effort: bool,
 }
 
 fn default_stream() -> bool {
@@ -114,6 +120,7 @@ impl Endpoint {
             api_key: None,
             stream: true,
             cache_control: false,
+            reasoning_effort: false,
         }
     }
 
@@ -121,6 +128,12 @@ impl Endpoint {
     /// prefix. Needed by Anthropic and Alibaba Qwen; harmless elsewhere.
     pub fn with_cache_control(mut self, on: bool) -> Self {
         self.cache_control = on;
+        self
+    }
+
+    /// Declare that the model accepts the `reasoning_effort` request field.
+    pub fn with_reasoning_effort(mut self, on: bool) -> Self {
+        self.reasoning_effort = on;
         self
     }
 
@@ -406,11 +419,19 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Planner,
-            Endpoint::new("http://127.0.0.1:8000/v1", "planner", Speculation::Mtp { n: 2 }),
+            Endpoint::new(
+                "http://127.0.0.1:8000/v1",
+                "planner",
+                Speculation::Mtp { n: 2 },
+            ),
         );
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://127.0.0.1:8001/v1", "worker", Speculation::DFlash2 { n: 7 }),
+            Endpoint::new(
+                "http://127.0.0.1:8001/v1",
+                "worker",
+                Speculation::DFlash2 { n: 7 },
+            ),
         );
         r
     }
@@ -419,13 +440,21 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Planner,
-            Endpoint::new("http://onyxtron-g12:30000/v1", "planner", Speculation::Mtp { n: 2 })
-                .with_engine(EngineKind::Sglang),
+            Endpoint::new(
+                "http://onyxtron-g12:30000/v1",
+                "planner",
+                Speculation::Mtp { n: 2 },
+            )
+            .with_engine(EngineKind::Sglang),
         );
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://rhoditron-g24:30000/v1", "worker", Speculation::Eagle3 { n: 5 })
-                .with_engine(EngineKind::Sglang),
+            Endpoint::new(
+                "http://rhoditron-g24:30000/v1",
+                "worker",
+                Speculation::Eagle3 { n: 5 },
+            )
+            .with_engine(EngineKind::Sglang),
         );
         r
     }
@@ -458,8 +487,12 @@ mod tests {
         let mut r = EngineRegistry::new();
         r.register(
             ModelRole::Worker,
-            Endpoint::new("http://VIDATRON_TAILNET_IP:18031/v1", "qwen3.8-27b", Speculation::DFlash2 { n: 7 })
-                .with_engine(EngineKind::Sglang),
+            Endpoint::new(
+                "http://VIDATRON_TAILNET_IP:18031/v1",
+                "qwen3.8-27b",
+                Speculation::DFlash2 { n: 7 },
+            )
+            .with_engine(EngineKind::Sglang),
         );
         let e = r
             .resolve(ModelRole::Worker, Speculation::DFlash2 { n: 7 })
@@ -475,7 +508,10 @@ mod tests {
             Endpoint::new("http://h/v1", "m", Speculation::DFlash2 { n: 7 })
                 .with_engine(EngineKind::Sglang),
         );
-        assert!(r.resolve(ModelRole::Worker, Speculation::DFlash2 { n: 7 }).is_ok());
+        assert!(
+            r.resolve(ModelRole::Worker, Speculation::DFlash2 { n: 7 })
+                .is_ok()
+        );
         let warnings = r.unusual_pairings();
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("worth a second look"), "{warnings:?}");
@@ -488,8 +524,14 @@ mod tests {
         let err = vllm_registry()
             .resolve(ModelRole::Worker, Speculation::Mtp { n: 3 })
             .unwrap_err();
-        assert!(matches!(err, EngineRegistryError::NoEndpoint { .. }), "{err:?}");
-        assert!(err.to_string().contains("dflash2 n=7"), "lists what is registered");
+        assert!(
+            matches!(err, EngineRegistryError::NoEndpoint { .. }),
+            "{err:?}"
+        );
+        assert!(
+            err.to_string().contains("dflash2 n=7"),
+            "lists what is registered"
+        );
     }
 
     #[test]
@@ -503,14 +545,29 @@ mod tests {
 
     #[test]
     fn engine_support_tables_differ_where_it_matters() {
-        assert!(engine_typically_supports(EngineKind::Vllm, Speculation::DFlash2 { n: 7 }));
+        assert!(engine_typically_supports(
+            EngineKind::Vllm,
+            Speculation::DFlash2 { n: 7 }
+        ));
         // Advisory only — the QGI fleet does exactly this pairing in production.
-        assert!(!engine_typically_supports(EngineKind::Sglang, Speculation::DFlash2 { n: 7 }));
-        assert!(engine_typically_supports(EngineKind::Sglang, Speculation::Eagle3 { n: 5 }));
-        assert!(!engine_typically_supports(EngineKind::Vllm, Speculation::Eagle3 { n: 5 }));
+        assert!(!engine_typically_supports(
+            EngineKind::Sglang,
+            Speculation::DFlash2 { n: 7 }
+        ));
+        assert!(engine_typically_supports(
+            EngineKind::Sglang,
+            Speculation::Eagle3 { n: 5 }
+        ));
+        assert!(!engine_typically_supports(
+            EngineKind::Vllm,
+            Speculation::Eagle3 { n: 5 }
+        ));
         // DSpark is real on both engines at SM120/SM121.
         for k in EngineKind::ALL {
-            assert!(engine_typically_supports(k, Speculation::DSpark { n: 7 }), "{k}");
+            assert!(
+                engine_typically_supports(k, Speculation::DSpark { n: 7 }),
+                "{k}"
+            );
         }
         // Both do MTP and n-gram.
         for k in EngineKind::ALL {
@@ -523,8 +580,14 @@ mod tests {
     #[test]
     fn url_joining_survives_a_trailing_slash() {
         let e = Endpoint::new("http://h:8000/v1/", "m", Speculation::Off);
-        assert_eq!(e.url("/chat/completions"), "http://h:8000/v1/chat/completions");
-        assert_eq!(e.url("chat/completions"), "http://h:8000/v1/chat/completions");
+        assert_eq!(
+            e.url("/chat/completions"),
+            "http://h:8000/v1/chat/completions"
+        );
+        assert_eq!(
+            e.url("chat/completions"),
+            "http://h:8000/v1/chat/completions"
+        );
         assert_eq!(e.root(), "http://h:8000");
     }
 
@@ -541,7 +604,8 @@ mod tests {
     #[test]
     fn the_registry_round_trips_through_config() {
         let r = sglang_registry();
-        let back: EngineRegistry = serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
+        let back: EngineRegistry =
+            serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
         let e = back
             .resolve(ModelRole::Worker, Speculation::Eagle3 { n: 5 })
             .unwrap();

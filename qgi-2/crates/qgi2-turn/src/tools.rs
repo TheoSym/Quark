@@ -231,8 +231,14 @@ mod tests {
 
     #[test]
     fn call_ids_are_deterministic() {
-        assert_eq!(ToolCall::id_for(1, 2, "edit"), ToolCall::id_for(1, 2, "edit"));
-        assert_ne!(ToolCall::id_for(1, 2, "edit"), ToolCall::id_for(1, 3, "edit"));
+        assert_eq!(
+            ToolCall::id_for(1, 2, "edit"),
+            ToolCall::id_for(1, 2, "edit")
+        );
+        assert_ne!(
+            ToolCall::id_for(1, 2, "edit"),
+            ToolCall::id_for(1, 3, "edit")
+        );
     }
 
     #[test]

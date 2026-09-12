@@ -193,7 +193,13 @@ mod tests {
     fn budget_truncates_and_reports() {
         let mut g = FactGraph::new();
         for i in 0..10 {
-            add(&mut g, &format!("task:{i}"), Relation::DependsOn, "file:x", 0.5);
+            add(
+                &mut g,
+                &format!("task:{i}"),
+                Relation::DependsOn,
+                "file:x",
+                0.5,
+            );
         }
         let out = render_scope(
             &g,
@@ -211,7 +217,13 @@ mod tests {
     fn byte_budget_never_produces_a_partial_line() {
         let mut g = FactGraph::new();
         for i in 0..10 {
-            add(&mut g, &format!("task:{i}"), Relation::DependsOn, "file:x", 0.5);
+            add(
+                &mut g,
+                &format!("task:{i}"),
+                Relation::DependsOn,
+                "file:x",
+                0.5,
+            );
         }
         let out = render_scope(
             &g,

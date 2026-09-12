@@ -11,7 +11,7 @@
 //! subgraph in the same order.
 
 use crate::store::FactGraph;
-use qgi2_spec_types::{Fact, FactId, RetrievalPolicy, TraversalSpec};
+use qgi2_spec_types::{Fact, FactId, Relation, RetrievalPolicy, TraversalSpec};
 use std::collections::{BTreeSet, VecDeque};
 
 /// One breadth-first walk over the graph.
@@ -90,14 +90,30 @@ impl<'g> Walk<'g> {
 
             // Collect this node's edges in FactId order so the visit sequence
             // does not depend on index iteration details.
+            //
+            // At an entry point (depth 0) every live fact touching the node is
+            // included, whatever its relation; only *expansion* to the far end
+            // follows the mood's traversal relations. Verify accepts the
+            // structural relations (`is_a`, `part_of`) in every mood, so a
+            // walk that only rendered the traversal relations left those
+            // facts committed but invisible: on the first live run the agent
+            // was asked what it knew about a file it had two facts on and
+            // answered that it had none.
             let mut edges: BTreeSet<FactId> = BTreeSet::new();
+            // Structural facts are visible at the entry only; an off-mood
+            // relation (a Companion preference on a Builder turn) stays out,
+            // as the module doc promises.
+            let include = |f: &Fact| {
+                self.spec.follows(f.relation())
+                    || (depth == 0 && Relation::STRUCTURAL.contains(f.relation()))
+            };
             for f in self.graph.by_subject(&node) {
-                if self.spec.follows(f.relation()) {
+                if include(f) {
                     edges.insert(f.id.clone());
                 }
             }
             for f in self.graph.by_object(&node) {
-                if self.spec.follows(f.relation()) {
+                if include(f) {
                     edges.insert(f.id.clone());
                 }
             }
@@ -109,6 +125,9 @@ impl<'g> Walk<'g> {
                 if seen.insert(id.clone()) {
                     result.facts.push(id.clone());
                     result.depths.push(depth);
+                }
+                if !self.spec.follows(fact.relation()) {
+                    continue;
                 }
                 // Enqueue the far end of the edge.
                 for next in [fact.subject(), fact.object()] {
@@ -184,6 +203,54 @@ mod tests {
     }
 
     #[test]
+    fn an_entry_points_structural_facts_are_reached_but_not_followed() {
+        // Verify accepts `part_of` / `is_a` in every mood, so a walk that only
+        // rendered traversal relations left such facts committed but
+        // invisible -- the first live run answered "I know nothing about
+        // file:auth.rs" with two facts on it. At the entry the structural
+        // fact is included; the walk still does not expand through it.
+        let mut g = builder_chain();
+        add(
+            &mut g,
+            "fn:validate_token",
+            Relation::PartOf,
+            "file:auth.rs",
+        );
+        add(
+            &mut g,
+            "fn:validate_token",
+            Relation::DependsOn,
+            "crate:jsonwebtoken",
+        );
+        let spec = Mood::Builder.table().traversal;
+        let walk = Walk::new(&g, &spec, Profile::Traceable.retrieval());
+        let r = walk.from_entries(&["file:auth.rs".to_string()]);
+        let subjects: Vec<_> = walk
+            .resolve(&r)
+            .iter()
+            .map(|f| format!("{} {}", f.subject(), f.relation().as_str()))
+            .collect();
+        assert!(
+            subjects.contains(&"fn:validate_token part_of".to_string()),
+            "{subjects:?}"
+        );
+        assert!(
+            !subjects.contains(&"fn:validate_token depends_on".to_string()),
+            "a structural edge is rendered, not expanded through: {subjects:?}"
+        );
+        // An off-mood, non-structural fact at the entry is still kept out: a
+        // Builder turn does not see a Companion preference.
+        let r2 = walk.from_entries(&["task:auth".to_string()]);
+        assert!(
+            !walk
+                .resolve(&r2)
+                .iter()
+                .any(|f| f.object() == "topic:security"),
+            "off-mood relations stay invisible even at the entry"
+        );
+    }
+
+    #[test]
     fn full_chain_reaches_the_far_end() {
         let g = builder_chain();
         let spec = Mood::Builder.table().traversal;
@@ -194,7 +261,10 @@ mod tests {
             .iter()
             .map(|f| f.object().to_string())
             .collect();
-        assert!(objects.contains(&"file:pool.rs".to_string()), "got {objects:?}");
+        assert!(
+            objects.contains(&"file:pool.rs".to_string()),
+            "got {objects:?}"
+        );
     }
 
     #[test]
@@ -209,7 +279,10 @@ mod tests {
             .map(|f| f.object().to_string())
             .collect();
         assert!(objects.contains(&"file:auth.rs".to_string()));
-        assert!(!objects.contains(&"file:pool.rs".to_string()), "got {objects:?}");
+        assert!(
+            !objects.contains(&"file:pool.rs".to_string()),
+            "got {objects:?}"
+        );
     }
 
     #[test]

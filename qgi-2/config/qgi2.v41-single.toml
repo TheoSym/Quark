@@ -1,0 +1,64 @@
+# ADDRESSES ARE PLACEHOLDERS. This repo is public, so tailnet IPs are not
+# committed. Substitute the real values in your local copy (~/.qgi2/config.toml
+# is gitignored).
+#
+# QGI-2 in single-model mode on DeepSeek-V4.1-Flash.
+#
+# One process (deploy/launch-qgi2-planner-v41.sh) serves every step. The
+# reasons the spec wanted a separate small worker -- cost and latency on the
+# frequent structured steps -- are covered differently here: 8B active on
+# prefill and 16B on decode, DSpark on schema-constrained output, and the
+# per-step reasoning-effort dial, which the router sets low for route,
+# tool-args and extract and higher for plan and answer.
+#
+# Single-model mode is DETECTED from both roles resolving to the same URL and
+# model; the planner:worker ratio metric is then suppressed and everything else
+# (cache hit rate, acceptance, rejection rate) still applies.
+
+[server]
+bind = "127.0.0.1:8788"
+
+[persona]
+mood = "builder"
+profile = "traceable"
+allow_mood_switch = false
+
+# Both roles, one endpoint. Speculation must match the launch script: DSpark
+# is the checkpoint's own draft head, block size 5. `reasoning_effort = true`
+# tells the engine client this model accepts the OpenAI-style
+# `reasoning_effort` field (integer 1-100 on DeepSeek V4.1); endpoints that do
+# not declare it are never sent the field.
+[[engines]]
+role = "planner"
+engine = "sglang"
+base_url = "http://V41_HOST_TAILNET_IP:18034/v1"
+model = "QGI-2-V41"
+speculation = "dspark"
+speculation_n = 5
+reasoning_effort = true
+
+[[engines]]
+role = "worker"
+engine = "sglang"
+base_url = "http://V41_HOST_TAILNET_IP:18034/v1"
+model = "QGI-2-V41"
+speculation = "dspark"
+speculation_n = 5
+reasoning_effort = true
+
+# No [embedder]: retrieval runs lexical-only and the response carries
+# `retrieval_degraded`. Add one back (2 GB, any OpenAI-compatible
+# /v1/embeddings) if graph misses show up on queries that do not name a node.
+
+# HiCache on the process. page_size must equal the launch script's --page-size.
+[hicache]
+enabled = true
+page_size = 256
+io_backend = "kernel"
+write_policy = "write_through_selective"
+mem_layout = "page_first"
+fa3 = false
+
+[hicache.l2]
+mode = "ratio"
+value = 2.0

@@ -22,9 +22,7 @@ pub use core_prompt::CORE_PROMPT;
 
 use qgi2_engine::PageAlignment;
 use qgi2_factgraph::{FactGraph, RenderBudget, Scope, render};
-use qgi2_spec_types::{
-    Mood, Profile, Segment, SegmentHash, SegmentId, SegmentSet, SEGMENT_ORDER,
-};
+use qgi2_spec_types::{Mood, Profile, SEGMENT_ORDER, Segment, SegmentHash, SegmentId, SegmentSet};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -175,6 +173,9 @@ impl Assembler {
     /// rendered from the graph. Rendering happens here rather than at the call
     /// site so the determinism guarantees in [`qgi2_factgraph::render`] cannot
     /// be bypassed by a caller formatting facts its own way.
+    // One argument per segment source, in segment order; a parameter struct
+    // would hide which of the six segments each input feeds.
+    #[allow(clippy::too_many_arguments)]
     pub fn assemble(
         &mut self,
         graph: &FactGraph,
@@ -182,10 +183,24 @@ impl Assembler {
         _profile: Profile,
         skills: &[String],
         subgraph_ids: &[qgi2_spec_types::FactId],
+        memory: &str,
         query: &str,
     ) -> Assembled {
         let durable = render::render_scope(graph, Scope::Durable, self.budget);
         let subgraph = render::render_facts(graph, subgraph_ids, self.budget);
+        // Segment 5 carries two memories: the graph's structure, rendered as
+        // triples, and the line store's verbatim lines retrieved for this
+        // query. Both are volatile, so neither touches the cached prefix.
+        let subgraph_text = if memory.is_empty() {
+            subgraph.text
+        } else if subgraph.text.is_empty() {
+            format!("# Memory (verbatim lines from earlier turns)\n{memory}")
+        } else {
+            format!(
+                "{}\n\n# Memory (verbatim lines from earlier turns)\n{memory}",
+                subgraph.text
+            )
+        };
 
         let mood_text = mood.table().render();
         let durable_text = match (&self.alignment, &self.frozen_padding) {
@@ -194,8 +209,7 @@ impl Assembler {
                 // Size the padding against the whole stable prefix, not just
                 // segment 3: the page boundary the engine sees is a function of
                 // every token before it.
-                let prefix_len =
-                    CORE_PROMPT.len() + 1 + mood_text.len() + 1 + durable.text.len();
+                let prefix_len = CORE_PROMPT.len() + 1 + mood_text.len() + 1 + durable.text.len();
                 let pad = align.padding_text(prefix_len);
                 self.frozen_padding = Some(pad.clone());
                 format!("{}{pad}", durable.text)
@@ -208,7 +222,7 @@ impl Assembler {
             mood_text,
             durable_text,
             render_skills(skills),
-            subgraph.text,
+            subgraph_text,
             query.to_string(),
         );
 
@@ -308,7 +322,15 @@ mod tests {
     #[test]
     fn the_first_turn_is_a_cold_start() {
         let mut a = Assembler::new();
-        let out = a.assemble(&graph(), Mood::Builder, Profile::Traceable, &[], &[], "hi");
+        let out = a.assemble(
+            &graph(),
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "hi",
+        );
         assert_eq!(out.outlook, CacheOutlook::ColdStart);
         assert_eq!(out.outlook.expected_hit_ratio(), 0.0);
     }
@@ -317,8 +339,16 @@ mod tests {
     fn changing_only_the_query_leaves_the_prefix_intact() {
         let g = graph();
         let mut a = Assembler::new();
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "first");
-        let out = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "second");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "first");
+        let out = a.assemble(
+            &g,
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "second",
+        );
         assert!(matches!(out.outlook, CacheOutlook::PrefixIntact { .. }));
         assert!(out.outlook.expected_hit_ratio() > 0.0);
     }
@@ -329,24 +359,29 @@ mod tests {
         // cost the cached prefix.
         let g = graph();
         let mut a = Assembler::new();
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         let out = a.assemble(
             &g,
             Mood::Builder,
             Profile::Traceable,
             &["rust-review".into()],
             &[],
+            "",
             "q",
         );
-        assert!(matches!(out.outlook, CacheOutlook::PrefixIntact { .. }), "{:?}", out.outlook);
+        assert!(
+            matches!(out.outlook, CacheOutlook::PrefixIntact { .. }),
+            "{:?}",
+            out.outlook
+        );
     }
 
     #[test]
     fn switching_mood_breaks_the_prefix_and_says_which_segment() {
         let g = graph();
         let mut a = Assembler::new();
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
-        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
+        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "", "q");
         match out.outlook {
             CacheOutlook::PrefixBroken {
                 first_changed,
@@ -368,7 +403,7 @@ mod tests {
         // is exactly the mistake the outlook is meant to catch.
         let mut g = graph();
         let mut a = Assembler::new();
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
 
         let f = ProposedFact {
             subject: "task:b".into(),
@@ -380,7 +415,7 @@ mod tests {
         .commit(CommitToken::issued_by_verify_stage(), Source::User, 2);
         g.commit(f, Scope::Durable, ConflictPolicy::LatestWins);
 
-        let out = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let out = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         match out.outlook {
             CacheOutlook::PrefixBroken { first_changed, .. } => {
                 assert_eq!(first_changed, SegmentId::Durable);
@@ -393,16 +428,28 @@ mod tests {
     fn reset_turns_an_intended_change_into_a_cold_start() {
         let g = graph();
         let mut a = Assembler::new();
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         a.reset();
-        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "q");
-        assert_eq!(out.outlook, CacheOutlook::ColdStart, "not reported as a bug");
+        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "", "q");
+        assert_eq!(
+            out.outlook,
+            CacheOutlook::ColdStart,
+            "not reported as a bug"
+        );
     }
 
     #[test]
     fn the_system_prompt_is_exactly_the_stable_prefix() {
         let mut a = Assembler::new();
-        let out = a.assemble(&graph(), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let out = a.assemble(
+            &graph(),
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "q",
+        );
         assert!(out.system().starts_with(CORE_PROMPT));
         assert!(out.system().contains("# Mood: builder"));
         assert!(!out.system().contains('q'.to_string().as_str()) || !out.system().ends_with("q"));
@@ -419,6 +466,7 @@ mod tests {
             Profile::Traceable,
             &["b".into(), "a".into()],
             &[],
+            "",
             "q",
         );
         let mut b = Assembler::new();
@@ -428,6 +476,7 @@ mod tests {
             Profile::Traceable,
             &["a".into(), "b".into()],
             &[],
+            "",
             "q",
         );
         assert_eq!(
@@ -440,9 +489,9 @@ mod tests {
     fn assembly_is_deterministic_for_the_same_inputs() {
         let g = graph();
         let mut a = Assembler::new();
-        let one = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let one = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         let mut b = Assembler::new();
-        let two = b.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let two = b.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         assert_eq!(one.segments, two.segments);
     }
 }
@@ -478,15 +527,35 @@ mod alignment_tests {
     #[test]
     fn alignment_lands_the_stable_prefix_on_a_page_boundary() {
         let mut a = Assembler::new().with_page_alignment(align());
-        let out = a.assemble(&graph_with(3), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        let out = a.assemble(
+            &graph_with(3),
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "q",
+        );
         let tokens = align().estimated_tokens(out.system().len());
-        assert_eq!(tokens % 64, 0, "prefix is {tokens} tokens, not a page multiple");
+        assert_eq!(
+            tokens % 64,
+            0,
+            "prefix is {tokens} tokens, not a page multiple"
+        );
     }
 
     #[test]
     fn without_alignment_nothing_is_padded() {
         let mut a = Assembler::new();
-        a.assemble(&graph_with(3), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(
+            &graph_with(3),
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "q",
+        );
         assert_eq!(a.padding_bytes(), 0);
     }
 
@@ -498,7 +567,7 @@ mod alignment_tests {
         // source of cache misses.
         let mut g = graph_with(3);
         let mut a = Assembler::new().with_page_alignment(align());
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         let pad = a.padding_bytes();
 
         // Grow the durable slice, which alone already breaks the prefix — the
@@ -513,7 +582,7 @@ mod alignment_tests {
         .commit(CommitToken::issued_by_verify_stage(), Source::User, 2);
         g.commit(f, Scope::Durable, ConflictPolicy::LatestWins);
 
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         assert_eq!(a.padding_bytes(), pad, "padding must not move mid-session");
     }
 
@@ -521,8 +590,16 @@ mod alignment_tests {
     fn an_aligned_session_still_reports_an_intact_prefix_across_turns() {
         let g = graph_with(3);
         let mut a = Assembler::new().with_page_alignment(align());
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "first");
-        let out = a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "second");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "first");
+        let out = a.assemble(
+            &g,
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "second",
+        );
         assert!(
             matches!(out.outlook, CacheOutlook::PrefixIntact { .. }),
             "alignment must not itself break the prefix: {:?}",
@@ -534,13 +611,13 @@ mod alignment_tests {
     fn reset_resizes_the_padding_for_the_new_prefix() {
         let g = graph_with(3);
         let mut a = Assembler::new().with_page_alignment(align());
-        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(&g, Mood::Builder, Profile::Traceable, &[], &[], "", "q");
         a.reset();
         assert_eq!(a.padding_bytes(), 0, "reset clears the frozen padding");
 
         // A mood switch changes segment 2, so the prefix must be re-aligned
         // against its new length rather than keeping the old padding.
-        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "q");
+        let out = a.assemble(&g, Mood::Researcher, Profile::Traceable, &[], &[], "", "q");
         let tokens = align().estimated_tokens(out.system().len());
         assert_eq!(tokens % 64, 0, "re-aligned for the new mood segment");
     }
@@ -548,7 +625,15 @@ mod alignment_tests {
     #[test]
     fn padding_costs_less_than_one_page() {
         let mut a = Assembler::new().with_page_alignment(align());
-        a.assemble(&graph_with(20), Mood::Builder, Profile::Traceable, &[], &[], "q");
+        a.assemble(
+            &graph_with(20),
+            Mood::Builder,
+            Profile::Traceable,
+            &[],
+            &[],
+            "",
+            "q",
+        );
         let pad_tokens = align().estimated_tokens(a.padding_bytes());
         assert!(pad_tokens < 64, "padding cost {pad_tokens} tokens");
     }

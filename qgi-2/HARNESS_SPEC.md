@@ -22,7 +22,7 @@ Agent loops are slow and inaccurate because every turn re-sends a long, mostly-u
 | KV persistence | LMCache / vLLM KV connector | Cached prefix survives restarts and is shared across replicas |
 | Control layer | Harness-owned router \+ assembler | Per-step model/spec/sampling selection; cache-aware prompt assembly with segment hashes |
 | Memory | jcode's in-RAM graph, extended with typed facts | `(subject, relation, object, confidence, source, turn)` on each entry |
-| Rules | Compiled Datalog in Rust (`crepe`/`ascent`) | Retrieval traversal, tool gating, consistency, skill selection, mood switching |
+| Rules | Plain Rust functions, one per rule (a Datalog engine was tried and dropped: 15 rules, one recursive) | Retrieval traversal, tool gating, consistency, skill selection, mood switching |
 | Embedder | Qwen3-Embedding-0.6B via vLLM `/v1/embeddings` (MiniLM fallback) | Entry-point retrieval only |
 | Outer loop | jcode (Rust) | TUI, tools, stdio MCP, swarm, lazy skills, session resume, cache-miss warnings |
 

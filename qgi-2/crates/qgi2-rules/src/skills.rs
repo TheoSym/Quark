@@ -150,7 +150,9 @@ mod tests {
             SkillCandidate::new("citation-check")
                 .covering(&["claim:"])
                 .for_moods(&[Mood::Researcher]),
-            SkillCandidate::new("deploy").covering(&["task:deploy"]).requiring(&["rust-review"]),
+            SkillCandidate::new("deploy")
+                .covering(&["task:deploy"])
+                .requiring(&["rust-review"]),
             SkillCandidate::new("never-matches").covering(&["zzz:"]),
         ]
     }
@@ -161,7 +163,13 @@ mod tests {
 
     #[test]
     fn a_reached_node_activates_the_covering_skill() {
-        let out = select_skills(&candidates(), &["file:auth.rs".into()], Mood::Builder, &[], &g());
+        let out = select_skills(
+            &candidates(),
+            &["file:auth.rs".into()],
+            Mood::Builder,
+            &[],
+            &g(),
+        );
         assert!(out.contains(&"rust-review".to_string()));
         assert!(!out.contains(&"never-matches".to_string()));
     }
@@ -177,9 +185,18 @@ mod tests {
 
     #[test]
     fn requirements_activate_transitively() {
-        let out = select_skills(&candidates(), &["task:deploy".into()], Mood::Builder, &[], &g());
+        let out = select_skills(
+            &candidates(),
+            &["task:deploy".into()],
+            Mood::Builder,
+            &[],
+            &g(),
+        );
         assert!(out.contains(&"deploy".to_string()));
-        assert!(out.contains(&"rust-review".to_string()), "requirement pulled in");
+        assert!(
+            out.contains(&"rust-review".to_string()),
+            "requirement pulled in"
+        );
     }
 
     #[test]
@@ -200,7 +217,9 @@ mod tests {
         // neither b nor anything only reachable through it activates.
         let cands = vec![
             SkillCandidate::new("a").covering(&["x:"]).requiring(&["b"]),
-            SkillCandidate::new("b").for_moods(&[Mood::Researcher]).requiring(&["c"]),
+            SkillCandidate::new("b")
+                .for_moods(&[Mood::Researcher])
+                .requiring(&["c"]),
             SkillCandidate::new("c"),
         ];
         let out = select_skills(&cands, &["x:1".into()], Mood::Builder, &[], &g());
@@ -209,14 +228,24 @@ mod tests {
 
     #[test]
     fn a_requirement_that_is_not_a_candidate_activates_nothing() {
-        let cands = vec![SkillCandidate::new("a").covering(&["x:"]).requiring(&["ghost"])];
+        let cands = vec![
+            SkillCandidate::new("a")
+                .covering(&["x:"])
+                .requiring(&["ghost"]),
+        ];
         let out = select_skills(&cands, &["x:1".into()], Mood::Builder, &[], &g());
         assert_eq!(out, vec!["a".to_string()]);
     }
 
     #[test]
     fn forcing_activates_a_skill_nothing_reached() {
-        let out = select_skills(&candidates(), &[], Mood::Builder, &["never-matches".into()], &g());
+        let out = select_skills(
+            &candidates(),
+            &[],
+            Mood::Builder,
+            &["never-matches".into()],
+            &g(),
+        );
         assert_eq!(out, vec!["never-matches".to_string()]);
     }
 
@@ -224,7 +253,13 @@ mod tests {
     fn forcing_still_respects_a_mood_restriction() {
         // Otherwise a forced Researcher skill injects instructions that
         // contradict the Builder mood segment sitting above it in the prompt.
-        let out = select_skills(&candidates(), &[], Mood::Builder, &["citation-check".into()], &g());
+        let out = select_skills(
+            &candidates(),
+            &[],
+            Mood::Builder,
+            &["citation-check".into()],
+            &g(),
+        );
         assert!(out.is_empty(), "got {out:?}");
     }
 
@@ -257,7 +292,13 @@ mod tests {
     #[test]
     fn prefix_matching_is_a_prefix_not_a_substring() {
         // "task:deploy" covers "task:deployment" but not "old-task:deploy".
-        let out = select_skills(&candidates(), &["old-task:deploy".into()], Mood::Builder, &[], &g());
+        let out = select_skills(
+            &candidates(),
+            &["old-task:deploy".into()],
+            Mood::Builder,
+            &[],
+            &g(),
+        );
         assert!(!out.contains(&"deploy".to_string()));
     }
 }

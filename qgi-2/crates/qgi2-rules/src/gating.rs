@@ -56,7 +56,15 @@ impl ToolMask {
 
 /// Tools that write to the filesystem or run commands. A read-only rule
 /// removes exactly these.
-const MUTATING_TOOLS: &[&str] = &["write", "edit", "multiedit", "patch", "apply_patch", "bash", "bg"];
+const MUTATING_TOOLS: &[&str] = &[
+    "write",
+    "edit",
+    "multiedit",
+    "patch",
+    "apply_patch",
+    "bash",
+    "bg",
+];
 
 /// `denied(tool, rule)`: the fact-driven denials the live graph implies.
 ///
@@ -137,9 +145,7 @@ pub fn tool_mask(available: &[String], mood: Mood, graph: &FactGraph) -> ToolMas
 mod tests {
     use super::*;
     use qgi2_factgraph::Scope;
-    use qgi2_spec_types::{
-        CommitToken, Confidence, ConflictPolicy, ProposedFact, Source,
-    };
+    use qgi2_spec_types::{CommitToken, Confidence, ConflictPolicy, ProposedFact, Source};
 
     fn tools() -> Vec<String> {
         ["read", "write", "edit", "bash", "browser", "gmail", "ls"]
@@ -157,7 +163,11 @@ mod tests {
             confidence: Confidence::new(0.99),
             evidence: None,
         }
-        .commit(CommitToken::issued_by_verify_stage(), Source::Rule("test".into()), 1);
+        .commit(
+            CommitToken::issued_by_verify_stage(),
+            Source::Rule("test".into()),
+            1,
+        );
         g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
         g
     }
@@ -195,7 +205,10 @@ mod tests {
         assert!(!m.permits("write"));
         assert!(!m.permits("edit"));
         assert!(!m.permits("bash"));
-        assert_eq!(m.denial_reason("write").unwrap(), "denied by rule `read_only`");
+        assert_eq!(
+            m.denial_reason("write").unwrap(),
+            "denied by rule `read_only`"
+        );
     }
 
     #[test]
@@ -241,7 +254,11 @@ mod tests {
             confidence: Confidence::new(0.99),
             evidence: None,
         }
-        .commit(CommitToken::issued_by_verify_stage(), Source::Rule("test".into()), 1);
+        .commit(
+            CommitToken::issued_by_verify_stage(),
+            Source::Rule("test".into()),
+            1,
+        );
         g.commit(f, Scope::Session, ConflictPolicy::LatestWins);
         let m = tool_mask(&tools(), Mood::Builder, &g);
         let rules: Vec<&str> = m

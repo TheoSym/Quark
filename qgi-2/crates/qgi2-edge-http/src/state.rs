@@ -90,7 +90,13 @@ impl SessionStore {
                 "{}@{}",
                 Self::persona_key(persona),
                 c.chars()
-                    .map(|ch| if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' { ch } else { '_' })
+                    .map(
+                        |ch| if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+                            ch
+                        } else {
+                            '_'
+                        }
+                    )
                     .take(64)
                     .collect::<String>()
             ),
@@ -112,6 +118,10 @@ impl SessionStore {
 
     fn embeddings_path(&self, key: &str) -> Option<PathBuf> {
         self.path(&format!("{key}.embeddings.json"))
+    }
+
+    fn memory_path(&self, key: &str) -> Option<PathBuf> {
+        self.path(&format!("{key}.memory.json"))
     }
 
     /// Atomic write: a crash partway through a direct write leaves a truncated
@@ -144,7 +154,10 @@ impl SessionStore {
     /// use.
     pub async fn get(&self, persona: Persona, client: Option<&str>) -> Arc<Mutex<Session>> {
         let key = Self::key(persona, client);
-        self.last_active.lock().await.insert(key.clone(), Instant::now());
+        self.last_active
+            .lock()
+            .await
+            .insert(key.clone(), Instant::now());
 
         let mut map = self.sessions.lock().await;
         if let Some(s) = map.get(&key) {
@@ -172,6 +185,13 @@ impl SessionStore {
         {
             session = session.with_retrieval(r);
         }
+        if let Some(path) = self.memory_path(&key)
+            && let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(m) = qgi2_memory::LineStore::from_json(&text)
+        {
+            tracing::info!(%key, lines = m.len(), "resuming line-store memory from disk");
+            session = session.with_memory(m);
+        }
 
         let arc = Arc::new(Mutex::new(session));
         map.insert(key, arc.clone());
@@ -193,15 +213,18 @@ impl SessionStore {
             let Some(s) = map.get(key) else { return Ok(()) };
             s.clone()
         };
-        let (graph, retrieval) = {
+        let (graph, retrieval, memory) = {
             let s = session.lock().await;
-            (s.graph_json()?, s.retrieval_json()?)
+            (s.graph_json()?, s.retrieval_json()?, s.memory_json()?)
         };
         if let Some(p) = self.session_path(key) {
             Self::write_atomic(&p, &graph)?;
         }
         if let Some(p) = self.embeddings_path(key) {
             Self::write_atomic(&p, &retrieval)?;
+        }
+        if let Some(p) = self.memory_path(key) {
+            Self::write_atomic(&p, &memory)?;
         }
         Ok(())
     }
@@ -215,7 +238,9 @@ impl SessionStore {
     pub async fn end(&self, key: &str) -> Result<bool> {
         let session = {
             let mut map = self.sessions.lock().await;
-            let Some(s) = map.remove(key) else { return Ok(false) };
+            let Some(s) = map.remove(key) else {
+                return Ok(false);
+            };
             s
         };
         self.last_active.lock().await.remove(key);
@@ -234,7 +259,14 @@ impl SessionStore {
             Self::write_atomic(&durable_path, &shared.to_json()?)?;
         }
 
-        for p in [self.session_path(key), self.embeddings_path(key)].into_iter().flatten() {
+        for p in [
+            self.session_path(key),
+            self.embeddings_path(key),
+            self.memory_path(key),
+        ]
+        .into_iter()
+        .flatten()
+        {
             let _ = std::fs::remove_file(p);
         }
         Ok(true)
@@ -291,7 +323,6 @@ impl SessionStore {
     }
 }
 
-
 /// Axum state.
 #[derive(Clone)]
 pub struct AppState {
@@ -342,8 +373,12 @@ mod tests {
     async fn different_personas_get_different_sessions() {
         // They cannot share a cached prefix, because the mood segment differs.
         let s = store();
-        let a = s.get(Persona::new(Mood::Builder, Profile::Traceable), None).await;
-        let b = s.get(Persona::new(Mood::Researcher, Profile::Traceable), None).await;
+        let a = s
+            .get(Persona::new(Mood::Builder, Profile::Traceable), None)
+            .await;
+        let b = s
+            .get(Persona::new(Mood::Researcher, Profile::Traceable), None)
+            .await;
         assert!(!Arc::ptr_eq(&a, &b));
     }
 
@@ -395,7 +430,12 @@ mod tests {
             ModelRole::Planner,
             Endpoint::new("http://127.0.0.1:8000/v1", "p", Speculation::Mtp { n: 2 }),
         );
-        let s = SessionStore::new(SessionConfig::default(), r.clone(), vec![], Some(dir.clone()));
+        let s = SessionStore::new(
+            SessionConfig::default(),
+            r.clone(),
+            vec![],
+            Some(dir.clone()),
+        );
         let key = SessionStore::key(Persona::default(), Some("c"));
         {
             let sess = s.get(Persona::default(), Some("c")).await;
@@ -407,14 +447,21 @@ mod tests {
                 evidence: None,
             }
             .commit(CommitToken::issued_by_verify_stage(), Source::User, 1);
-            sess.lock().await.graph.commit(f, Scope::Session, ConflictPolicy::LatestWins);
+            sess.lock()
+                .await
+                .graph
+                .commit(f, Scope::Session, ConflictPolicy::LatestWins);
         }
         s.persist_session(&key).await.unwrap();
 
         // A "new server": fresh store, same directory, same key.
         let s2 = SessionStore::new(SessionConfig::default(), r, vec![], Some(dir.clone()));
         let sess = s2.get(Persona::default(), Some("c")).await;
-        assert_eq!(sess.lock().await.graph.len(), 1, "session facts survived the crash");
+        assert_eq!(
+            sess.lock().await.graph.len(),
+            1,
+            "session facts survived the crash"
+        );
 
         let _ = std::fs::remove_dir_all(&dir);
     }

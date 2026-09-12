@@ -30,7 +30,7 @@ crates/
   qgi2-rules/          rules as plain functions: verify, tool gating, skills, mood switch
   qgi2-assembler/      cache-shaped assembly + per-segment BLAKE3 hashes
   qgi2-router/         per-step (model, speculation, sampling) + JSON schemas
-  qgi2-engine-vllm/    vLLM client: guided decoding, cached_tokens, acceptance scraping
+  qgi2-engine/         engine trait; vLLM + SGLang backends, HiCache, metrics scraping
   qgi2-metrics/        the spec's success metrics, reported as defects
   qgi2-turn/           the per-turn loop
   qgi2-edge-http/      OpenAI-compatible sidecar   <- works with stock jcode
@@ -71,7 +71,7 @@ code with the reasoning recorded next to it.
 per-request field that switches a running server from DFlash2 to MTP. So
 "every step has an explicit `(model, speculation, sampling)` triple" is
 satisfied by routing each step to the endpoint launched with that speculation —
-[`EngineRegistry`](crates/qgi2-engine-vllm/src/registry.rs).
+[`EngineRegistry`](crates/qgi2-engine/src/endpoint.rs).
 
 **Consequence:** the spec's "two processes" is a floor, not a total. Running
 Traceable (worker DFlash2 n=7) *and* Deterministic (worker MTP n=3) against one
@@ -90,9 +90,10 @@ needs zero jcode changes and is what `qgi2 serve` targets.
 A brand-new provider identity backed by an in-process `Provider` is **not**
 reachable via `--provider qgi2` on a stock binary; jcode would have to learn the
 name. [`qgi2-edge-provider`](crates/qgi2-edge-provider/) is complete and tested
-as a `Provider`, and is used by a variant binary that constructs its own
-provider rather than going through jcode's name resolution — which is what the
-in-process variant always meant. It is not a change to jcode either way.
+as a `Provider`, but no binary composes it yet: it exists for a future variant
+binary that constructs its own provider rather than going through jcode's name
+resolution. The `qgi2` binary does not depend on it. It is not a change to
+jcode either way.
 
 ### 3. History does not become prompt tokens
 

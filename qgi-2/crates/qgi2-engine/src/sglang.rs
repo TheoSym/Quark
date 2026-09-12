@@ -73,6 +73,7 @@ impl Engine for SglangEngine {
             .streaming(endpoint.stream)
             .with_cache_breakpoint(endpoint.cache_control)
             .to_openai_body(&endpoint.model);
+        crate::apply_reasoning_effort(endpoint, req, &mut body);
 
         if let Some(schema) = &req.schema {
             // The OpenAI-standard form. `guided_json` would be accepted and
@@ -181,8 +182,8 @@ mod tests {
     fn a_schema_becomes_response_format_not_guided_json() {
         // Sending guided_json here would be silently ignored, leaving the step
         // unconstrained while the harness believed it was schema-bound.
-        let req = ChatRequest::new(vec![ChatMessage::user("hi")])
-            .with_schema(json!({"type": "object"}));
+        let req =
+            ChatRequest::new(vec![ChatMessage::user("hi")]).with_schema(json!({"type": "object"}));
         let mut body = req.to_openai_body("m");
         body.insert(
             "response_format".into(),
@@ -194,6 +195,40 @@ mod tests {
         assert_eq!(body["response_format"]["type"], "json_schema");
         assert_eq!(body["response_format"]["json_schema"]["strict"], true);
         assert!(body.get("guided_json").is_none());
+    }
+
+    #[test]
+    fn reasoning_effort_is_sent_only_where_the_endpoint_declares_it() {
+        let mut sampling = qgi2_spec_types::Sampling::at_temperature(0.3);
+        sampling.reasoning_effort = Some(40);
+        let req = ChatRequest::new(vec![ChatMessage::user("hi")]).with_sampling(sampling);
+
+        // A server that does not know the field may reject the request, so an
+        // undeclared endpoint never sees it.
+        let plain = Endpoint::new("http://h/v1", "m", Speculation::Off);
+        let mut body = req.to_openai_body("m");
+        crate::apply_reasoning_effort(&plain, &req, &mut body);
+        assert!(body.get("reasoning_effort").is_none());
+
+        let dial = plain.clone().with_reasoning_effort(true);
+        let mut body = req.to_openai_body("m");
+        crate::apply_reasoning_effort(&dial, &req, &mut body);
+        // The wire carries the OpenAI literal, not the number: SGLang rejects
+        // an integer here with a literal_error (measured).
+        assert_eq!(body["reasoning_effort"], "medium");
+    }
+
+    #[test]
+    fn the_profile_table_maps_onto_distinct_literals() {
+        use crate::effort_literal;
+        // structured 5 / plan 40 / answer 70, Quick 1 / 10 / 20
+        assert_eq!(effort_literal(5), "minimal");
+        assert_eq!(effort_literal(40), "medium");
+        assert_eq!(effort_literal(70), "high");
+        assert_eq!(effort_literal(1), "none");
+        assert_eq!(effort_literal(10), "minimal");
+        assert_eq!(effort_literal(20), "low");
+        assert_eq!(effort_literal(100), "max");
     }
 
     #[test]
@@ -213,8 +248,8 @@ sglang:num_running_reqs 3.0
     #[test]
     fn the_cache_hit_rate_gauge_is_recognised() {
         let body = "sglang:cache_hit_rate{model=\"w\"} 0.91\n";
-        let found = prometheus_lines(body)
-            .find_map(|(n, v)| (n == "sglang:cache_hit_rate").then_some(v));
+        let found =
+            prometheus_lines(body).find_map(|(n, v)| (n == "sglang:cache_hit_rate").then_some(v));
         assert_eq!(found, Some(0.91));
     }
 

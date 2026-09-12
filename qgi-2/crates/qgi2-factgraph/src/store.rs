@@ -1,8 +1,6 @@
 //! The graph itself: storage, indices, conflict resolution, decay, promotion.
 
-use qgi2_spec_types::{
-    ConflictPolicy, Fact, FactId, FactKey, Relation, Source, TurnIndex,
-};
+use qgi2_spec_types::{ConflictPolicy, Fact, FactId, FactKey, Relation, Source, TurnIndex};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -497,7 +495,11 @@ mod tests {
         );
         assert!(matches!(out, CommitOutcome::Superseded { .. }));
         let live: Vec<_> = g.iter_live().map(|f| f.object().to_string()).collect();
-        assert_eq!(live, vec!["file:y"], "lower confidence but newer still wins");
+        assert_eq!(
+            live,
+            vec!["file:y"],
+            "lower confidence but newer still wins"
+        );
     }
 
     #[test]
@@ -610,7 +612,10 @@ mod tests {
         let promoted = g.promote_to_durable(0.7, 2);
         assert_eq!(promoted.len(), 1);
         assert_eq!(g.iter_scope(Scope::Durable).count(), 1);
-        assert_eq!(g.iter_scope(Scope::Durable).next().unwrap().subject(), "task:b");
+        assert_eq!(
+            g.iter_scope(Scope::Durable).next().unwrap().subject(),
+            "task:b"
+        );
     }
 
     #[test]
@@ -640,7 +645,10 @@ mod tests {
         g.remove(&id);
         assert_eq!(g.by_subject("task:a").count(), 0);
         assert_eq!(g.by_object("file:x").count(), 0);
-        assert_eq!(g.by_subject_relation("task:a", &Relation::DependsOn).len(), 0);
+        assert_eq!(
+            g.by_subject_relation("task:a", &Relation::DependsOn).len(),
+            0
+        );
         assert!(g.subjects().next().is_none(), "empty index sets are pruned");
     }
 
@@ -672,7 +680,8 @@ mod tests {
         assert_eq!(back.by_subject("task:a").count(), 1);
         assert_eq!(back.by_object("file:x").count(), 1);
         assert_eq!(
-            back.by_subject_relation("task:a", &Relation::DependsOn).len(),
+            back.by_subject_relation("task:a", &Relation::DependsOn)
+                .len(),
             1
         );
     }

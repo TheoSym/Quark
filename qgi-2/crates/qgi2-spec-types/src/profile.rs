@@ -18,7 +18,7 @@
 //! default still lives in [`Profile::worker_speculation`] rather than in the
 //! router, so the table has one home.
 
-use crate::step::{Sampling, Speculation};
+use crate::step::{Sampling, Speculation, StepKind};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -84,12 +84,36 @@ impl Profile {
                 seed: Some(DETERMINISTIC_SEED),
                 batch_invariant: true,
                 thinking: mood_sampling.thinking,
+                reasoning_effort: mood_sampling.reasoning_effort,
                 max_tokens: mood_sampling.max_tokens,
             },
             Self::Quick => Sampling {
                 thinking: false,
                 ..mood_sampling
             },
+        }
+    }
+
+    /// Reasoning effort (1-100) for a model step under this profile.
+    ///
+    /// The structured steps -- route, tool-args, extract -- emit a fixed-shape
+    /// JSON object and get the floor: effort there is planner-grade tokens
+    /// spent on bookkeeping, the same argument that turns thinking off for the
+    /// worker. Plan gets a middle setting and answer the most, because the
+    /// answer is what the user reads. Quick keeps every step low, which is
+    /// what "thinking off" means on a model with a dial rather than a switch.
+    /// Deterministic matches Traceable: a fixed integer is reproducible.
+    ///
+    /// Only sent to endpoints that declare `reasoning_effort`; a model without
+    /// the dial never sees the field.
+    pub const fn reasoning_effort(self, step: StepKind) -> u8 {
+        match (self, step) {
+            (Self::Quick, StepKind::Answer) => 20,
+            (Self::Quick, StepKind::Plan) => 10,
+            (Self::Quick, _) => 1,
+            (_, StepKind::Answer) => 70,
+            (_, StepKind::Plan) => 40,
+            (_, _) => 5,
         }
     }
 

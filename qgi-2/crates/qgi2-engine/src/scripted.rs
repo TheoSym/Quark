@@ -24,10 +24,12 @@
 //! reason `run_structured` re-validates after guided decoding is that real
 //! deployments sometimes ignore the constraint too.
 
+use crate::Engine;
 use crate::endpoint::{Endpoint, EngineKind};
 use crate::metrics::AcceptanceSnapshot;
-use crate::types::{ChatChoice, ChatMessage, ChatRequest, ChatResponse, PromptTokensDetails, Usage};
-use crate::Engine;
+use crate::types::{
+    ChatChoice, ChatMessage, ChatRequest, ChatResponse, PromptTokensDetails, Usage,
+};
 use anyhow::Result;
 use async_trait::async_trait;
 use qgi2_spec_types::Speculation;
@@ -61,7 +63,9 @@ pub struct Script {
 impl Default for Script {
     fn default() -> Self {
         Self {
-            plans: vec![json!({ "steps": [{ "intent": "answer directly" }], "needs_tools": false })],
+            plans: vec![
+                json!({ "steps": [{ "intent": "answer directly" }], "needs_tools": false }),
+            ],
             extracts: vec![json!({ "facts": [] })],
             routes: vec![json!({ "entry_points": [] })],
             tool_args: vec![json!({ "tool": "read", "arguments": { "path": "a.rs" } })],
@@ -91,9 +95,9 @@ impl Script {
     pub fn extracting(facts: &[(&str, &str, &str, f32)]) -> Value {
         let facts: Vec<Value> = facts
             .iter()
-            .map(|(s, r, o, c)| {
-                json!({ "subject": s, "relation": r, "object": o, "confidence": c })
-            })
+            .map(
+                |(s, r, o, c)| json!({ "subject": s, "relation": r, "object": o, "confidence": c }),
+            )
             .collect();
         json!({ "facts": facts })
     }

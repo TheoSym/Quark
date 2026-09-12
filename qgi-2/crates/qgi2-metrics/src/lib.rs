@@ -43,6 +43,21 @@ pub struct TurnMetrics {
     pub rejection_rate: f64,
     /// Facts committed this turn.
     pub facts_committed: usize,
+    /// The engine's cache page (or hybrid snapshot granularity) in tokens, when
+    /// known. `0` means unknown, and the cache-hit floor is then applied as
+    /// written.
+    pub page_size: u64,
+    /// Estimated tokens of the byte-stable prefix this turn's requests share.
+    /// `0` means unknown.
+    pub stable_prefix_tokens: u64,
+    /// The most tokens the engine *could* have served from cache for the
+    /// prompts this turn sent, per role: every full page before the page that
+    /// holds the volatile tail. That last page can never hit, so on a
+    /// 256-token page a three-page prompt tops out at 67% however stable the
+    /// prefix is (measured on DeepSeek-V4.1 under the `dsv4` backend, where
+    /// the harness's ~770-token requests cached exactly 512 every time).
+    pub planner_achievable_tokens: u64,
+    pub worker_achievable_tokens: u64,
 }
 
 impl TurnMetrics {
@@ -53,6 +68,47 @@ impl TurnMetrics {
         }
     }
 
+    /// State the engine's page size so the cache-hit floor can be bounded by
+    /// what a prompt of that length can achieve at all.
+    pub fn with_page_size(mut self, page_size: u32) -> Self {
+        self.page_size = page_size as u64;
+        self
+    }
+
+    /// State how many tokens of the prompt are the byte-stable prefix
+    /// (segments 1–4, padded). Only those pages are *guaranteed* to hit; the
+    /// volatile tail may or may not, depending on which step the request is
+    /// and what the previous step appended. The floor is therefore "the
+    /// stable prefix cached", which is exactly what the breach message
+    /// claims to detect.
+    pub fn with_stable_prefix_tokens(mut self, tokens: u32) -> Self {
+        self.stable_prefix_tokens = tokens as u64;
+        self
+    }
+
+    /// Tokens a prompt of `prompt_tokens` is expected to have served from
+    /// cache: the full pages of the stable prefix, never more than the pages
+    /// before the one holding the volatile tail.
+    ///
+    /// The second bound alone over-promised on the first live run. Steps
+    /// within a turn share the stable prefix and the rendered subgraph, but
+    /// each appends its own tail -- the plan, the answer text, the extract
+    /// instruction -- and once a step's private tail crossed a page boundary
+    /// the "all pages but the last" ceiling flagged a breach on a prefix that
+    /// was byte-identical. Bounding by the stable prefix asks only for what
+    /// the harness controls.
+    fn achievable(&self, prompt_tokens: u64) -> u64 {
+        if self.page_size == 0 {
+            return prompt_tokens;
+        }
+        let by_pages = prompt_tokens.div_ceil(self.page_size).saturating_sub(1) * self.page_size;
+        if self.stable_prefix_tokens == 0 {
+            return by_pages;
+        }
+        let stable_pages = (self.stable_prefix_tokens / self.page_size) * self.page_size;
+        by_pages.min(stable_pages)
+    }
+
     /// Record one model call's usage against a role.
     pub fn record_usage(
         &mut self,
@@ -61,16 +117,19 @@ impl TurnMetrics {
         completion_tokens: u64,
         cached_tokens: u64,
     ) {
+        let achievable = self.achievable(prompt_tokens);
         match role {
             ModelRole::Planner => {
                 self.planner_prompt_tokens += prompt_tokens;
                 self.planner_completion_tokens += completion_tokens;
                 self.planner_cached_tokens += cached_tokens;
+                self.planner_achievable_tokens += achievable;
             }
             ModelRole::Worker => {
                 self.worker_prompt_tokens += prompt_tokens;
                 self.worker_completion_tokens += completion_tokens;
                 self.worker_cached_tokens += cached_tokens;
+                self.worker_achievable_tokens += achievable;
             }
         }
     }
@@ -85,6 +144,19 @@ impl TurnMetrics {
             return None;
         }
         Some(cached as f64 / prompt as f64)
+    }
+
+    /// The best hit rate this turn's prompts could have reached at the
+    /// engine's page size. `None` when the role was not called.
+    pub fn cache_hit_ceiling(&self, role: ModelRole) -> Option<f64> {
+        let (achievable, prompt) = match role {
+            ModelRole::Planner => (self.planner_achievable_tokens, self.planner_prompt_tokens),
+            ModelRole::Worker => (self.worker_achievable_tokens, self.worker_prompt_tokens),
+        };
+        if prompt == 0 {
+            return None;
+        }
+        Some(achievable as f64 / prompt as f64)
     }
 
     /// Total tokens for the turn, the number the "trending down" metric tracks.
@@ -119,17 +191,40 @@ impl TurnMetrics {
         let mut out = Vec::new();
 
         for role in [ModelRole::Planner, ModelRole::Worker] {
-            if let Some(rate) = self.cache_hit_rate(role)
-                && rate < t.cache_hit_rate
-            {
+            let Some(rate) = self.cache_hit_rate(role) else {
+                continue;
+            };
+            // The floor cannot ask for more than the page size allows. A
+            // prompt that spans three pages can cache two of them at best;
+            // holding it to 85% would report a defect in a prefix that is
+            // doing everything a prefix can do. The ceiling is compared with
+            // a small tolerance because cached_tokens is page-granular and
+            // the ratio lands exactly on it when the prefix is perfect.
+            let ceiling = self.cache_hit_ceiling(role).unwrap_or(1.0);
+            let floor = t.cache_hit_rate.min(ceiling);
+            if rate + 1e-9 < floor {
+                let bounded = ceiling < t.cache_hit_rate;
                 out.push(Breach {
                     kind: BreachKind::CacheHitRate,
-                    detail: format!(
-                        "{role} prefix-cache hit rate {:.1}% is below the {:.0}% floor. \
-                         Something changed the stable prefix; check the segment hashes.",
-                        rate * 100.0,
-                        t.cache_hit_rate * 100.0
-                    ),
+                    detail: if bounded {
+                        format!(
+                            "{role} prefix-cache hit rate {:.1}% is below the {:.1}% this \
+                             turn's prompts could reach at a {}-token page (the spec floor \
+                             is {:.0}%). Something changed the stable prefix; check the \
+                             segment hashes.",
+                            rate * 100.0,
+                            ceiling * 100.0,
+                            self.page_size,
+                            t.cache_hit_rate * 100.0
+                        )
+                    } else {
+                        format!(
+                            "{role} prefix-cache hit rate {:.1}% is below the {:.0}% floor. \
+                             Something changed the stable prefix; check the segment hashes.",
+                            rate * 100.0,
+                            t.cache_hit_rate * 100.0
+                        )
+                    },
                 });
             }
         }
@@ -298,7 +393,11 @@ impl SessionMetrics {
 
         if let Some(t) = self.latest() {
             if let Some(a) = t.planner_acceptance {
-                push("metric:acceptance:planner", Relation::IsA, format!("{a:.2}"));
+                push(
+                    "metric:acceptance:planner",
+                    Relation::IsA,
+                    format!("{a:.2}"),
+                );
             }
             if let Some(a) = t.worker_acceptance {
                 push("metric:acceptance:worker", Relation::IsA, format!("{a:.2}"));
@@ -347,6 +446,64 @@ mod tests {
     }
 
     #[test]
+    fn the_cache_floor_is_bounded_by_what_the_page_size_allows() {
+        // Measured shape: four ~770-token requests on a 256-token page, each
+        // caching exactly the two full pages before the volatile one. 67% is
+        // the ceiling for that prompt, not a defect.
+        let mut m = TurnMetrics::new(1).with_page_size(256);
+        for _ in 0..4 {
+            m.record_usage(ModelRole::Planner, 768, 50, 512);
+        }
+        assert!((m.cache_hit_ceiling(ModelRole::Planner).unwrap() - 2.0 / 3.0).abs() < 1e-9);
+        assert!(m.breaches(Thresholds::default()).is_empty());
+
+        // The same prompts caching only one page each IS a defect, and the
+        // message names the ceiling rather than the unreachable spec floor.
+        let mut m = TurnMetrics::new(1).with_page_size(256);
+        m.record_usage(ModelRole::Planner, 768, 50, 256);
+        let b = m.breaches(Thresholds::default());
+        assert_eq!(b.len(), 1);
+        assert!(b[0].detail.contains("66.7%"), "{}", b[0].detail);
+        assert!(b[0].detail.contains("256-token page"), "{}", b[0].detail);
+
+        // Unknown page size: the floor applies as written.
+        let mut m = TurnMetrics::new(1);
+        m.record_usage(ModelRole::Planner, 768, 50, 512);
+        assert_eq!(m.breaches(Thresholds::default()).len(), 1);
+    }
+
+    #[test]
+    fn the_floor_asks_only_for_the_stable_prefix_when_it_is_known() {
+        // Stable prefix of 2 pages inside a 4-page prompt: a step whose own
+        // tail spans the last two pages can cache exactly 512, and that is
+        // not a defect. Without the stable-prefix bound the ceiling would be
+        // 768 and this would breach.
+        let mut m = TurnMetrics::new(1)
+            .with_page_size(256)
+            .with_stable_prefix_tokens(540);
+        m.record_usage(ModelRole::Planner, 1024, 50, 512);
+        assert!(m.breaches(Thresholds::default()).is_empty());
+
+        // Fewer than the stable pages cached IS the defect the message names.
+        let mut m = TurnMetrics::new(1)
+            .with_page_size(256)
+            .with_stable_prefix_tokens(540);
+        m.record_usage(ModelRole::Planner, 1024, 50, 256);
+        assert_eq!(m.breaches(Thresholds::default()).len(), 1);
+    }
+
+    #[test]
+    fn a_long_prompt_is_still_held_to_the_spec_floor() {
+        // Ten pages, one volatile: the ceiling is 90%, above the 85% floor,
+        // so the floor is what applies.
+        let mut m = TurnMetrics::new(1).with_page_size(256);
+        m.record_usage(ModelRole::Planner, 2560, 50, 2048);
+        let b = m.breaches(Thresholds::default());
+        assert_eq!(b.len(), 1, "{b:?}");
+        assert!(b[0].detail.contains("85% floor"), "{}", b[0].detail);
+    }
+
+    #[test]
     fn an_uncalled_model_has_no_hit_rate_and_breaches_nothing() {
         let mut m = TurnMetrics::new(1);
         m.record_usage(ModelRole::Planner, 1000, 10, 950);
@@ -380,8 +537,15 @@ mod tests {
         let mut m = healthy_turn(1);
         m.rejection_rate = 0.4;
         let b = m.breaches(Thresholds::default());
-        let r = b.iter().find(|b| b.kind == BreachKind::RejectionRate).unwrap();
-        assert!(r.detail.contains("extract prompt or schema"), "{}", r.detail);
+        let r = b
+            .iter()
+            .find(|b| b.kind == BreachKind::RejectionRate)
+            .unwrap();
+        assert!(
+            r.detail.contains("extract prompt or schema"),
+            "{}",
+            r.detail
+        );
     }
 
     #[test]
@@ -390,7 +554,12 @@ mod tests {
         m.planner_acceptance = Some(1.0);
         m.worker_acceptance = Some(1.2);
         let b = m.breaches(Thresholds::default());
-        assert_eq!(b.iter().filter(|b| b.kind == BreachKind::Acceptance).count(), 2);
+        assert_eq!(
+            b.iter()
+                .filter(|b| b.kind == BreachKind::Acceptance)
+                .count(),
+            2
+        );
     }
 
     #[test]
@@ -440,7 +609,11 @@ mod tests {
                 .iter()
                 .any(|f| f.subject() == "metric:cache_hit_rate:planner")
         );
-        assert!(facts.iter().any(|f| f.subject() == "metric:tokens_per_turn"));
+        assert!(
+            facts
+                .iter()
+                .any(|f| f.subject() == "metric:tokens_per_turn")
+        );
     }
 
     #[test]
@@ -454,7 +627,12 @@ mod tests {
             .into_iter()
             .find(|f| f.subject() == "metric:cache_hit_rate:planner")
             .unwrap();
-        assert_eq!(f.object().len(), 4, "expected two decimals, got {}", f.object());
+        assert_eq!(
+            f.object().len(),
+            4,
+            "expected two decimals, got {}",
+            f.object()
+        );
     }
 
     #[test]
@@ -477,7 +655,10 @@ mod single_model_tests {
         assert!(t.max_planner_worker_ratio.is_none());
         // Everything else is a property of the harness, not of the split.
         assert_eq!(t.cache_hit_rate, Thresholds::default().cache_hit_rate);
-        assert_eq!(t.max_rejection_rate, Thresholds::default().max_rejection_rate);
+        assert_eq!(
+            t.max_rejection_rate,
+            Thresholds::default().max_rejection_rate
+        );
         assert_eq!(t.worker_acceptance, Thresholds::default().worker_acceptance);
     }
 

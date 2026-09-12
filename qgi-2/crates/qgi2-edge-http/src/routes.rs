@@ -48,10 +48,13 @@ pub struct ChatRequest {
 
 /// Which client this request belongs to.
 ///
-/// Header first, then the OpenAI `user` field, then none. jcode's named-provider
+/// Header first, then the OpenAI `user` field, then none; the caller also
+/// checks the `@client` suffix of the model name (see
+/// [`crate::model_name::ModelName::client`]), which is the one per-run channel
+/// a stock client such as `jcode run --model ...` has. jcode's named-provider
 /// config can send a static header per instance (`headers = { X-QGI2-Session =
-/// "..." }`), which is the intended way to keep two jcode clients on one persona
-/// from serialising behind one session lock.
+/// "..." }`), which keeps two long-lived jcode clients on one persona from
+/// serialising behind one session lock.
 fn client_id(headers: &HeaderMap, user: Option<&str>) -> Option<String> {
     headers
         .get("x-qgi2-session")
@@ -66,8 +69,26 @@ async fn chat_completions(
     Json(req): Json<ChatRequest>,
 ) -> impl IntoResponse {
     let parsed = parse_model_name(&req.model);
-    let client = client_id(&headers, req.user.as_deref());
+    // Header, then the `@client` model suffix, then the OpenAI `user` field.
+    let client = client_id(&headers, req.user.as_deref()).or_else(|| parsed.client.clone());
     let key = crate::state::SessionStore::key(parsed.persona, client.as_deref());
+    // The shape of what the client sent, for Traceable diagnosis: which role
+    // each message has and how it starts. Clients differ in where they put
+    // reminders and tool results, and the query selection below depends on it.
+    tracing::debug!(
+        shape = ?req
+            .messages
+            .iter()
+            .map(|m| format!(
+                "{}:{}:{:?}",
+                m.role,
+                m.text().len(),
+                m.text().chars().take(48).collect::<String>()
+            ))
+            .collect::<Vec<_>>(),
+        tools = req.tools.len(),
+        "chat request"
+    );
     let transcript = read_transcript(&req.messages);
 
     if transcript.query.is_empty() {
@@ -106,11 +127,11 @@ async fn chat_completions(
         tracing::warn!(error = %e, %key, "could not persist session");
     }
 
-    match outcome {
+    let body = match outcome {
         Ok(RoundOutcome::CallTools { calls, result }) => {
             let tool_calls: Vec<ToolCallMessage> =
                 calls.iter().map(ToolCallMessage::from_call).collect();
-            let body = completion_body(
+            completion_body(
                 &parsed.render(),
                 &result,
                 json!({
@@ -119,32 +140,96 @@ async fn chat_completions(
                     "tool_calls": tool_calls,
                 }),
                 "tool_calls",
-            );
-            (StatusCode::OK, Json(body)).into_response()
+            )
         }
-        Ok(RoundOutcome::Answered(result)) => {
-            let body = completion_body(
-                &parsed.render(),
-                &result,
-                json!({ "role": "assistant", "content": result.answer }),
-                "stop",
-            );
-            (StatusCode::OK, Json(body)).into_response()
+        Ok(RoundOutcome::Answered(result)) => completion_body(
+            &parsed.render(),
+            &result,
+            json!({ "role": "assistant", "content": result.answer }),
+            "stop",
+        ),
+        Err(e) => {
+            return (StatusCode::BAD_GATEWAY, Json(error_body(&format!("{e:#}")))).into_response();
         }
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(error_body(&format!("{e:#}"))),
+    };
+
+    if req.stream {
+        // jcode's OpenAI-compatible runtime asks for `stream: true` and reads
+        // SSE chunks. Answering with a plain JSON body to that request looks
+        // like an empty response to it -- on the first live jcode run every
+        // round came back as "[provider guardrail] the model ended its turn
+        // without any visible output". The turn is complete by now, so the
+        // stream is the finished message replayed as standard chunks.
+        (
+            StatusCode::OK,
+            [
+                ("content-type", "text/event-stream"),
+                ("cache-control", "no-cache"),
+            ],
+            sse_body(&body),
         )
-            .into_response(),
+            .into_response()
+    } else {
+        (StatusCode::OK, Json(body)).into_response()
     }
 }
 
-fn completion_body(
-    model: &str,
-    result: &TurnResult,
-    message: Value,
-    finish_reason: &str,
-) -> Value {
+/// A completed chat body rendered as OpenAI streaming chunks.
+///
+/// Four events: the role, the content or tool-call delta, the finish with
+/// usage (the shape `stream_options.include_usage` produces), and `[DONE]`.
+/// The `qgi2` block rides on the final chunk.
+fn sse_body(body: &Value) -> String {
+    let id = &body["id"];
+    let model = &body["model"];
+    let choice = &body["choices"][0];
+    let message = &choice["message"];
+    let finish = &choice["finish_reason"];
+    let chunk = |delta: Value, finish: Value| {
+        json!({
+            "id": id,
+            "object": "chat.completion.chunk",
+            "model": model,
+            "choices": [{ "index": 0, "delta": delta, "finish_reason": finish }]
+        })
+    };
+
+    let mut out = String::new();
+    let mut push = |v: &Value| {
+        out.push_str("data: ");
+        out.push_str(&v.to_string());
+        out.push_str("\n\n");
+    };
+
+    push(&chunk(
+        json!({ "role": "assistant", "content": "" }),
+        Value::Null,
+    ));
+    if let Some(calls) = message["tool_calls"].as_array() {
+        let deltas: Vec<Value> = calls
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let mut d = c.clone();
+                d["index"] = json!(i);
+                d
+            })
+            .collect();
+        push(&chunk(json!({ "tool_calls": deltas }), Value::Null));
+    } else if let Some(text) = message["content"].as_str()
+        && !text.is_empty()
+    {
+        push(&chunk(json!({ "content": text }), Value::Null));
+    }
+    let mut last = chunk(json!({}), finish.clone());
+    last["usage"] = body["usage"].clone();
+    last["qgi2"] = body["qgi2"].clone();
+    push(&last);
+    out.push_str("data: [DONE]\n\n");
+    out
+}
+
+fn completion_body(model: &str, result: &TurnResult, message: Value, finish_reason: &str) -> Value {
     let m = &result.metrics;
     json!({
         "id": format!("qgi2-{}", m.turn),
@@ -174,6 +259,10 @@ fn completion_body(
             "mood_switched_to": result.mood_switched_to.map(|m| m.as_str()),
             "tool_rounds_exhausted": result.tool_rounds_exhausted,
             "retrieval_degraded": result.retrieval_degraded,
+            "answer_contained_tool_markup": result.answer_contained_tool_markup,
+            "tool_outputs_truncated": result.tool_outputs_truncated,
+            "memory_lines": result.memory_lines,
+            "memory_budget_hit": result.memory_budget_hit,
             "route_suggested_mood": result.route_suggested_mood,
             // Breaches ride along on every response: the spec calls a threshold
             // drop a bug, and a bug nobody is shown is a bug nobody fixes.
@@ -227,7 +316,9 @@ async fn metrics(State(state): State<AppState>) -> impl IntoResponse {
     let mut out = serde_json::Map::new();
     for key in state.store.live_keys().await {
         // `get` would create a session; read the live map directly instead.
-        let Some(session) = state.store.peek(&key).await else { continue };
+        let Some(session) = state.store.peek(&key).await else {
+            continue;
+        };
         let s = session.lock().await;
         out.insert(
             key,
@@ -271,10 +362,9 @@ mod tests {
 
     #[test]
     fn a_request_without_tools_still_parses() {
-        let req: ChatRequest = serde_json::from_str(
-            r#"{"model":"m","messages":[{"role":"user","content":"hi"}]}"#,
-        )
-        .unwrap();
+        let req: ChatRequest =
+            serde_json::from_str(r#"{"model":"m","messages":[{"role":"user","content":"hi"}]}"#)
+                .unwrap();
         assert!(req.tools.is_empty());
     }
 
@@ -295,6 +385,61 @@ mod tests {
         assert_eq!(body["choices"][0]["finish_reason"], "tool_calls");
         assert_eq!(body["choices"][0]["message"]["tool_calls"][0]["id"], "c1");
         assert!(body["choices"][0]["message"]["content"].is_null());
+    }
+
+    #[test]
+    fn a_streamed_body_is_standard_chunks_ending_in_done() {
+        // jcode asks for stream=true; a plain JSON body reads as an empty
+        // response to its parser (measured). The stream must carry the tool
+        // call as a delta with an index, the finish reason, the usage, and
+        // the [DONE] sentinel.
+        let calls = [ToolCall {
+            id: "c1".into(),
+            tool: "read".into(),
+            arguments: json!({"path": "a.rs"}),
+        }];
+        let msgs: Vec<ToolCallMessage> = calls.iter().map(ToolCallMessage::from_call).collect();
+        let body = completion_body(
+            "qgi2/builder-traceable",
+            &TurnResult::default(),
+            json!({"role":"assistant","content":Value::Null,"tool_calls":msgs}),
+            "tool_calls",
+        );
+        let sse = sse_body(&body);
+        let chunks: Vec<Value> = sse
+            .split("\n\n")
+            .filter_map(|l| l.strip_prefix("data: "))
+            .filter(|d| *d != "[DONE]")
+            .map(|d| serde_json::from_str(d).unwrap())
+            .collect();
+        assert!(sse.trim_end().ends_with("data: [DONE]"), "{sse}");
+        assert_eq!(chunks[0]["choices"][0]["delta"]["role"], "assistant");
+        assert_eq!(
+            chunks[1]["choices"][0]["delta"]["tool_calls"][0]["index"],
+            0
+        );
+        assert_eq!(
+            chunks[1]["choices"][0]["delta"]["tool_calls"][0]["id"],
+            "c1"
+        );
+        let last = chunks.last().unwrap();
+        assert_eq!(last["choices"][0]["finish_reason"], "tool_calls");
+        assert!(last["usage"]["prompt_tokens"].is_number());
+        assert!(last["qgi2"].is_object());
+        for c in &chunks {
+            assert_eq!(c["object"], "chat.completion.chunk");
+        }
+
+        // An answer streams its text as one content delta.
+        let body = completion_body(
+            "qgi2/builder-traceable",
+            &TurnResult::default(),
+            json!({"role":"assistant","content":"done"}),
+            "stop",
+        );
+        let sse = sse_body(&body);
+        assert!(sse.contains(r#""content":"done""#), "{sse}");
+        assert!(sse.contains(r#""finish_reason":"stop""#), "{sse}");
     }
 
     #[test]

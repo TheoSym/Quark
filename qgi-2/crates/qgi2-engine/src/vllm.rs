@@ -85,6 +85,7 @@ impl Engine for VllmEngine {
             .streaming(endpoint.stream)
             .with_cache_breakpoint(endpoint.cache_control)
             .to_openai_body(&endpoint.model);
+        crate::apply_reasoning_effort(endpoint, req, &mut body);
 
         // vLLM's guided decoding is a top-level `guided_json` field.
         if let Some(schema) = &req.schema {
@@ -188,7 +189,10 @@ impl Engine for VllmEngine {
 /// Reject a request vLLM cannot serve before it is sent.
 pub fn check_serviceable(endpoint: &Endpoint, spec: Speculation) -> Result<()> {
     if !engine_typically_supports(EngineKind::Vllm, spec) {
-        bail!("vLLM does not implement {spec} (endpoint {})", endpoint.base_url);
+        bail!(
+            "vLLM does not implement {spec} (endpoint {})",
+            endpoint.base_url
+        );
     }
     Ok(())
 }
@@ -205,8 +209,8 @@ mod tests {
 
     #[test]
     fn a_schema_becomes_guided_json() {
-        let req = ChatRequest::new(vec![ChatMessage::user("hi")])
-            .with_schema(json!({"type": "object"}));
+        let req =
+            ChatRequest::new(vec![ChatMessage::user("hi")]).with_schema(json!({"type": "object"}));
         let mut body = req.to_openai_body("m");
         if let Some(s) = &req.schema {
             body.insert("guided_json".into(), s.clone());
@@ -272,7 +276,10 @@ vllm:num_requests_running 2.0
             Speculation::DSpark { n: 7 },
         ] {
             let hint = engine().launch_hint(spec);
-            assert!(hint.contains("--enable-force-include-usage"), "{spec}: {hint}");
+            assert!(
+                hint.contains("--enable-force-include-usage"),
+                "{spec}: {hint}"
+            );
             assert!(hint.contains("--mamba-cache-mode align"), "{spec}: {hint}");
             assert!(hint.contains("--enable-prefix-caching"), "{spec}: {hint}");
         }

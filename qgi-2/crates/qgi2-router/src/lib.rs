@@ -18,8 +18,7 @@
 pub mod schemas;
 
 use qgi2_spec_types::{
-    Mood, ModelRole, Persona, Profile, Qgi2Error, Result, Sampling, Speculation, StepKind,
-    StepPlan,
+    ModelRole, Mood, Persona, Profile, Qgi2Error, Result, Sampling, Speculation, StepKind, StepPlan,
 };
 
 /// Output cap for planner steps.
@@ -123,6 +122,11 @@ impl Router {
             sampling.thinking = false;
         }
 
+        // Stated for every model step, so a model with a continuous dial gets
+        // an explicit setting per step rather than its server default. The
+        // engine client only sends it where the endpoint declares the field.
+        sampling.reasoning_effort = Some(self.profile().reasoning_effort(step));
+
         // Always a finite cap. An uncapped request lets a model that starts
         // looping run until the context is exhausted, which costs a full
         // generation and returns nothing usable. The worker's steps emit a
@@ -140,23 +144,16 @@ impl Router {
             role,
             speculation,
             sampling,
-            schema: schemas::for_step(step),
+            schema: schemas::for_step_in(step, self.mood()),
         };
 
-        plan.validate().map_err(|detail| Qgi2Error::Schema {
-            step,
-            detail,
-        })?;
+        plan.validate()
+            .map_err(|detail| Qgi2Error::Schema { step, detail })?;
 
         Ok(plan)
     }
 
-    fn speculation_for(
-        &self,
-        role: ModelRole,
-        step: StepKind,
-        sampling: &Sampling,
-    ) -> Speculation {
+    fn speculation_for(&self, role: ModelRole, step: StepKind, sampling: &Sampling) -> Speculation {
         if let Some(override_) = match role {
             ModelRole::Planner => self.planner_speculation,
             ModelRole::Worker => self.worker_speculation,
@@ -319,7 +316,11 @@ mod tests {
         let p = router(Mood::Builder, Profile::Quick)
             .plan(StepKind::ToolArgs)
             .unwrap();
-        assert!(matches!(p.speculation, Speculation::NGram { .. }), "{:?}", p.speculation);
+        assert!(
+            matches!(p.speculation, Speculation::NGram { .. }),
+            "{:?}",
+            p.speculation
+        );
     }
 
     #[test]
@@ -328,7 +329,11 @@ mod tests {
         // the number meaningless.
         let r = router(Mood::Builder, Profile::Traceable);
         for s in [StepKind::Extract, StepKind::ToolArgs, StepKind::Route] {
-            assert_eq!(r.plan(s).unwrap().speculation, Speculation::DFlash2 { n: 7 }, "{s}");
+            assert_eq!(
+                r.plan(s).unwrap().speculation,
+                Speculation::DFlash2 { n: 7 },
+                "{s}"
+            );
         }
     }
 
@@ -363,9 +368,45 @@ mod tests {
     }
 
     #[test]
+    fn every_model_step_states_a_reasoning_effort() {
+        // "Nothing defaults": a model with a continuous dial must get an
+        // explicit per-step setting, never the server's default.
+        for mood in Mood::ALL {
+            for profile in Profile::ALL {
+                for p in router(mood, profile).plan_all().unwrap() {
+                    let e = p.sampling.reasoning_effort.expect("stated");
+                    assert!((1..=100).contains(&e), "{mood}/{profile}/{}", p.step);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn effort_is_lowest_on_the_structured_steps_and_highest_on_the_answer() {
+        let r = router(Mood::Builder, Profile::Traceable);
+        let effort = |s| r.plan(s).unwrap().sampling.reasoning_effort.unwrap();
+        assert!(effort(StepKind::Extract) < effort(StepKind::Plan));
+        assert!(effort(StepKind::Plan) < effort(StepKind::Answer));
+        assert_eq!(effort(StepKind::Extract), effort(StepKind::ToolArgs));
+        // Quick is "thinking off" on a model with a dial: every step lower.
+        let q = router(Mood::Builder, Profile::Quick);
+        for s in [StepKind::Plan, StepKind::Answer, StepKind::Extract] {
+            assert!(
+                q.plan(s).unwrap().sampling.reasoning_effort.unwrap() < effort(s),
+                "{s}"
+            );
+        }
+    }
+
+    #[test]
     fn every_structured_step_carries_a_schema_and_answer_does_not() {
         let r = router(Mood::Builder, Profile::Traceable);
-        for s in [StepKind::Plan, StepKind::Extract, StepKind::ToolArgs, StepKind::Route] {
+        for s in [
+            StepKind::Plan,
+            StepKind::Extract,
+            StepKind::ToolArgs,
+            StepKind::Route,
+        ] {
             assert!(r.plan(s).unwrap().schema.is_some(), "{s}");
         }
         assert!(r.plan(StepKind::Answer).unwrap().schema.is_none());
@@ -379,7 +420,8 @@ mod tests {
                 let plans = router(mood, profile).plan_all().unwrap();
                 assert_eq!(plans.len(), 5, "{mood}/{profile}");
                 for p in plans {
-                    p.validate().unwrap_or_else(|e| panic!("{mood}/{profile}: {e}"));
+                    p.validate()
+                        .unwrap_or_else(|e| panic!("{mood}/{profile}: {e}"));
                 }
             }
         }
@@ -431,7 +473,9 @@ mod override_tests {
         // deployment, not a violation. The default stays MTP per the table.
         let r = router(Mood::Builder, Profile::Deterministic)
             .with_speculation(None, Some(Speculation::DFlash2 { n: 7 }));
-        let p = r.plan(StepKind::Extract).expect("measured-working config must route");
+        let p = r
+            .plan(StepKind::Extract)
+            .expect("measured-working config must route");
         assert!(p.sampling.is_greedy());
         assert_eq!(p.speculation, Speculation::DFlash2 { n: 7 });
         assert_eq!(
@@ -447,6 +491,9 @@ mod override_tests {
     #[test]
     fn no_override_leaves_the_spec_table_in_charge() {
         let r = router(Mood::Builder, Profile::Traceable);
-        assert_eq!(r.plan(StepKind::Plan).unwrap().speculation, Speculation::Mtp { n: 2 });
+        assert_eq!(
+            r.plan(StepKind::Plan).unwrap().speculation,
+            Speculation::Mtp { n: 2 }
+        );
     }
 }

@@ -129,7 +129,10 @@ impl L3Backend {
                 v
             }
             Self::File { path } => {
-                vec![("SGLANG_HICACHE_FILE_BACKEND_STORAGE_DIR".to_string(), path.clone())]
+                vec![(
+                    "SGLANG_HICACHE_FILE_BACKEND_STORAGE_DIR".to_string(),
+                    path.clone(),
+                )]
             }
             _ => Vec::new(),
         }
@@ -453,9 +456,7 @@ fn group_flags(flags: &[String]) -> Vec<String> {
     let mut i = 0;
     while i < flags.len() {
         let name = &flags[i];
-        let takes_value = flags
-            .get(i + 1)
-            .is_some_and(|next| !next.starts_with("--"));
+        let takes_value = flags.get(i + 1).is_some_and(|next| !next.starts_with("--"));
         if takes_value {
             out.push(format!("{name} {}", flags[i + 1]));
             i += 2;
@@ -731,11 +732,7 @@ impl PageAlignment {
         }
         let tokens = self.estimated_tokens(byte_len);
         let remainder = tokens % unit;
-        if remainder == 0 {
-            0
-        } else {
-            unit - remainder
-        }
+        if remainder == 0 { 0 } else { unit - remainder }
     }
 
     /// Padding text that carries a prefix of `byte_len` onto a page boundary.
@@ -756,8 +753,16 @@ impl PageAlignment {
         if pad_bytes == 0 {
             return String::new();
         }
-        const UNIT: &str = "\n# pad";
-        let mut s = String::with_capacity(pad_bytes + UNIT.len());
+        // Self-describing: the model reads this block, and on the first live
+        // jcode run a bare `# pad` wall drew a remark about "a block of
+        // padding" in the answer. Say what it is once, then fill with inert
+        // lines.
+        const HEADER: &str = "\n# Alignment padding (cache page boundary; carries no information)";
+        const UNIT: &str = "\n#";
+        let mut s = String::with_capacity(pad_bytes + HEADER.len());
+        if pad_bytes > HEADER.len() {
+            s.push_str(HEADER);
+        }
         while s.len() < pad_bytes {
             s.push_str(UNIT);
         }
@@ -891,7 +896,11 @@ pub fn parse_hicache(body: &str) -> HiCacheStats {
 /// percentage; taking it at face value would make every hit rate look like a
 /// catastrophic breach or an impossible success.
 fn normalize_rate(v: f64) -> f64 {
-    if v > 1.0 { (v / 100.0).min(1.0) } else { v.max(0.0) }
+    if v > 1.0 {
+        (v / 100.0).min(1.0)
+    } else {
+        v.max(0.0)
+    }
 }
 
 #[cfg(test)]
@@ -929,7 +938,9 @@ mod tests {
 
     #[test]
     fn launch_flags_include_every_tier_setting() {
-        let flags = HiCacheConfig::with_file_l3("/tmp/kv").launch_flags().join(" ");
+        let flags = HiCacheConfig::with_file_l3("/tmp/kv")
+            .launch_flags()
+            .join(" ");
         for expected in [
             "--page-size",
             "--enable-hierarchical-cache",
@@ -960,7 +971,11 @@ mod tests {
             l2: L2Sizing::Ratio(1.0),
             ..HiCacheConfig::default()
         };
-        assert!(c.problems()[0].contains("will not help"), "{:?}", c.problems());
+        assert!(
+            c.problems()[0].contains("will not help"),
+            "{:?}",
+            c.problems()
+        );
     }
 
     #[test]
@@ -1032,7 +1047,10 @@ mod tests {
             let parts: Vec<_> = line.split(' ').collect();
             assert!(parts.len() <= 2, "flag line has stray tokens: {line:?}");
             if parts.len() == 2 {
-                assert!(!parts[1].starts_with("--"), "flag paired with a flag: {line:?}");
+                assert!(
+                    !parts[1].starts_with("--"),
+                    "flag paired with a flag: {line:?}"
+                );
             }
         }
     }
@@ -1141,7 +1159,11 @@ sglang:host_kv_cache_usage{model=\"w\"} 0.6
             ..HiCacheStats::default()
         };
         let f = s.findings(&HiCacheConfig::l2_only());
-        assert!(f.iter().any(|m| m.contains("hicache-ratio could come down")), "{f:?}");
+        assert!(
+            f.iter()
+                .any(|m| m.contains("hicache-ratio could come down")),
+            "{f:?}"
+        );
     }
 
     #[test]
@@ -1174,7 +1196,8 @@ sglang:host_kv_cache_usage{model=\"w\"} 0.6
     #[test]
     fn the_config_round_trips_through_serde() {
         let c = HiCacheConfig::with_mooncake_l3("m:1", Some("h".into()));
-        let back: HiCacheConfig = serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
+        let back: HiCacheConfig =
+            serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
         assert_eq!(back, c);
     }
 }
@@ -1226,7 +1249,6 @@ mod alignment_math_tests {
         assert!(a.padding_text(aligned).is_empty());
     }
 }
-
 
 #[cfg(test)]
 mod granularity_tests {
@@ -1281,7 +1303,11 @@ mod granularity_tests {
             snapshot_chunk: Some(64),
             ..HiCacheConfig::default()
         };
-        assert!(c.problems().iter().any(|p| p.contains("snapshot_chunk")), "{:?}", c.problems());
+        assert!(
+            c.problems().iter().any(|p| p.contains("snapshot_chunk")),
+            "{:?}",
+            c.problems()
+        );
         let ok = HiCacheConfig {
             page_size: 64,
             snapshot_chunk: Some(128),
@@ -1300,7 +1326,6 @@ mod granularity_tests {
     }
 }
 
-
 #[cfg(test)]
 mod gdn_tests {
     use super::*;
@@ -1318,8 +1343,8 @@ mod gdn_tests {
     fn the_recipe_calculator_reproduces() {
         // start.sh: S=4 + D=8 = 12 slots/req; 8 concurrent -> 96 slots -> ~7.5 GB;
         // 86.4 - 24.5 - 7.5 - 3.5 = ~50 GB KV.
-        let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 })
-            .with_budget(recipe_budget());
+        let g =
+            GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 }).with_budget(recipe_budget());
         assert_eq!(g.draft_slots(), 8);
         assert_eq!(g.slots_per_request(), 12);
         assert_eq!(g.total_slots(), 96);
@@ -1350,11 +1375,18 @@ mod gdn_tests {
     fn the_pool_caps_concurrency_before_kv_does() {
         // Push concurrency until the state pool eats the KV budget: the harness
         // should say so before launch rather than the engine refusing to start.
-        let g = GdnStatePool::qwen38_27b(64, Speculation::DSpark { n: 7 })
-            .with_budget(recipe_budget());
+        let g =
+            GdnStatePool::qwen38_27b(64, Speculation::DSpark { n: 7 }).with_budget(recipe_budget());
         let p = g.problems();
-        assert!(!p.is_empty(), "64 concurrent x 12 slots is {:.1} GB", g.pool_gb());
-        assert!(p[0].contains("leaves no VRAM for KV") || p[0].contains("only"), "{p:?}");
+        assert!(
+            !p.is_empty(),
+            "64 concurrent x 12 slots is {:.1} GB",
+            g.pool_gb()
+        );
+        assert!(
+            p[0].contains("leaves no VRAM for KV") || p[0].contains("only"),
+            "{p:?}"
+        );
     }
 
     #[test]
@@ -1362,7 +1394,10 @@ mod gdn_tests {
         let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 });
         let f = g.launch_flags().join(" ");
         assert!(f.contains("--max-mamba-cache-size 96"), "{f}");
-        assert!(f.contains("--mamba-radix-cache-strategy extra_buffer_lazy"), "{f}");
+        assert!(
+            f.contains("--mamba-radix-cache-strategy extra_buffer_lazy"),
+            "{f}"
+        );
         assert!(f.contains("--max-running-requests 8"), "{f}");
     }
 
@@ -1375,7 +1410,11 @@ mod gdn_tests {
             ),
             ..HiCacheConfig::default()
         };
-        assert!(c.launch_flags().join(" ").contains("--max-mamba-cache-size 96"));
+        assert!(
+            c.launch_flags()
+                .join(" ")
+                .contains("--max-mamba-cache-size 96")
+        );
         assert!(c.problems().is_empty(), "{:?}", c.problems());
 
         let too_many = HiCacheConfig {
@@ -1390,8 +1429,8 @@ mod gdn_tests {
 
     #[test]
     fn the_pool_round_trips_through_config() {
-        let g = GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 })
-            .with_budget(recipe_budget());
+        let g =
+            GdnStatePool::qwen38_27b(8, Speculation::DSpark { n: 7 }).with_budget(recipe_budget());
         let back: GdnStatePool = serde_json::from_str(&serde_json::to_string(&g).unwrap()).unwrap();
         assert_eq!(back, g);
     }
