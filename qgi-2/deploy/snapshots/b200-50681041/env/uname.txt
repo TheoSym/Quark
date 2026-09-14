@@ -1,0 +1,1 @@
+Linux d399d67ed072 7.0.0-1009-aws #9~24.04.1-Ubuntu SMP PREEMPT Mon Jul 13 22:43:41 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux

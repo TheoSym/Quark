@@ -1,0 +1,30 @@
+# QGI-2 worker-mtp. model-serve §3 persistence.
+#
+# Secrets via EnvironmentFile, never Environment= — a .service is world-readable
+# and prints in `systemctl cat`, which is how HF_TOKEN ended up in transcripts
+# on vidatron in Aug 2026.
+[Unit]
+Description=QGI-2 worker (SGLang, MTP spec-decode, for the deterministic profile)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/workspace
+EnvironmentFile=/etc/qgi2-worker-mtp.env
+Environment=MODEL_PATH=/models/qgi2-worker-mtp
+Environment=PORT=18034
+Environment=NAME=QGI-2-Planner
+Environment=CUDA_VISIBLE_DEVICES=0
+ExecStart=/workspace/bin/launch-qgi2-worker-mtp.sh
+Restart=always
+RestartSec=10
+# Big checkpoints take a long time to load; a short timeout turns a slow start
+# into a restart loop that never finishes loading.
+TimeoutStartSec=1800
+StandardOutput=append:/var/log/qgi2-worker-mtp.log
+StandardError=append:/var/log/qgi2-worker-mtp.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+== A: baseline (env: none; flags: none)
+prefill: 7744 tok prompt, TTFT median 0.18s  (runs 1.07, 0.18, 0.17)
+decode 1-stream: median 254.2 tok/s (runs 264.4, 254.2, 252.2)
+decode 8-stream: 1336.8 tok/s aggregate, 2400 tokens in 1.8s
+accept_len 2.85
+== B: Q8KV8 sparse prefill (env: SGLANG_ENABLE_DSA_Q8KV8_TOPK_LENGTH=1; flags: --dsv4-prefill-backend flashmla_sparse_q8)
+prefill: 7744 tok prompt, TTFT median 0.21s  (runs 1.27, 0.21, 0.21)
+decode 1-stream: median 247.5 tok/s (runs 258.4, 247.5, 246.3)
+decode 8-stream: 1230.6 tok/s aggregate, 2400 tokens in 2.0s
+accept_len 2.80625
+== C: DeepEP all-to-all (EP2) (env: none; flags: --moe-a2a-backend deepep)
+prefill: 7744 tok prompt, TTFT median 0.21s  (runs 1.27, 0.21, 0.21)
+decode 1-stream: median 246.9 tok/s (runs 258.0, 246.7, 246.9)
+decode 8-stream: 1198.8 tok/s aggregate, 2400 tokens in 2.0s
+accept_len 2.684375

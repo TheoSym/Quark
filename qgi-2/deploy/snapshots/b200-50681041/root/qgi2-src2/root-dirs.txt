@@ -1,0 +1,5 @@
+/root/qgi2-deploy/
+/root/qgi2-src/
+/root/qgi2-src2/
+/root/sglang-main/
+/root/sglang/

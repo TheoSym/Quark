@@ -1,0 +1,45 @@
+{
+  "dataset": {
+    "examples": 1319,
+    "harness": "sgl-eval",
+    "name": "gsm8k",
+    "revision": "6690895609dcbc5df1e7b00dd57c9502b868ec4d"
+  },
+  "gates": {
+    "empty_generations": 0,
+    "maximum_request_errors": 0,
+    "maximum_truncations": 0,
+    "minimum_accuracy": 0.965,
+    "minimum_mtp_acceptance_length": 1.0,
+    "stop_rate": 1.0,
+    "target_oom_kills": 0
+  },
+  "runtime": {
+    "cuda_graph_max_batch_size": 64,
+    "kv_cache_dtype": "fp8_e4m3",
+    "mamba_radix_cache_strategy": "extra_buffer",
+    "memory_fraction_static": 0.75,
+    "modelopt_loader": "modelopt_fp4",
+    "resolved_backends": "automatic",
+    "sglang_revision": "29481685462732237d80d86076d6563e1f658102",
+    "speculative_algorithm": "NEXTN",
+    "speculative_draft_tokens": 4,
+    "speculative_num_steps": 3,
+    "speculative_topk": 1,
+    "tensor_parallel_size": 4
+  },
+  "sampling": {
+    "min_p": 0.0,
+    "presence_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "temperature": 1.0,
+    "thinking": true,
+    "top_k": 20,
+    "top_p": 0.95
+  },
+  "smoke": {
+    "exact_answer": "5",
+    "finite_logprobs": true,
+    "finish_reason": "stop"
+  }
+}

@@ -1,0 +1,3 @@
+Filesystem      Size  Used Avail Use% Mounted on
+overlay         1.4T  870G  549G  62% /
+overlay         1.4T  870G  549G  62% /

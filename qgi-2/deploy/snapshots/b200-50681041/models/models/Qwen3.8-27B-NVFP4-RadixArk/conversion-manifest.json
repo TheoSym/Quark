@@ -1,0 +1,612 @@
+{
+  "architecture": {
+    "architecture": [
+      "Qwen3_5ForConditionalGeneration"
+    ],
+    "decision": "whole_model",
+    "decision_reason": "exact architecture/recipe support and whole-model resource fit were provided",
+    "dtype_counts": {
+      "BF16": 1199
+    },
+    "hidden_layers": 64,
+    "model_type": "qwen3_5",
+    "modelopt_supported": "yes",
+    "mtp_tensor_count": 15,
+    "routed_expert": {
+      "compatible": false,
+      "expected_layers": null,
+      "exporter_qualified": "unknown",
+      "layer_count": 0,
+      "prefixes": []
+    },
+    "safetensors_shard_count": 18,
+    "tensor_count": 1199,
+    "text_model_type": "qwen3_5_text",
+    "whole_model_fit": "yes"
+  },
+  "arguments": {
+    "batch_size": 1,
+    "calib_seq": 512,
+    "calib_size": 1024,
+    "dataset": "cnn_dailymail",
+    "entrypoint": "examples/llm_ptq/hf_ptq.py",
+    "export_path": "/scratch/Qwen3.8-27B-NVFP4-W4A4-official.staging",
+    "pyt_ckpt_path": "/scratch/Qwen3.8-27B-official-e13a4f0e",
+    "recipe": "/scratch/qwen38-27b-official-w4a4/recipe.yaml",
+    "skip_generate": true
+  },
+  "calibration": {
+    "algorithm": "max",
+    "batch_size": 1,
+    "config": "3.0.0",
+    "dataset": "abisee/cnn_dailymail",
+    "revision": "96df5e686bee6baa90b8bee7c28b81fa3fa6223d",
+    "sample_count": 1024,
+    "seed": 1234,
+    "sequence_length": 512,
+    "split": "train"
+  },
+  "conversion_artifacts": [
+    {
+      "name": "/scratch/qwen38-27b-official-w4a4/audit_w4a4.py",
+      "sha256": "5f991c713bfeb9dc639ea28538cb2ceff9d829230137cb8ba32d584607cf8229",
+      "size": 7928
+    },
+    {
+      "name": "/scratch/qwen38-27b-official-w4a4/run_conversion_official.sh",
+      "sha256": "486d32334367be2d6277aa7bacd42bf7d51593b765ac59bed01a6a7724bba9df",
+      "size": 718
+    }
+  ],
+  "conversion_path": "whole_model",
+  "environment": {
+    "accelerate": "1.12.0",
+    "architecture": "aarch64",
+    "cuda_runtime": "13.0",
+    "datasets": "5.0.1",
+    "driver": "580.159.03",
+    "huggingface_hub": "1.27.0",
+    "image": "lmsysorg/sglang:latest",
+    "modelopt": "0.47.0.dev0",
+    "omegaconf": "2.3.1",
+    "python": "3.12.3",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.12.1"
+  },
+  "manifest_sha256": "17d46701df54a7d05db38b79b63cefe0bdfcc7d6707b598172f2e9aff934036c",
+  "modelopt_commit": "87c9f8cf83021957d1a1a575c90c9a4eaaf7ef0c",
+  "precision_contract": {
+    "fp8_attention_bases": 208,
+    "kv_cache": "FP8 metadata",
+    "mtp": "BF16 source-identical",
+    "nvfp4_bases": 193,
+    "nvfp4_group_size": 16,
+    "nvfp4_scope": "MLP and lm_head weights with dynamic NVFP4 activations",
+    "output_quant_algo": "MIXED_PRECISION",
+    "vision": "BF16 source-identical"
+  },
+  "recipe": {
+    "name": "/scratch/qwen38-27b-official-w4a4/recipe.yaml",
+    "path": "/scratch/qwen38-27b-official-w4a4/recipe.yaml",
+    "sha256": "5687231613e00d614803f8117bde6d3ccda87d643112f6b911fbec32e4969862"
+  },
+  "source": {
+    "inventory": {
+      "file_count": 99,
+      "files": [
+        {
+          "name": ".cache/huggingface/.gitignore",
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+          "size": 1
+        },
+        {
+          "name": ".cache/huggingface/CACHEDIR.TAG",
+          "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d",
+          "size": 191
+        },
+        {
+          "name": ".cache/huggingface/download/.gitattributes.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/.gitattributes.metadata",
+          "sha256": "0e3dfcd9283f800864b54b682cb71a91a6087934aba5440a300803f3247987f0",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/LICENSE.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/LICENSE.metadata",
+          "sha256": "0b4e56d8594fe40c152bd96e45bea0d5707bf9e6b7c24999ec5078b164f930f7",
+          "size": 100
+        },
+        {
+          "name": ".cache/huggingface/download/README.md.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/README.md.metadata",
+          "sha256": "d5c5acc0eb79076607d87b671c5da95902f5bd44de48ba4d74bc235f750d88e2",
+          "size": 100
+        },
+        {
+          "name": ".cache/huggingface/download/chat_template.jinja.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/chat_template.jinja.metadata",
+          "sha256": "5fcb1998678eb83d13c76e222170393e1df3b467b1542d8a49572817f44befb0",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/config.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/config.json.metadata",
+          "sha256": "7ddb940d6d160017a21801b5ca8966d684a18908c35ce6ff38006761d59fd705",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/crc32.txt.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/crc32.txt.metadata",
+          "sha256": "b4ab2fd44ae09cb7cdb8279093a0c7a096afe985e44c6b94dfc106e4c8f717e9",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/generation_config.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/generation_config.json.metadata",
+          "sha256": "cd83507c47802502663f712e43ffd9ad0611afe11016d90131f95135e79d06e6",
+          "size": 100
+        },
+        {
+          "name": ".cache/huggingface/download/merges.txt.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/merges.txt.metadata",
+          "sha256": "a78c2d55c64f0c75165731e91e3c613b3bd70c1c1cf7b28bfa33dbdc0fab9207",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/model-00001-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00001-of-00018.safetensors.metadata",
+          "sha256": "8dfbb301d4786231f7c3d41668ac5f26c53129e1478667e59c52f663d1534e8e",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00002-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00002-of-00018.safetensors.metadata",
+          "sha256": "76a6ce56b1598cd34265dc049d9080803dfa46079c5ebf0227fb097ca48f43ea",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00003-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00003-of-00018.safetensors.metadata",
+          "sha256": "4c83b93f93ef9282fe8bb1c58f1fbefac8c093fe7516e233a388579155bd07af",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00004-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00004-of-00018.safetensors.metadata",
+          "sha256": "0b406a29d8a95dcf7be05ead4171611b2fa9b99f8e97bd7d901cf336e9e50f60",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00005-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00005-of-00018.safetensors.metadata",
+          "sha256": "9bddce04db0edb1e2ee54bd28fc0d1d51bea456eb6c52251324956602ee40aaa",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00006-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00006-of-00018.safetensors.metadata",
+          "sha256": "3f818e5a2163dab5c526e11882b87bb52c48547824d2c7868f2c5f8c3460bd14",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00007-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00007-of-00018.safetensors.metadata",
+          "sha256": "32c40dffccf0fb320f9e1a50441c58ad3186b05d6f5d9fe6ceea5ff627dfcde5",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00008-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00008-of-00018.safetensors.metadata",
+          "sha256": "374bb4b05a0b7851fab3ddaefc6cdf449d9ab5108f72eca94917c974f93a588c",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00009-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00009-of-00018.safetensors.metadata",
+          "sha256": "774e56b678e91b67812413970ea92ae2cb51553d65aa755f881ff809da8043a5",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00010-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00010-of-00018.safetensors.metadata",
+          "sha256": "aac1bec5ac8bc619e0c0f10208e0baf601ed03e60c90ffe06d44bcd5ab8801ff",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00011-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00011-of-00018.safetensors.metadata",
+          "sha256": "dbf4f3103b45cdd2c909aaf36f3afc7c22b39f984ba44a6992171dc7eb1f53f7",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00012-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00012-of-00018.safetensors.metadata",
+          "sha256": "b3c92451943c00438dc70faf876d5e7bdeffa1a093d938471db01c543402f928",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00013-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00013-of-00018.safetensors.metadata",
+          "sha256": "44f52c96c3ce1c383c188cf6bef62eb218c518ab6494df5aa868f04564118082",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00014-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00014-of-00018.safetensors.metadata",
+          "sha256": "c2bd6fb870bd166838cfb7f99db7473ecf43a3ee33b2d028556eacaa075c9121",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00015-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00015-of-00018.safetensors.metadata",
+          "sha256": "dd5400c484fec2917aa8adbf57e18ce1517ba3d3a7a764bb33f4a4d1e0032a1d",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00016-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00016-of-00018.safetensors.metadata",
+          "sha256": "549b424d93a64a52dff41ce45aa9e7ca8965f4c00746a9ab5c023f3cf1ccd203",
+          "size": 125
+        },
+        {
+          "name": ".cache/huggingface/download/model-00017-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00017-of-00018.safetensors.metadata",
+          "sha256": "d02ef793b8976ada079846a81952c213cc5eff8e414d797bba16288cc6964be9",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model-00018-of-00018.safetensors.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model-00018-of-00018.safetensors.metadata",
+          "sha256": "0040ae379bf0124272763874f1714cc008e041b46077560adbfe3247d1bc6b0c",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/model.safetensors.index.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/model.safetensors.index.json.metadata",
+          "sha256": "03d6482bfa23cccda9fba0644f30016d18651cdb723c48eb732a9e0d752c210e",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/preprocessor_config.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/preprocessor_config.json.metadata",
+          "sha256": "1b3b2ed6d230f6a7ac4391c7a5b5e353a15c391a60ea8ab21cbae684ea80b57d",
+          "size": 100
+        },
+        {
+          "name": ".cache/huggingface/download/tokenizer.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/tokenizer.json.metadata",
+          "sha256": "393c0f2cb6868399deef714d9ec40a695f08d8882b68fcd2e5966f8aba557c1a",
+          "size": 124
+        },
+        {
+          "name": ".cache/huggingface/download/tokenizer_config.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/tokenizer_config.json.metadata",
+          "sha256": "5a0a6304553fd1db70bb182d715aced28a1f847a40e4200b344b7a50449bc88a",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/video_preprocessor_config.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/video_preprocessor_config.json.metadata",
+          "sha256": "55c7bd190ef38808558b2457f436c45097f5cb880522c1c93d62b16b565372b3",
+          "size": 101
+        },
+        {
+          "name": ".cache/huggingface/download/vocab.json.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "name": ".cache/huggingface/download/vocab.json.metadata",
+          "sha256": "9803bedcc094965f828f6330521b95530ecaa901c684fc90f1267e5ce95272e1",
+          "size": 100
+        },
+        {
+          "name": ".cache/huggingface/trees/e13a4f0e35203116364e3b3f3f0c82f6ef1afd3c.json",
+          "sha256": "489f78f700b281e9706f418a80abe57c3e1ea36fd998fe4a5a5e9142aeeac728",
+          "size": 7447
+        },
+        {
+          "name": ".gitattributes",
+          "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+          "size": 1570
+        },
+        {
+          "name": "LICENSE",
+          "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a",
+          "size": 11544
+        },
+        {
+          "name": "README.md",
+          "sha256": "e83d0b3d6e69c69b667f09698f18847faa137d705f68c9bd148b8bb15c576302",
+          "size": 158
+        },
+        {
+          "name": "chat_template.jinja",
+          "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+          "size": 8952
+        },
+        {
+          "name": "config.json",
+          "sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+          "size": 4312
+        },
+        {
+          "name": "crc32.txt",
+          "sha256": "b42dd291f5f98b05807e458f5b47849969a9b3326acbf0c97d28b05826740b83",
+          "size": 238
+        },
+        {
+          "name": "generation_config.json",
+          "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+          "size": 202
+        },
+        {
+          "name": "merges.txt",
+          "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d",
+          "size": 3353259
+        },
+        {
+          "name": "model-00001-of-00018.safetensors",
+          "sha256": "ba0ce20aae489ad196733da5064bcdf159a1fe84f53336648196e1ebb7751b1c",
+          "size": 3966730552
+        },
+        {
+          "name": "model-00002-of-00018.safetensors",
+          "sha256": "06a148c01bfbe3faa14a5f184a7ff29a706f7ae1c8b2705d2058e26d17a001fb",
+          "size": 3043080328
+        },
+        {
+          "name": "model-00003-of-00018.safetensors",
+          "sha256": "2e1bf62cbcd406eaa64b60d10353e1f0ef4039d0976e56f05cabe953454f9968",
+          "size": 2542796952
+        },
+        {
+          "name": "model-00004-of-00018.safetensors",
+          "sha256": "511e34063187882659753c4d93f3859f93c019fd438d8813071921c81d9a3f1a",
+          "size": 3988973152
+        },
+        {
+          "name": "model-00005-of-00018.safetensors",
+          "sha256": "635cb53446dc74f219740fc59e18b774f877b803b9722e289ca62575a6efa701",
+          "size": 2099339864
+        },
+        {
+          "name": "model-00006-of-00018.safetensors",
+          "sha256": "0bc5214fac607f0e6cc92eec3789d4b8559410ef9fce66621ba8158e8410dae0",
+          "size": 3979553696
+        },
+        {
+          "name": "model-00007-of-00018.safetensors",
+          "sha256": "80b0c49033e9a0d5762562aa12f4acdb7f54da586f3d0110f28c48d91cf07892",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00008-of-00018.safetensors",
+          "sha256": "7192c5b66185d3592927daabee1cc19e6f6e0ce75988ee20e824b624765fda79",
+          "size": 3979553696
+        },
+        {
+          "name": "model-00009-of-00018.safetensors",
+          "sha256": "af3c48cc37af44f3db6ae0579baf019180d48d9c527caa0a1f03ff85813a56d8",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00010-of-00018.safetensors",
+          "sha256": "163490a76f3bea3a40855b7efc04ce6d27afaf1a34f0bbde495b9491f76457c9",
+          "size": 3979553696
+        },
+        {
+          "name": "model-00011-of-00018.safetensors",
+          "sha256": "5f3ae1b948aeee39da77aec558e8236cd65fe4d7cb7686a76bb007acc563c6d8",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00012-of-00018.safetensors",
+          "sha256": "a3de1c7114677a8f5ac5c4892c90e8238ea5c1e2038c80e757dfc87c3902ca55",
+          "size": 3979553696
+        },
+        {
+          "name": "model-00013-of-00018.safetensors",
+          "sha256": "06ab79a41f74c9c5cb734816feb0c7fc364104b227165ee7391231e1155aa02a",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00014-of-00018.safetensors",
+          "sha256": "4138ed94603065ba884bbcadedb04d7718bb40117e85e6f5c6fc5b9c05b7a85b",
+          "size": 3979553696
+        },
+        {
+          "name": "model-00015-of-00018.safetensors",
+          "sha256": "69224e27b9de4e7dbf6fc936c6eaae08447bda3b80a6c31a871ab451173afd22",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00016-of-00018.safetensors",
+          "sha256": "73cb9a1089fb6155cb648609478d6633be8a5c7d9ca5a05bc8925ce8a553cefe",
+          "size": 3979564040
+        },
+        {
+          "name": "model-00017-of-00018.safetensors",
+          "sha256": "beb51f01056142ac4984bd800507b0dd0fd18de57f8e9ef6ea41d1a3598983a8",
+          "size": 2108759344
+        },
+        {
+          "name": "model-00018-of-00018.safetensors",
+          "sha256": "1d3479509e21494658f9b64d317f5ea8e55c4025d28c702d6c4d0b356ce8ea06",
+          "size": 3392197344
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+          "size": 112216
+        },
+        {
+          "name": "preprocessor_config.json",
+          "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+          "size": 390
+        },
+        {
+          "name": "tokenizer.json",
+          "sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+          "size": 12809320
+        },
+        {
+          "name": "tokenizer_config.json",
+          "sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27",
+          "size": 17928
+        },
+        {
+          "name": "video_preprocessor_config.json",
+          "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+          "size": 385
+        },
+        {
+          "name": "vocab.json",
+          "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003",
+          "size": 6722759
+        }
+      ],
+      "indexed_payload_bytes": 55562855904.0,
+      "safetensors_index": "model.safetensors.index.json",
+      "safetensors_shard_count": 18,
+      "tensor_count": 1199,
+      "total_file_bytes": 55586061323
+    },
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "e13a4f0e35203116364e3b3f3f0c82f6ef1afd3c"
+  },
+  "topology": {
+    "cluster": "gb300-coreweave",
+    "devbox": "dsv4-flash-hicache-balanced-0811",
+    "gpu_count": 4,
+    "gpu_memory_mib_each": 284208,
+    "gpu_model": "NVIDIA GB300",
+    "node": "s15t4nb4",
+    "single_node": true
+  }
+}

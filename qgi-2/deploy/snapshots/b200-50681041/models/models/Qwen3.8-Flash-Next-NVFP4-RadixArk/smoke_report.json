@@ -1,0 +1,13 @@
+{
+  "content": "We need to answer user's request: \"What is 2 + 3? Answer with only the number.\" Need final only number. Simple.\n</think>\n\n5",
+  "finish_reason": "stop",
+  "finite_logprobs": 35,
+  "model": "qwen38next-nvfp4",
+  "usage": {
+    "completion_tokens": 35,
+    "prompt_tokens": 66,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "total_tokens": 101
+  }
+}

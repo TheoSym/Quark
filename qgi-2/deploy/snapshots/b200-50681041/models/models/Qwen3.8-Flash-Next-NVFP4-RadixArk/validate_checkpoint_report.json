@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/scratch/Qwen3.8-Flash-Next-NVFP4-candidate",
+  "dtype_counts": {
+    "BF16": 1559,
+    "F32": 147456,
+    "F8_E4M3": 73728,
+    "I64": 3,
+    "U8": 73728
+  },
+  "mtp_entries": 31,
+  "non_routed_entries": 1562,
+  "routed_entries": 294912,
+  "shards": 204,
+  "tensor_bytes": 186356367352,
+  "tensor_entries": 296474
+}

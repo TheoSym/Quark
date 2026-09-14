@@ -1,0 +1,33 @@
+{
+  "aggregate": {
+    "error_rate": 0.0,
+    "score": 0.9727065959059894,
+    "stop_rate": 0.9886277482941622,
+    "truncated_rate": 0.011372251705837756
+  },
+  "base_url": "http://127.0.0.1:30001/v1",
+  "gen": {
+    "chat_template_kwargs": null,
+    "extra_body": null,
+    "max_tokens": 8192,
+    "min_p": 0.0,
+    "reasoning_effort": null,
+    "repetition_penalty": 1.0,
+    "seed": 0,
+    "system_message": null,
+    "temperature": 0.6,
+    "top_p": 0.95
+  },
+  "latency_seconds": 829.4909560070373,
+  "model": "qwen38next-nvfp4-plefp8",
+  "n_repeats": 1,
+  "name": "gsm8k",
+  "ns_commit_sha": "645cf567ff08c0ae9cc3fc8e1edbb975b3067816",
+  "num_examples": 1319,
+  "num_threads": 16,
+  "output_throughput_tps": 687.4095442158896,
+  "sgl_eval_version": "0.0.1",
+  "timestamp": "20260826-083046",
+  "total_completion_tokens": 570200,
+  "total_prompt_tokens": 179677
+}

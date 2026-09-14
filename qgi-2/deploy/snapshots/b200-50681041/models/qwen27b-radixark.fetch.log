@@ -1,0 +1,8 @@
+Fetching 22 files:   0%|          | 0/22 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 22 files:  32%|███▏      | 7/22 [00:00<00:00, 65.36it/s]Fetching 22 files:  82%|████████▏ | 18/22 [00:00<00:00, 71.68it/s]Fetching 22 files:  91%|█████████ | 20/22 [00:20<00:00, 71.68it/s]Fetching 22 files:  95%|█████████▌| 21/22 [00:27<00:01,  1.93s/it]Fetching 22 files: 100%|██████████| 22/22 [00:29<00:00,  1.93s/it]Fetching 22 files: 100%|██████████| 22/22 [00:29<00:00,  1.33s/it]
+[32m✓ Downloaded[0m
+  path: /models/Qwen3.8-27B-NVFP4-RadixArk
+Fetching 6 files:   0%|          | 0/6 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 6 files: 100%|██████████| 6/6 [00:09<00:00,  1.51s/it]Fetching 6 files: 100%|██████████| 6/6 [00:09<00:00,  1.51s/it]
+[32m✓ Downloaded[0m
+  path: /models/Qwen3.8-27B-DSpark

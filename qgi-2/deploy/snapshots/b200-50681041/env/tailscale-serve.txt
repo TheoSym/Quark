@@ -1,0 +1,22 @@
+|-- tcp://qgi-g732.tailcfde13.ts.net:18036 (tailnet only)
+|-- tcp://100.121.27.40:18036
+|-- tcp://[fd7a:115c:a1e0::bd36:1b29]:18036
+|--> tcp://127.0.0.1:18036
+|-- tcp://qgi-g732.tailcfde13.ts.net:18037 (tailnet only)
+|-- tcp://100.121.27.40:18037
+|-- tcp://[fd7a:115c:a1e0::bd36:1b29]:18037
+|--> tcp://127.0.0.1:18037
+|-- tcp://qgi-g732.tailcfde13.ts.net:18041 (tailnet only)
+|-- tcp://100.121.27.40:18041
+|-- tcp://[fd7a:115c:a1e0::bd36:1b29]:18041
+|--> tcp://127.0.0.1:18041
+|-- tcp://qgi-g732.tailcfde13.ts.net:18034 (tailnet only)
+|-- tcp://100.121.27.40:18034
+|-- tcp://[fd7a:115c:a1e0::bd36:1b29]:18034
+|--> tcp://127.0.0.1:18034
+|-- tcp://qgi-g732.tailcfde13.ts.net:18035 (tailnet only)
+|-- tcp://100.121.27.40:18035
+|-- tcp://[fd7a:115c:a1e0::bd36:1b29]:18035
+|--> tcp://127.0.0.1:18035
+100.121.27.40   qgi-g732           qgi-g732.tailcfde13.ts.net  linux    -                            
+100.93.16.30    alice-engine       tagged-devices              linux    offline, last seen 35d ago   

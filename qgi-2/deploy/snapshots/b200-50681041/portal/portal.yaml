@@ -1,0 +1,61 @@
+applications:
+  Instance Portal:
+    hostname: localhost
+    external_port: 1111
+    internal_port: 11111
+    open_path: /
+    name: Instance Portal
+  Jupyter:
+    hostname: localhost
+    external_port: 8080
+    internal_port: 8080
+    open_path: /
+    name: Jupyter
+  Jupyter Terminal:
+    hostname: localhost
+    external_port: 8080
+    internal_port: 8080
+    open_path: /terminals/1
+    name: Jupyter Terminal
+  Syncthing:
+    hostname: localhost
+    external_port: 8384
+    internal_port: 18384
+    open_path: /
+    name: Syncthing
+  Tensorboard:
+    hostname: localhost
+    external_port: 6006
+    internal_port: 16006
+    open_path: /
+    name: Tensorboard
+  QGI-2 V41:
+    hostname: localhost
+    external_port: 10100
+    internal_port: 18034
+    open_path: /v1/models
+    name: QGI-2 V41
+  Qwen3.8 Flash Next:
+    hostname: localhost
+    external_port: 10200
+    internal_port: 18035
+    open_path: /v1/models
+    name: Qwen3.8 Flash Next
+  QGI-2 Worker DFlash2:
+    hostname: localhost
+    external_port: 10300
+    internal_port: 18037
+    open_path: /v1/models
+    name: QGI-2 Worker DFlash2
+  QGI-Flash 3.6:
+    hostname: localhost
+    external_port: 10400
+    internal_port: 18036
+    open_path: /v1/models
+    name: QGI-Flash 3.6
+  QGI DGemma 26B:
+    hostname: localhost
+    external_port: 10600
+    internal_port: 18041
+    open_path: /v1/models
+    name: QGI DGemma 26B

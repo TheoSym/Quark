@@ -1,0 +1,41 @@
+{
+  "aggregate": {
+    "error_rate": 0.0,
+    "majority@8": 1.0,
+    "no_answer": 0.004166666666666667,
+    "pass@1": 0.9875,
+    "pass@1_sem": 0.0060993754559283304,
+    "pass@1_std": 0.017251638983558852,
+    "pass@8": 1.0,
+    "score": 0.9875,
+    "stop_rate": 0.9916666666666667,
+    "truncated_rate": 0.008333333333333333
+  },
+  "base_url": "http://127.0.0.1:30000/v1",
+  "gen": {
+    "chat_template_kwargs": {
+      "thinking": true
+    },
+    "extra_body": null,
+    "max_tokens": 130000,
+    "min_p": 0.0,
+    "reasoning_effort": null,
+    "repetition_penalty": 1.0,
+    "seed": 0,
+    "system_message": null,
+    "temperature": 1.0,
+    "top_p": 0.95
+  },
+  "latency_seconds": 11196.289524045998,
+  "model": "qwen38next-nvfp4",
+  "n_repeats": 8,
+  "name": "aime26",
+  "ns_commit_sha": "645cf567ff08c0ae9cc3fc8e1edbb975b3067816",
+  "num_examples": 30,
+  "num_threads": 8,
+  "output_throughput_tps": 440.48262501681074,
+  "sgl_eval_version": "0.0.1",
+  "timestamp": "20260825-064808",
+  "total_completion_tokens": 4931771,
+  "total_prompt_tokens": 48104
+}

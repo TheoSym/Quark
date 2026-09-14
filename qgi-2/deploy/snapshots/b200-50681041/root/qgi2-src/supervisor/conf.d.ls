@@ -1,0 +1,13 @@
+caddy.conf
+cron.conf
+instance_portal.conf
+jupyter.conf
+pyworker.conf
+qgi2-muse.conf
+qgi2-qwen38.conf
+qgi2-v41.conf
+qgi2-w27b-dflash2.conf
+syncthing.conf
+tailscaled.conf
+tensorboard.conf
+tunnel_manager.conf

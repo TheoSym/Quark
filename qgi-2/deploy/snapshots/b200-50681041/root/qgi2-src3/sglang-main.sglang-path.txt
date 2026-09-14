@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen posixpath>", line 181, in dirname
+TypeError: expected str, bytes or os.PathLike object, not NoneType

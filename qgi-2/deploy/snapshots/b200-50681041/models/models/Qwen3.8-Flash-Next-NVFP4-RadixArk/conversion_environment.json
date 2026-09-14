@@ -1,0 +1,13 @@
+{
+  "accelerate": "1.14.0",
+  "cuda": "13.0",
+  "datasets": "5.0.1",
+  "modelopt_clean": true,
+  "modelopt_commit": "87c9f8cf83021957d1a1a575c90c9a4eaaf7ef0c",
+  "modelopt_distribution": "nvidia-modelopt",
+  "modelopt_version": "0.46.0",
+  "python": "3.12.3",
+  "pytorch": "2.13.0+cu130",
+  "safetensors": "0.8.0",
+  "transformers": "5.12.1"
+}

@@ -1,0 +1,16 @@
+== /models/Qwen3.8-Flash-Next-NVFP4-RadixArk.fetch.log
+      2 9.71it/s
+      2 9.43it/s
+      2 14.18it/s
+== /models/Qwen3.8-Flash-Next-NVFP4.fetch.log
+      2 63.56it/s
+      2 25/25
+      2 1.55it/s
+== /models/muse.fetch.log
+      2 it/s
+      2 17/17
+      2 13.20it/s
+== /models/qwen27b-radixark.fetch.log
+      2 it/s
+      2 71.68it/s
+      2 6/6

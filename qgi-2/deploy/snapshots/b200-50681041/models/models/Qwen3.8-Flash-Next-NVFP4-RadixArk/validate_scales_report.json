@@ -1,0 +1,6 @@
+{
+  "checkpoint": "/scratch/Qwen3.8-Flash-Next-NVFP4-candidate",
+  "maximum": 448.0,
+  "minimum": 2.125331411662046e-05,
+  "scale_entries": 221184
+}

@@ -1,0 +1,4 @@
+/usr/bin/bash: -c: line 1: syntax error near unexpected token `'torch',torch.__version__,'cuda',torch.version.cuda'
+/usr/bin/bash: -c: line 1: `import torch,sglang;print('torch',torch.__version__,'cuda',torch.version.cuda);print('sglang',sglang.__version__)'
+Build cuda_13.2.r13.2/compiler.37953736_0
+595.91.07

@@ -1,0 +1,7 @@
+/usr/bin/bash: cannot set terminal process group (180960): Inappropriate ioctl for device
+/usr/bin/bash: no job control in this shell
+/usr/bin/pip: line 3: import: command not found
+/usr/bin/pip: line 4: import: command not found
+/usr/bin/pip: line 5: from: command not found
+/usr/bin/pip: pip: line 7: syntax error near unexpected token `('
+/usr/bin/pip: pip: line 7: `    sys.argv[0] = re.sub(r"(-script\.pyw|\.exe)?$", "", sys.argv[0])'

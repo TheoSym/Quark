@@ -1,0 +1,4 @@
+https://github.com/sgl-project/sglang.git
+824bb45e1bf7486e49034bfa4bcad59aba799540
+2026-09-10 15:57:41 -0700 DeepSeek V4.1: build the tool-call structural tag with the spaced DSML names (#38951)
+ M python/sglang/srt/entrypoints/openai/serving_responses.py

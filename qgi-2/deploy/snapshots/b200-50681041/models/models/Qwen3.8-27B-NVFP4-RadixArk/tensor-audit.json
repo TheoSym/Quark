@@ -1,0 +1,20 @@
+{
+  "algorithm_base_counts": {
+    "FP8": 208,
+    "NVFP4": 193
+  },
+  "input_scale_tensor_count": 401,
+  "kv_cache_quant_algo": "FP8",
+  "mtp_tensor_count": 15,
+  "output_indexed_payload_bytes": 21921428072,
+  "output_shard_count": 3,
+  "output_tensor_count": 2194,
+  "scale_max": 448.0,
+  "scale_min": 5.013602276449092e-05,
+  "scale_tensor_count": 995,
+  "scale_value_count": 1149010722,
+  "source_architecture": "Qwen3_5ForConditionalGeneration",
+  "unchanged_bytes": 4366132704,
+  "unchanged_tensor_count": 798,
+  "verdict": "pass"
+}

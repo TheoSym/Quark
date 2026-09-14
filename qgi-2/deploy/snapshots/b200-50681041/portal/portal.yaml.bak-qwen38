@@ -1,0 +1,37 @@
+applications:
+  Instance Portal:
+    hostname: localhost
+    external_port: 1111
+    internal_port: 11111
+    open_path: /
+    name: Instance Portal
+  Jupyter:
+    hostname: localhost
+    external_port: 8080
+    internal_port: 8080
+    open_path: /
+    name: Jupyter
+  Jupyter Terminal:
+    hostname: localhost
+    external_port: 8080
+    internal_port: 8080
+    open_path: /terminals/1
+    name: Jupyter Terminal
+  Syncthing:
+    hostname: localhost
+    external_port: 8384
+    internal_port: 18384
+    open_path: /
+    name: Syncthing
+  Tensorboard:
+    hostname: localhost
+    external_port: 6006
+    internal_port: 16006
+    open_path: /
+    name: Tensorboard
+  QGI-2 V41:
+    hostname: localhost
+    external_port: 10100
+    internal_port: 18034
+    open_path: /v1/models
+    name: QGI-2 V41

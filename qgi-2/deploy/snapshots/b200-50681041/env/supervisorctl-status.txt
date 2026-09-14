@@ -1,0 +1,14 @@
+caddy                            RUNNING   pid 34562, uptime 2 days, 9:08:55
+cron                             RUNNING   pid 1054, uptime 2 days, 15:21:06
+instance_portal                  RUNNING   pid 1055, uptime 2 days, 15:21:06
+jupyter                          STOPPED   Not started
+pyworker                         EXITED    Sep 12 02:03 AM
+qgi2-dgemma                      STOPPED   Sep 13 11:50 PM
+qgi2-qwen36                      RUNNING   pid 193839, uptime 18:47:24
+qgi2-qwen38                      RUNNING   pid 69424, uptime 1 day, 13:34:21
+qgi2-v41                         RUNNING   pid 120699, uptime 1 day, 8:59:40
+qgi2-w27b-dflash2                RUNNING   pid 188905, uptime 19:08:27
+syncthing                        STOPPED   Not started
+tailscaled                       RUNNING   pid 37987, uptime 1 day, 18:22:42
+tensorboard                      STOPPED   Not started
+tunnel_manager                   RUNNING   pid 1068, uptime 2 days, 15:21:06

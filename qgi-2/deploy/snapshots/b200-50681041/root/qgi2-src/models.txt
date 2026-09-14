@@ -1,0 +1,18 @@
+== DeepSeek-V4.1-Flash 476G
+DeepSeek_V41_Tech_Report.pdf LICENSE README.md assets config.json encoding evaluation inference model-00001-of-00048.safetensors model-00002-of-00048.safetensors model-00003-of-00048.safetensors model-00004-of-00048.safetensors model-00005-of-00048.safetensors model-00006-of-00048.safetensors model-00007-of-00048.safetensors model-00008-of-00048.safetensors model-00009-of-00048.safetensors model-00010-of-00048.safetensors model-00011-of-00048.safetensors model-00012-of-00048.safetensors 
+== Muse-Glimmer-30B-assistant 4.8G
+LICENSE README.md USAGE_POLICY.md config.json model.safetensors 
+== Muse-Glimmer-NVFP4 19G
+LICENSE README.md USAGE_POLICY.md chat_template.jinja config.json generation_config.json hf_quant_config.json model-00001-of-00005.safetensors model-00002-of-00005.safetensors model-00003-of-00005.safetensors model-00004-of-00005.safetensors model-00005-of-00005.safetensors model.safetensors.index.json processor_config.json tokenizer.json tokenizer_config.json 
+== Qwen3.8-27B-DFlash2 3.6G
+README.md assets config.json model.safetensors 
+== Qwen3.8-27B-DSpark 3.5G
+README.md config.json dflash.py dspark.py model.safetensors 
+== Qwen3.8-27B-FP8 29G
+LICENSE README.md chat_template.jinja config.json crc32.txt generation_config.json layers-0.safetensors layers-1.safetensors layers-10.safetensors layers-11.safetensors layers-12.safetensors layers-13.safetensors layers-14.safetensors layers-15.safetensors layers-16.safetensors layers-17.safetensors layers-18.safetensors layers-19.safetensors layers-2.safetensors layers-20.safetensors 
+== Qwen3.8-27B-NVFP4-RadixArk 21G
+LICENSE README.md chat_template.jinja config.json conversion-manifest.json generation_config.json hf_quant_config.json merges.txt model-00001-of-00003.safetensors model-00002-of-00003.safetensors model-00003-of-00003.safetensors model.safetensors.index.json preprocessor_config.json qualification-criteria.json qualification.json tensor-audit.json tokenizer.json tokenizer_config.json video_preprocessor_config.json vocab.json 
+== Qwen3.8-Flash-Next-NVFP4-RadixArk 126G
+README.md aime26_metrics.json audit_unchanged_report.json chat_template.jinja config.json conversion_environment.json generation_config.json gsm8k_metrics.json hf_quant_config.json layer-00000-experts-0000-0127.complete.json layer-00000-experts-0000-0127.safetensors layer-00000-experts-0128-0255.complete.json layer-00000-experts-0128-0255.safetensors layer-00000-experts-0256-0383.complete.json layer-00000-experts-0256-0383.safetensors layer-00000-experts-0384-0511.complete.json layer-00000-experts-0384-0511.safetensors layer-00001-experts-0000-0127.complete.json layer-00001-experts-0000-0127.safetensors layer-00001-experts-0128-0255.complete.json 
+== Qwen3.8-Flash-Next-NVFP4 124G
+README.md chat_template.jinja config.json generation_config.json hf_quant_config.json merges.txt model-00001-of-00010.safetensors model-00002-of-00010.safetensors model-00003-of-00010.safetensors model-00004-of-00010.safetensors model-00005-of-00010.safetensors model-00006-of-00010.safetensors model-00007-of-00010.safetensors model-00008-of-00010.safetensors model-00009-of-00010.safetensors model-00010-of-00010.safetensors model-fp8-mtp-ple.safetensors model.safetensors.index.json preprocessor_config.json processor_config.json 

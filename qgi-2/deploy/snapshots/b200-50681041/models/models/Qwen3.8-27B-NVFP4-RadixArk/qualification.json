@@ -1,0 +1,81 @@
+{
+  "checkpoint": {
+    "audit_verdict": "pass",
+    "output_indexed_payload_bytes": 21921428072,
+    "output_shard_count": 3,
+    "output_tensor_count": 2194,
+    "source_repository": "Qwen/Qwen3.8-27B",
+    "source_revision": "e13a4f0e35203116364e3b3f3f0c82f6ef1afd3c"
+  },
+  "evaluation": {
+    "accuracy": 0.9727065959059894,
+    "correct": 1283,
+    "dataset": "gsm8k",
+    "empty_generations": 0,
+    "examples": 1319,
+    "finish_reasons": {
+      "stop": 1319
+    },
+    "harness_revision": "6690895609dcbc5df1e7b00dd57c9502b868ec4d",
+    "incorrect": 36,
+    "latency_seconds": 144.55181782902218,
+    "request_errors": 0,
+    "stop_rate": 1.0,
+    "truncations": 0
+  },
+  "evidence_sha256": {
+    "conversion_manifest": "c71e938cadabd25b2d6ec6b1bd15afecb618674cd8004cf1ecf04e28badbbf55",
+    "evaluation_log": "63c86c3c2aa44765b1ed0c779fc5f2e26bfe091a4cb6ae0858d5e8d92eb6f90d",
+    "evaluation_metrics": "caa4c373713f7cad8e54c2825694d649fa3d77afcf93e990f047e2098fdf44f6",
+    "evaluation_predictions": "e100169dbff801908c3e952ce14e13c133814c55fc4a25ee8d970ce08380eb3e",
+    "production_tensor_audit": "8a7801e2b46298432a129689879c9e4f8c69444e0b71b4c971470c2747794679",
+    "qualification_criteria": "8e3b57367245354acb040a133e63df8eb1f4aef787e036156b944dfda217352a",
+    "runtime_metrics": "99142766caa9138d864b21c241deebb8a1505d15b702d108033f10cf8aff60ac",
+    "server_log": "bfdbfb5d95aaae1caeb9ed5e454562f6896d4fcc9f4a6f437f719f76527901d1"
+  },
+  "fp8_kv_cache": {
+    "dtype": "fp8_e4m3",
+    "scales_calibrated": false,
+    "warning": "Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0. This may lead to less accurate results!"
+  },
+  "gates": {
+    "maximum_empty_generations": 0,
+    "maximum_request_errors": 0,
+    "maximum_truncations": 0,
+    "minimum_accuracy": 0.965,
+    "minimum_mtp_acceptance_length": 1.0,
+    "required_stop_rate": 1.0,
+    "target_oom_kills": 0
+  },
+  "mtp": {
+    "final_acceptance_length": 2.775,
+    "final_acceptance_rate": 0.5916666666666667,
+    "smoke_acceptance_length": 3.725,
+    "smoke_exact_answer": "5",
+    "smoke_finish_reason": "stop"
+  },
+  "oom_kills": {
+    "after_evaluation": 0,
+    "after_load": 0,
+    "after_shutdown": 0,
+    "before_startup": 0
+  },
+  "runtime": {
+    "gpu_count": 4,
+    "gpu_model": "NVIDIA GB300",
+    "intentional_shutdown": "SIGTERM",
+    "sglang_revision": "29481685462732237d80d86076d6563e1f658102",
+    "speculative_algorithm_resolved": "EAGLE",
+    "tensor_parallel_size": 4
+  },
+  "sampling": {
+    "min_p": 0.0,
+    "presence_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "temperature": 1.0,
+    "thinking": true,
+    "top_k": 20,
+    "top_p": 0.95
+  },
+  "verdict": "pass"
+}

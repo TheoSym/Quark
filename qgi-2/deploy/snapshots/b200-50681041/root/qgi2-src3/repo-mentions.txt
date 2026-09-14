@@ -1,0 +1,8 @@
+      3 incoai/Qwen3.8-27B-DFlash2
+      3 Qwen/Qwen3.8-27B-FP8
+      2 syv-ai/qwen38-27b-rtx3090
+      2 deepseek-ai/DeepSeek-V4.1-Flash
+      1 nvidia/Qwen3.8-Flash-Next-NVFP4
+      1 SamSammane/qwen38-27b-nvfp4-sm121-vllm
+      1 SamSammane/Qwen3.8-27B-RTX-6000-PRO-SGLang-DSpark.
+      1 RadixArk/Qwen3.8-Flash-Next-NVFP4

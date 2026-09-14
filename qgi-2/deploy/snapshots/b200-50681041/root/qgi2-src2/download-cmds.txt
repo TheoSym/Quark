@@ -1,0 +1,2 @@
+hf download "$REPO" --revision "$REV" --local-dir "$DEST"
+huggingface-cli download "$REPO" --revision "$REV" --local-dir "$DEST"
