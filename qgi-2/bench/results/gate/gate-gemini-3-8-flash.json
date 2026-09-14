@@ -1,0 +1,96 @@
+{
+ "model": "Gemini 3.8 Flash",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 12:46",
+ "gate_wall_s": 749.7,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 1.22,
+   "decode_tps": 76.4,
+   "cache_reported": false,
+   "cache_probe_cached_tokens": null,
+   "cache_probe_prompt_tokens": 0,
+   "wall_s": 16.8
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 50.4,
+   "total_wall_s": 144.2,
+   "input_tokens": 95622,
+   "cached_tokens": 87207,
+   "errors": 0,
+   "file": "gemini-3-8-flash-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 329.5,
+    "errors": 0,
+    "file": "gemini-3-8-flash-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 91.5,
+    "errors": 0,
+    "file": "gemini-3-8-flash-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 2.59,
+   "p90_latency_s": 6.27,
+   "prompt_tokens": 28065,
+   "cached_tokens": 0,
+   "errors": 0,
+   "total_s": 103.7,
+   "file": "gemini-3-8-flash-memory.json",
+   "truncated": 0
+  }
+ },
+ "verdict": {
+  "model": "Gemini 3.8 Flash",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 50.4,
+  "decode_tps": 76.4,
+  "ttft_s": 1.22,
+  "cache_reported": false,
+  "errors": 0
+ },
+ "refolded": [
+  "2026-09-14 12:49"
+ ]
+}

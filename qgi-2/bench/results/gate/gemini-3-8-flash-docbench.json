@@ -1,0 +1,65 @@
+{
+  "model": "Gemini 3.8 Flash",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 329.5,
+    "errors": 0,
+    "input_tokens": 55326,
+    "output_tokens": 449,
+    "cached_tokens": 48524
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 174.0,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=532",
+      "input_tokens": 29777,
+      "output_tokens": 332,
+      "cached_tokens": 26254,
+      "error": null,
+      "agent_tail": "suer: `QGI Fleet Operations`\\n   - Recipient: `Nordic Port Logistics AB`\\n   - Dates: `13 September 2026` / `13 October 2026`\\n   - Line items:\\n     - AGV fleet software licence (qty 6 @ 1250.00 = 7500.00)\\n     - On-site commissioning (days) (qty 4 @ 980.00 = 3920.00)\\n     - Remote support retainer (months) (qty 3 @ 450.00 = 1350.00)\\n   - Totals: Subtotal `12770.00`, VAT 25% `3192.50`, Grand Total `15962.50`\\n   - Footer: `Payment within 30 days to IBAN SE45 5000 0000 0583 9825 7466`\\n3. Todos and goal tracking reflect verified completion.\",\n  \"usage\": {\n    \"input_tokens\": 29777,\n    \"output_tokens\": 332,\n    \"cache_read_input_tokens\": 26254,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 155.5,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 25549,
+      "output_tokens": 117,
+      "cached_tokens": 22270,
+      "error": null,
+      "agent_tail": "_id\": \"session_crocodile_1789414780004_37e829fbc6473b0a\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"`fleet.xlsx` has been created with all requested specifications:\\n\\n- **Data Sheet**: Table containing the CSV records with bold headers, live utilization formulas (`=D{row}/C{row}`), integer number formatting for hours, and `0.0%` for utilization.\\n- **Summary Sheet**: Site summary for Rotterdam, Hamburg, and Antwerp using live `SUMIF` formulas over the Data sheet, a Total row using `SUM`, and live utilization formulas.\\n- **Chart**: Native Excel column bar chart on the Summary sheet plotting Hours Used per site.\",\n  \"usage\": {\n    \"input_tokens\": 25549,\n    \"output_tokens\": 117,\n    \"cache_read_input_tokens\": 22270,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}
