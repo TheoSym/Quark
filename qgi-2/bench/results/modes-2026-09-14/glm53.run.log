@@ -1,0 +1,13 @@
+  == glm53 baseline  21:45:44
+     2/3 med=108.1s tot=510.4s in=56002 out=424 err=1
+  == glm53 safe-efficient  21:54:17
+     0/3 med=0.7s tot=2.1s in=0 out=0 err=3
+  == glm53 exa-reuse  21:54:22
+     0/3 med=0.7s tot=2.1s in=0 out=0 err=3
+  == glm53 exa-reuse+tool  21:54:27
+     0/3 med=0.7s tot=2.1s in=0 out=0 err=3
+  == glm53 mem  21:54:32
+     0/3 med=1.0s tot=3.1s in=0 out=0 err=3
+  == glm53 mem+exa-tool  21:54:37
+     0/3 med=0.7s tot=2.2s in=0 out=0 err=3
+DONE glm53 21:54:42

@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 92.1,
+      "total_wall_s": 252.3,
+      "errors": 0,
+      "input_tokens": 101313,
+      "output_tokens": 92,
+      "cached_tokens": 99328
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 92.1,
+      "input_tokens": 34991,
+      "output_tokens": 7,
+      "cached_tokens": 34816,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_cactus_1789447539200_fb4d8d1f7ff8a1d2\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 34991,\n    \"output_tokens\": 7,\n    \"cache_read_input_tokens\": 34816,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 100.3,
+      "input_tokens": 34977,
+      "output_tokens": 7,
+      "cached_tokens": 34816,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_badger_1789447632097_d113ab55ed74ffba\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 54 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 34977,\n    \"output_tokens\": 7,\n    \"cache_read_input_tokens\": 34816,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 59.9,
+      "input_tokens": 31345,
+      "output_tokens": 78,
+      "cached_tokens": 29696,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_chicken_1789447733292_a35ae333451845bf\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 25 tests pass.\\n\\nImplemented `answer()` in `wordy.py` to parse `What is ...?` problems, tokenize numbers and the four operations (including two-word `multiplied by` / `divided by`), evaluate left-to-right, and raise `ValueError(\\\"unknown operation\\\")` or `ValueError(\\\"syntax error\\\")` as required.\",\n  \"usage\": {\n    \"input_tokens\": 31345,\n    \"output_tokens\": 78,\n    \"cache_read_input_tokens\": 29696,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

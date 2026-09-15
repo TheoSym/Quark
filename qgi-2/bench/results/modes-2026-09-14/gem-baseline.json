@@ -1,0 +1,60 @@
+{
+  "model": "Gemini 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 44.1,
+      "total_wall_s": 119.8,
+      "errors": 0,
+      "input_tokens": 73945,
+      "output_tokens": 115,
+      "cached_tokens": 63905
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 46.8,
+      "input_tokens": 26948,
+      "output_tokens": 39,
+      "cached_tokens": 22741,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_hare_1789447537499_f08c9c5c19295186\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"`BowlingGame` has been implemented in `bowling.py` with frame tracking, roll validations, tenth-frame bonus logic, and scoring calculations. All 31 unit tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 26948,\n    \"output_tokens\": 39,\n    \"cache_read_input_tokens\": 22741,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 44.1,
+      "input_tokens": 24559,
+      "output_tokens": 28,
+      "cached_tokens": 22332,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_gorilla_1789447583906_d46892dc209a6b9d\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"The Forth evaluator has been implemented in `forth.py`. All 54 unit tests in `forth_test.py` pass.\",\n  \"usage\": {\n    \"input_tokens\": 24559,\n    \"output_tokens\": 28,\n    \"cache_read_input_tokens\": 22332,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 28.9,
+      "input_tokens": 22438,
+      "output_tokens": 48,
+      "cached_tokens": 18832,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_mosquito_1789447629370_51cabc6e466af756\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"I have implemented `answer()` in `wordy.py`.\\n\\nThe parser validates the question format, checks for unrecognized operations, verifies syntactic structure, and evaluates math operations left-to-right. All 25 unit tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 22438,\n    \"output_tokens\": 48,\n    \"cache_read_input_tokens\": 18832,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

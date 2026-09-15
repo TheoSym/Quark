@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 65.2,
+      "total_wall_s": 198.9,
+      "errors": 0,
+      "input_tokens": 124341,
+      "output_tokens": 702,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 81.5,
+      "input_tokens": 43460,
+      "output_tokens": 265,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "s 1 or 2 fill balls after a tenth-frame spare or strike. Rolls past the end raise `IndexError`; illegal pin counts raise `ValueError`.\\n- `score()` raises `IndexError` on an incomplete game, then walks the flat roll list across 10 frames adding strike (next two) and spare (next one) bonuses.\\n- Fill-ball rule handled: two fill balls sharing a rack can't exceed 10 unless the first is a strike, so `10, 6, 10` is rejected while `10, 10, 6` scores 26.\",\n  \"usage\": {\n    \"input_tokens\": 43460,\n    \"output_tokens\": 265,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 65.2,
+      "input_tokens": 42877,
+      "output_tokens": 239,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": " lists, so `: foo foo 1 + ;` and `: bar foo ;` freeze the meaning a word had at definition time.\\n- `StackUnderflowError` carries \\\"Insufficient number of items in stack\\\"; bad definitions raise `ValueError(\\\"illegal operation\\\")`, unknown words `ValueError(\\\"undefined operation\\\")`, and `4 0 /` raises `ZeroDivisionError(\\\"divide by zero\\\")`.\\n- Division truncates toward zero (`-7 2 /` gives `-3`), matching Forth rather than Python floor division.\",\n  \"usage\": {\n    \"input_tokens\": 42877,\n    \"output_tokens\": 239,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 52.2,
+      "input_tokens": 38004,
+      "output_tokens": 198,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": " question after stripping the `What is` prefix, then folds tokens left-to-right:\\n\\n- `plus` / `minus` are single-word ops; `multiplied` / `divided` require a following `by`\\n- Non-math words or an unsupported operation raise `ValueError(\\\"unknown operation\\\")`\\n- Bad token order (missing operand, doubled operator, prefix/postfix) raises `ValueError(\\\"syntax error\\\")`\\n- Division truncates toward zero, so `-7 divided by 2` is `-3` rather than `-4`\",\n  \"usage\": {\n    \"input_tokens\": 38004,\n    \"output_tokens\": 198,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

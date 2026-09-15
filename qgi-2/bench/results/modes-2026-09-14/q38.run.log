@@ -1,0 +1,13 @@
+  == q38 baseline  21:45:41
+     3/3 med=70.0s tot=357.1s in=94235 out=701 err=0
+  == q38 safe-efficient  21:51:41
+     0/3 med=0.7s tot=69.5s in=0 out=0 err=3
+  == q38 exa-reuse  21:52:54
+     0/3 med=0.8s tot=2.3s in=0 out=0 err=3
+  == q38 exa-reuse+tool  21:52:59
+     0/3 med=0.7s tot=2.2s in=0 out=0 err=3
+  == q38 mem  21:53:04
+     0/3 med=1.0s tot=3.2s in=0 out=0 err=3
+  == q38 mem+exa-tool  21:53:10
+     0/3 med=0.8s tot=3.2s in=0 out=0 err=3
+DONE q38 21:53:16

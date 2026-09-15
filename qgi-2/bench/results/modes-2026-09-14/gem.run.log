@@ -1,0 +1,13 @@
+  == gem baseline  21:45:35
+     3/3 med=44.1s tot=119.8s in=73945 out=115 err=0
+  == gem safe-efficient  21:47:38
+     3/3 med=33.7s tot=107.6s in=83427 out=118 err=0
+  == gem exa-reuse  21:49:29
+     2/3 med=30.5s tot=186.7s in=34366 out=52 err=2
+  == gem exa-reuse+tool  21:52:38
+     0/3 med=1.7s tot=5.7s in=0 out=0 err=3
+  == gem mem  21:52:47
+     0/3 med=1.3s tot=3.6s in=0 out=0 err=3
+  == gem mem+exa-tool  21:52:53
+     0/3 med=1.7s tot=4.3s in=0 out=0 err=3
+DONE gem 21:53:00

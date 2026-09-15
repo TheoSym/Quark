@@ -1,0 +1,61 @@
+{
+ "model": "Qwen3.8-Flash-Next-NVFP4",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "exa-reuse+tool": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 18.8,
+   "total_wall_s": 58.4,
+   "errors": 0,
+   "input_tokens": 95326,
+   "output_tokens": 646,
+   "cached_tokens": 92736
+  }
+ },
+ "results": [
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 18.8,
+   "input_tokens": 31897,
+   "output_tokens": 178,
+   "cached_tokens": 31616,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+   "agent_tail": "ests pass, committed as `d161c3e`.\\n\\n`bowling.py` now tracks rolls frame by frame: `roll()` validates pin counts (negative, >10, two rolls >10, invalid fill balls), rejects rolls after the game ends, and handles the tenth frame's spare/strike bonuses without granting extra bonus rolls. `score()` raises on unstarted or incomplete games, then sums strikes/spares using the following rolls from the flat roll list plus the tenth frame's raw total.\",\n  \"usage\": {\n    \"input_tokens\": 31897,\n    \"output_tokens\": 178,\n    \"cache_read_input_tokens\": 31616,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 15.8,
+   "input_tokens": 31854,
+   "output_tokens": 284,
+   "cached_tokens": 31488,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+   "agent_tail": "e; division truncates toward zero.\\n- Definitions `: name body ;` expand eagerly against the current dictionary, so `: foo 10 ; : foo foo 1 + ;` resolves correctly and later redefinitions don't retroactively change old words.\\n- `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"illegal operation\\\")` for numeric names, `ValueError(\\\"undefined operation\\\")` for unknown words.\",\n  \"usage\": {\n    \"input_tokens\": 31854,\n    \"output_tokens\": 284,\n    \"cache_read_input_tokens\": 31488,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 23.8,
+   "input_tokens": 31575,
+   "output_tokens": 184,
+   "cached_tokens": 29632,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": " by` into single tokens, then tokenize the rest.\\n- Scan every token first: unknown words (not numbers or operator words) raise `unknown operation`.\\n- Then parse strictly as `number (operator number)*` left-to-right, ignoring precedence; anything else (missing operand, two numbers/operators in a row, prefix/postfix, bare `by`/`multiplied`) raises `syntax error`.\\n- Division truncates toward zero, so `-12 divided by 2 divided by -3` gives `2`.\",\n  \"usage\": {\n    \"input_tokens\": 31575,\n    \"output_tokens\": 184,\n    \"cache_read_input_tokens\": 29632,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

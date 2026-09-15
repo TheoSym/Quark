@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 24.3,
+      "total_wall_s": 78.9,
+      "errors": 0,
+      "input_tokens": 112497,
+      "output_tokens": 285,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 22.3,
+      "input_tokens": 34860,
+      "output_tokens": 62,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_tiger_1789447638767_5c575ef5d1f1f398\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `BowlingGame` in `bowling.py` with validation (pin limits, fill-ball rules, premature/late calls raising errors with messages). All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 34860,\n    \"output_tokens\": 62,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 32.3,
+      "input_tokens": 40754,
+      "output_tokens": 143,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "nthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `forth.py`. All 54 tests pass.\\n\\nDesign notes: user-defined words are expanded at definition time into a flat list of numbers and builtin callables, so redefining a word later doesn't change earlier definitions that referenced it. `StackUnderflowError`, `ZeroDivisionError(\\\"divide by zero\\\")`, and `ValueError(\\\"undefined operation\\\" / \\\"illegal operation\\\")` are raised with the expected messages.\",\n  \"usage\": {\n    \"input_tokens\": 40754,\n    \"output_tokens\": 143,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 24.3,
+      "input_tokens": 36883,
+      "output_tokens": 80,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_sabertooth_1789447695155_77d78431a51af188\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"All 25 tests pass. `wordy.py` now parses \\\"What is ...\\\" questions, evaluates left to right, and raises `ValueError(\\\"unknown operation\\\")` for unknown words or `ValueError(\\\"syntax error\\\")` for malformed sequences.\",\n  \"usage\": {\n    \"input_tokens\": 36883,\n    \"output_tokens\": 80,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

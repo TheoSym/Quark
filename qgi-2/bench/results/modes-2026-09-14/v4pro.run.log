@@ -1,0 +1,13 @@
+  == v4pro baseline  21:45:38
+     3/3 med=92.1s tot=252.3s in=101313 out=92 err=0
+  == v4pro safe-efficient  21:49:53
+     2/3 med=72.5s tot=156.7s in=65275 out=137 err=1
+  == v4pro exa-reuse  21:52:33
+     0/3 med=0.8s tot=8.7s in=0 out=0 err=3
+  == v4pro exa-reuse+tool  21:52:44
+     0/3 med=0.9s tot=3.5s in=0 out=0 err=3
+  == v4pro mem  21:52:50
+     0/3 med=1.2s tot=4.2s in=0 out=0 err=3
+  == v4pro mem+exa-tool  21:52:58
+     0/3 med=1.0s tot=2.9s in=0 out=0 err=3
+DONE v4pro 21:53:03

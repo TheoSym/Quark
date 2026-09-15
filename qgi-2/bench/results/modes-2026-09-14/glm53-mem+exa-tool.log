@@ -1,0 +1,12 @@
+[jcode] bowling                      FAIL    0.7s  exit 1: GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
+
+[jcode] forth                        FAIL    0.7s  exit 1: GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
+
+[jcode] wordy                        FAIL    0.8s  exit 1: GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
+
+
+agent    solved   rate  median s  total s errors     in tok  out tok     cached
+mem+exa-tool    0/3       0%       0.7      2.2      3          0        0          0

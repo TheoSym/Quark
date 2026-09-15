@@ -1,0 +1,60 @@
+{
+  "model": "Gemini 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 33.7,
+      "total_wall_s": 107.6,
+      "errors": 0,
+      "input_tokens": 83427,
+      "output_tokens": 118,
+      "cached_tokens": 75467
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 33.7,
+      "input_tokens": 28979,
+      "output_tokens": 32,
+      "cached_tokens": 26466,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": " \"session_id\": \"session_chicken_1789447659325_64ff1a0c97a14720\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"The `BowlingGame` class has been implemented in `bowling.py` with validation and scoring rules for open frames, spares, strikes, and tenth-frame fill balls. All 31 tests in `bowling_test.py` pass.\\n\\nDouble-checked the test suite. All 31 unit tests in `bowling_test.py` were re-run with verbose output and passed.\",\n  \"usage\": {\n    \"input_tokens\": 28979,\n    \"output_tokens\": 32,\n    \"cache_read_input_tokens\": 26466,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 26.1,
+      "input_tokens": 24452,
+      "output_tokens": 68,
+      "cached_tokens": 22475,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_sloth_1789447693745_8123c4239178926b\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"The Forth evaluator has been implemented in `forth.py` supporting arithmetic (`+`, `-`, `*`, `/`), stack manipulation (`DUP`, `DROP`, `SWAP`, `OVER`), user-defined words (`: word-name definition ;`), case-insensitivity, and custom exceptions. All 54 unit tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 24452,\n    \"output_tokens\": 68,\n    \"cache_read_input_tokens\": 22475,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 47.8,
+      "input_tokens": 29996,
+      "output_tokens": 18,
+      "cached_tokens": 26526,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_llama_1789447720777_eb06474bf97aaef6\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Gemini 3.8 Flash\",\n  \"text\": \"`wordy.py` has been implemented to parse and evaluate word problems left-to-right. All 25 unit tests in `wordy_test.py` pass.\\n\\nAll tests have been verified with verbose output and all 25 test cases pass cleanly.\",\n  \"usage\": {\n    \"input_tokens\": 29996,\n    \"output_tokens\": 18,\n    \"cache_read_input_tokens\": 26526,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

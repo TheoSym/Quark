@@ -1,0 +1,61 @@
+{
+ "model": "QGI-2-V41",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "exa-reuse": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 17.1,
+   "total_wall_s": 102.4,
+   "errors": 0,
+   "input_tokens": 109336,
+   "output_tokens": 798,
+   "cached_tokens": 107776
+  }
+ },
+ "results": [
+  {
+   "agent": "exa-reuse",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 79.6,
+   "input_tokens": 46751,
+   "output_tokens": 343,
+   "cached_tokens": 46336,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+   "agent_tail": "-frame spare, a fill-ball strike counts but a non-strike fill cannot lift the pair past 10, so `9/ + 9` scores 19, not 20.\\n- After a tenth-frame strike, the two fill balls must total \u226410 unless the first is itself a strike, so `X + 9 + 9` is rejected while `X + X + 9` is accepted.\\n- Rack reset after a tenth-frame strike, but not after the first ball of a spare or open frame.\\n\\nFiles changed: `bowling.py` (only). `bowling_test.py` untouched.\",\n  \"usage\": {\n    \"input_tokens\": 46751,\n    \"output_tokens\": 343,\n    \"cache_read_input_tokens\": 46336,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 17.1,
+   "input_tokens": 34878,
+   "output_tokens": 275,
+   "cached_tokens": 34560,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+   "agent_tail": "e `ValueError(\\\"undefined operation\\\")`.\\n\\nTwo subtle semantics handled correctly:\\n- Definitions **capture** the words defined at that point, so `: foo 5 ; : bar foo ; : foo 6 ; bar foo` yields `[5, 6]` (bodies are immutable tuples, so redefinition can't corrupt an earlier snapshot).\\n- `: foo 10 ; : foo foo 1 + ; foo` yields `[11]`: the self-reference binds to the prior `foo` snapshot, avoiding infinite recursion.\\n\\nCommitted as `0d46204`.\",\n  \"usage\": {\n    \"input_tokens\": 34878,\n    \"output_tokens\": 275,\n    \"cache_read_input_tokens\": 34560,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 5.7,
+   "input_tokens": 27707,
+   "output_tokens": 180,
+   "cached_tokens": 26880,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": "**: split body, drop the filler `by` in \\\"multiplied by\\\" / \\\"divided by\\\".\\n- **Left-to-right evaluation**: no operator precedence, so `3 plus 2 multiplied by 3` = 15.\\n- **Errors**: unknown words (e.g. `cubed`) raise `unknown operation`; structural problems (leading non-number that is an operator, missing operand, two numbers/operators in a row) raise `syntax error`.\\n- Division uses `//`, which is exact for all test cases (`33 / -3` = -11).\",\n  \"usage\": {\n    \"input_tokens\": 27707,\n    \"output_tokens\": 180,\n    \"cache_read_input_tokens\": 26880,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

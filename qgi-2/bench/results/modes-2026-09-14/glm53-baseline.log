@@ -1,0 +1,8 @@
+[jcode] bowling                      PASS  108.1s
+[jcode] forth                        PASS   86.8s
+[jcode] wordy                        FAIL  315.5s  exit 1: for original model_group=GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+
+agent    solved   rate  median s  total s errors     in tok  out tok     cached
+baseline    2/3      67%     108.1    510.4      1     56,002      424     55,360

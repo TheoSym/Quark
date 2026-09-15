@@ -1,0 +1,12 @@
+[jcode] bowling                      FAIL    0.7s  exit 1: ut can only afford 14585. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+[jcode] forth                        FAIL    0.6s  exit 1: ut can only afford 14585. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+[jcode] wordy                        FAIL    0.7s  exit 1: but can only afford 1013. To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+
+agent    solved   rate  median s  total s errors     in tok  out tok     cached
+exa-reuse    0/3       0%       0.7      2.0      3          0        0          0

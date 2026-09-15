@@ -1,0 +1,61 @@
+{
+ "model": "Qwen3.8-Flash-Next-NVFP4",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "baseline": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 26.0,
+   "total_wall_s": 75.3,
+   "errors": 0,
+   "input_tokens": 91724,
+   "output_tokens": 646,
+   "cached_tokens": 89984
+  }
+ },
+ "results": [
+  {
+   "agent": "baseline",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 26.0,
+   "input_tokens": 31026,
+   "output_tokens": 284,
+   "cached_tokens": 30656,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+   "agent_tail": "mmitted as `c058406`.\\n\\n`bowling.py` now tracks frames as they're played: strikes and spares get the standard next-roll bonuses, the tenth frame handles fill balls (with a fresh rack only after a strike, so `10,6,10` is rejected but `10,10,6` scores 26), and every illegal state raises with a message: negative/over-10 rolls, two rolls over 10 pins, rolling past ten frames or past awarded fill balls, and scoring an unstarted or incomplete game.\",\n  \"usage\": {\n    \"input_tokens\": 31026,\n    \"output_tokens\": 284,\n    \"cache_read_input_tokens\": 30656,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "baseline",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 29.6,
+   "input_tokens": 32628,
+   "output_tokens": 229,
+   "cached_tokens": 32192,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+   "agent_tail": "forth.py`: `StackUnderflowError` (subclass of `Exception` with a message), a primitive table for `+ - * / dup drop swap over` with arity checks, eager macro-style expansion of user definitions at definition time (so later redefinitions don't retroactively change earlier words), truncating integer division with `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"illegal operation\\\")` for numeric word names, and case-insensitive tokenization.\",\n  \"usage\": {\n    \"input_tokens\": 32628,\n    \"output_tokens\": 229,\n    \"cache_read_input_tokens\": 32192,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "baseline",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 19.7,
+   "input_tokens": 28070,
+   "output_tokens": 133,
+   "cached_tokens": 27136,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": "918d9a965\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Qwen3.8-Flash-Next-NVFP4\",\n  \"text\": \"\\n\\nAll 25 tests pass, committed as `d4e2edb`.\\n\\n`wordy.py` now: strips the `What is` prefix (anything else is \\\"unknown operation\\\"), rejects unknown words, then walks tokens as `number (op [by] number)*` left-to-right, raising `ValueError(\\\"syntax error\\\")` for malformed input. Division truncates toward zero so `-12 divided by 2 divided by -3` gives 2.\",\n  \"usage\": {\n    \"input_tokens\": 28070,\n    \"output_tokens\": 133,\n    \"cache_read_input_tokens\": 27136,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

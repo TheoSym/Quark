@@ -1,0 +1,61 @@
+{
+ "model": "Qwen3.8-Flash-Next-NVFP4",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "safe-efficient": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 15.2,
+   "total_wall_s": 55.3,
+   "errors": 0,
+   "input_tokens": 91280,
+   "output_tokens": 772,
+   "cached_tokens": 89088
+  }
+ },
+ "results": [
+  {
+   "agent": "safe-efficient",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 25.0,
+   "input_tokens": 31824,
+   "output_tokens": 426,
+   "cached_tokens": 31424,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+   "agent_tail": " validates pin counts, rejects exceeding standing pins, rolls after game end, and completes the tenth frame only when its bonus balls (if any) are done.\\n- `score()` walks the first nine frames applying strike (+next two rolls) and spare (+next roll) bonuses, then adds tenth-frame totals; raises with messages for unstarted/incomplete games.\\n\\nAll 31 tests pass (`python -m unittest bowling_test` \u2192 OK), and the change is committed as `b1281f4`.\",\n  \"usage\": {\n    \"input_tokens\": 31824,\n    \"output_tokens\": 426,\n    \"cache_read_input_tokens\": 31424,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "safe-efficient",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 15.2,
+   "input_tokens": 29902,
+   "output_tokens": 182,
+   "cached_tokens": 28352,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+   "agent_tail": "t number of items in stack\\\")` raised by every primitive that needs more operands than the stack holds\\n- `ZeroDivisionError(\\\"divide by zero\\\")` for `/`, truncating toward zero; `ValueError(\\\"undefined operation\\\")` / `ValueError(\\\"illegal operation\\\")` for unknown words and numeric redefinitions\\n- Definitions are expanded eagerly at definition time, so `: foo 10 ; : foo foo 1 + ; foo` correctly yields `[11]`, and words stay case-insensitive\",\n  \"usage\": {\n    \"input_tokens\": 29902,\n    \"output_tokens\": 182,\n    \"cache_read_input_tokens\": 28352,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "safe-efficient",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 15.1,
+   "input_tokens": 29554,
+   "output_tokens": 164,
+   "cached_tokens": 29312,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": "t\": \"\\n\\nImplemented `answer()` in `wordy.py:43`: strips the \\\"What is ... ?\\\" wrapper, collapses \\\"multiplied by\\\"/\\\"divided by\\\" into single tokens, rejects unknown words with `ValueError(\\\"unknown operation\\\")`, and parses number/operator alternation left-to-right (ignoring precedence), raising `ValueError(\\\"syntax error\\\")` for malformed input. Division truncates toward zero.\\n\\nAll 25 tests in `wordy_test.py` pass; committed as `395070a`.\",\n  \"usage\": {\n    \"input_tokens\": 29554,\n    \"output_tokens\": 164,\n    \"cache_read_input_tokens\": 29312,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

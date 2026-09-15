@@ -1,0 +1,61 @@
+{
+ "model": "QGI-2-V41",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "safe-efficient": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 23.8,
+   "total_wall_s": 60.8,
+   "errors": 0,
+   "input_tokens": 103820,
+   "output_tokens": 562,
+   "cached_tokens": 103168
+  }
+ },
+ "results": [
+  {
+   "agent": "safe-efficient",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 23.8,
+   "input_tokens": 36948,
+   "output_tokens": 180,
+   "cached_tokens": 36864,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+   "agent_tail": "ces frames on strikes, and handles the special 10th-frame fill-ball rules (spare gets 1 fill ball, strike gets 2, no re-bonus, open 10th ends the game).\\n- `score()` rejects incomplete games and applies strike (next 2 rolls) and spare (next 1 roll) bonuses across the first 9 frames, summing the 10th frame directly.\\n\\nVerified against 31 unit tests plus extra checks (perfect 300, all spares 150, three 10th-frame strikes 30, prompt example 48).\",\n  \"usage\": {\n    \"input_tokens\": 36948,\n    \"output_tokens\": 180,\n    \"cache_read_input_tokens\": 36864,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "safe-efficient",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 23.8,
+   "input_tokens": 37142,
+   "output_tokens": 253,
+   "cached_tokens": 36864,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+   "agent_tail": ";` resolves the inner `foo` to the prior definition rather than recursing.\\n- Errors: `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"illegal operation\\\")` for redefining a number, `ValueError(\\\"undefined operation\\\")` for unknown words.\\n\\nNote on integration: `evaluate` is called once per test, creating a fresh `Forth` per call, which is what the canonical tests assume.\",\n  \"usage\": {\n    \"input_tokens\": 37142,\n    \"output_tokens\": 253,\n    \"cache_read_input_tokens\": 36864,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "safe-efficient",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 13.2,
+   "input_tokens": 29730,
+   "output_tokens": 129,
+   "cached_tokens": 29440,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": "r first, then loops consuming an operator (`plus`, `minus`, `multiplied by`, `divided by`) plus its operand, evaluating strictly left-to-right.\\n\\nError handling matches the spec: unrecognized word or non-math question gives `ValueError(\\\"unknown operation\\\")`; a number where an operator belongs, a missing operand, or a bare operator gives `ValueError(\\\"syntax error\\\")`.\\n\\nOne note: the commit I made accidentally included `__pycache__` files.\",\n  \"usage\": {\n    \"input_tokens\": 29730,\n    \"output_tokens\": 129,\n    \"cache_read_input_tokens\": 29440,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

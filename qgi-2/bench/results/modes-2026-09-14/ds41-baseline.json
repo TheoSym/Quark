@@ -1,0 +1,61 @@
+{
+ "model": "QGI-2-V41",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "baseline": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 32.8,
+   "total_wall_s": 144.3,
+   "errors": 0,
+   "input_tokens": 144268,
+   "output_tokens": 610,
+   "cached_tokens": 141824
+  }
+ },
+ "results": [
+  {
+   "agent": "baseline",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 32.8,
+   "input_tokens": 40917,
+   "output_tokens": 182,
+   "cached_tokens": 40704,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+   "agent_tail": "nting strikes as one roll) to locate where the tenth frame starts, which handles strike-heavy games correctly.\\n- **`score()`** raises unless the game is complete, then sums each frame with strike (next two rolls) and spare (next one roll) bonuses, treating the tenth frame as a plain sum of its rolls.\\n\\nAll 31 tests pass. Extra checks confirmed: the first-fill-ball-strike rule is enforced, all-spares scores 150, and a perfect game scores 300.\",\n  \"usage\": {\n    \"input_tokens\": 40917,\n    \"output_tokens\": 182,\n    \"cache_read_input_tokens\": 40704,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "baseline",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 93.6,
+   "input_tokens": 73616,
+   "output_tokens": 225,
+   "cached_tokens": 71680,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+   "agent_tail": " dictionary at definition time, so a word that names itself resolves to the previous definition (`: foo foo 1 + ;` works) and later redefinitions don't leak in.\\n\\nOne notable environment quirk I had to work around: this Python build mis-evaluates `list.append(list.pop())` and `d[k] = tup`/`words[k] = tup` when a tuple expression is built inline twice, so I avoided `pop()`/tuple-built-inline-as-argument idioms and bind results to locals first.\",\n  \"usage\": {\n    \"input_tokens\": 73616,\n    \"output_tokens\": 225,\n    \"cache_read_input_tokens\": 71680,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "baseline",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 17.9,
+   "input_tokens": 29735,
+   "output_tokens": 203,
+   "cached_tokens": 29440,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+   "agent_tail": " two numbers/operators in a row, prefix/postfix ordering) raises `ValueError(\\\"syntax error\\\")`.\\n- **Evaluation** is strictly left-to-right, matching the spec (so `3 plus 2 multiplied by 3` = 15), using integer division for `divided by`.\\n\\nOne thing I noticed: the files live under a temp `polyglot-bench` directory and there's a `.git` folder, but the harness controls commits there, so I left git alone. Let me know if you'd like it committed.\",\n  \"usage\": {\n    \"input_tokens\": 29735,\n    \"output_tokens\": 203,\n    \"cache_read_input_tokens\": 29440,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

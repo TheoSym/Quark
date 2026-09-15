@@ -1,0 +1,12 @@
+[jcode] bowling                      FAIL    0.7s  exit 1: for original model_group=GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+[jcode] forth                        FAIL    0.7s  exit 1: for original model_group=GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+[jcode] wordy                        FAIL    0.7s  exit 1: for original model_group=GLM 5.3. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
+Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
+
+
+agent    solved   rate  median s  total s errors     in tok  out tok     cached
+exa-reuse    0/3       0%       0.7      2.1      3          0        0          0

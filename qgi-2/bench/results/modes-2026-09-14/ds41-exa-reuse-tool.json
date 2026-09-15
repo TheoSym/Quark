@@ -1,0 +1,61 @@
+{
+ "model": "QGI-2-V41",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "exa-reuse+tool": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 14.4,
+   "total_wall_s": 36.7,
+   "errors": 0,
+   "input_tokens": 98253,
+   "output_tokens": 551,
+   "cached_tokens": 95744
+  }
+ },
+ "results": [
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 14.4,
+   "input_tokens": 35349,
+   "output_tokens": 208,
+   "cached_tokens": 33792,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+   "agent_tail": " or spare, no strike on the second fill ball unless the first was a strike, and no rolls after the game ends.\\n- `score` is terminal-only, raising `ValueError` for unstarted or incomplete games.\\n\\nEvery rule violation raises with a non-empty message, satisfying `assertRaisesRegex(Exception, r\\\".+\\\")`. Verified separately that a spare-then-two-fill-balls sequence (which the test file never exercises) is also rejected, and that `XX6` scores 26.\",\n  \"usage\": {\n    \"input_tokens\": 35349,\n    \"output_tokens\": 208,\n    \"cache_read_input_tokens\": 33792,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 16.8,
+   "input_tokens": 35032,
+   "output_tokens": 249,
+   "cached_tokens": 34304,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+   "agent_tail": "ken is replaced by the then-current definition of that word. This makes `: foo 10 ; : foo foo 1 + ; foo` yield `11` (self-reference uses the outer/prior definition), and redefining a word doesn't affect earlier definitions that already inlined it.\\n- Redefining a number (`: 1 2 ;`) raises `ValueError(\\\"illegal operation\\\")`; division by zero raises `ZeroDivisionError(\\\"divide by zero\\\")`.\\n\\nVerified with the full suite: `Ran 54 tests ... OK`.\",\n  \"usage\": {\n    \"input_tokens\": 35032,\n    \"output_tokens\": 249,\n    \"cache_read_input_tokens\": 34304,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse+tool",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 5.5,
+   "input_tokens": 27872,
+   "output_tokens": 94,
+   "cached_tokens": 27648,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.08s\n",
+   "agent_tail": "f5773d1b540b7\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-2-V41\",\n  \"text\": \"All 25 tests pass. `wordy.py` implements `answer()` with:\\n\\n- Left-to-right evaluation of `plus`/`minus`/`multiplied by`/`divided by` (integer division).\\n- Unknown tokens or non-\\\"What is\\\" questions raise `ValueError(\\\"unknown operation\\\")`.\\n- Structural problems (missing/extra operands, dangling operators, unprefixed \\\"by\\\") raise `ValueError(\\\"syntax error\\\")`.\",\n  \"usage\": {\n    \"input_tokens\": 27872,\n    \"output_tokens\": 94,\n    \"cache_read_input_tokens\": 27648,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

@@ -1,0 +1,61 @@
+{
+ "model": "Qwen3.8-Flash-Next-NVFP4",
+ "lang": "python",
+ "exercises": [
+  "bowling",
+  "forth",
+  "wordy"
+ ],
+ "summary": {
+  "exa-reuse": {
+   "n": 3,
+   "solved": 3,
+   "solve_rate": 1.0,
+   "median_wall_s": 20.8,
+   "total_wall_s": 63.4,
+   "errors": 0,
+   "input_tokens": 95735,
+   "output_tokens": 651,
+   "cached_tokens": 92224
+  }
+ },
+ "results": [
+  {
+   "agent": "exa-reuse",
+   "exercise": "bowling",
+   "solved": true,
+   "wall_s": 23.4,
+   "input_tokens": 32178,
+   "output_tokens": 163,
+   "cached_tokens": 31744,
+   "error": null,
+   "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+   "agent_tail": " committed (`737cb2b`).\\n\\nImplementation in `bowling.py`: `roll()` validates each ball (negative/over-10 pins, two rolls exceeding 10 pins, invalid fill balls, rolling after the game ends) and tracks frame state, including tenth-frame bonus rules where pins reset only after a strike. `score()` rejects incomplete games and walks the roll list, applying the strike (+next two) and spare (+next one) bonuses, then adds the tenth frame's raw total.\",\n  \"usage\": {\n    \"input_tokens\": 32178,\n    \"output_tokens\": 163,\n    \"cache_read_input_tokens\": 31744,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse",
+   "exercise": "forth",
+   "solved": true,
+   "wall_s": 20.8,
+   "input_tokens": 33999,
+   "output_tokens": 308,
+   "cached_tokens": 31808,
+   "error": null,
+   "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+   "agent_tail": "eration\\\")` for redefining numbers (`: 1 2 ;`, `: -1 2 ;`).\\n- Division truncates toward zero, so `-7 2 /` gives `-3` rather than Python's floor division.\\n- Definitions (`: word definition ;`) are expanded eagerly at definition time, so `: foo 5 ; : bar foo ; : foo 6 ;` keeps `bar` as 5, and `: foo foo 1 + ;` works. Everything is lowercased, so words and definitions are case-insensitive; multiple definitions and statements can share one line.\",\n  \"usage\": {\n    \"input_tokens\": 33999,\n    \"output_tokens\": 308,\n    \"cache_read_input_tokens\": 31808,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  },
+  {
+   "agent": "exa-reuse",
+   "exercise": "wordy",
+   "solved": true,
+   "wall_s": 19.2,
+   "input_tokens": 29558,
+   "output_tokens": 180,
+   "cached_tokens": 28672,
+   "error": null,
+   "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+   "agent_tail": "s `What is` prefix; anything without it raises `ValueError(\\\"unknown operation\\\")`.\\n- Collapses `multiplied by` / `divided by` into single tokens, then tokenizes.\\n- Tokens that aren't numbers or known operations \u2192 `unknown operation` (covers \\\"52 cubed\\\").\\n- Parses strictly alternating number/operand pairs left-to-right (no operator precedence); malformed sequences \u2192 `syntax error`.\\n- Division truncates toward zero; committed as `1ffc006`.\",\n  \"usage\": {\n    \"input_tokens\": 29558,\n    \"output_tokens\": 180,\n    \"cache_read_input_tokens\": 28672,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+  }
+ ],
+ "copied_from": "coding-modes-2026-09-13 (self-hosted B200, 13 Sep; not re-run)"
+}

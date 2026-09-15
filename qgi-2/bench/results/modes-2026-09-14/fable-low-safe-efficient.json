@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 29.3,
+      "total_wall_s": 92.8,
+      "errors": 0,
+      "input_tokens": 122322,
+      "output_tokens": 300,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 25.8,
+      "input_tokens": 41628,
+      "output_tokens": 78,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_jaguar_1789447720417_2f0f75a7c2024655\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `BowlingGame` in `bowling.py` with roll validation (pin range, frame limits, fill-ball rules, game-over) and scoring for strikes, spares, and the tenth frame. All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 41628,\n    \"output_tokens\": 78,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 29.3,
+      "input_tokens": 42295,
+      "output_tokens": 134,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "_id\": \"session_tigress_1789447746955_c64e8421fb7a4aad\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `forth.py`: a stack evaluator with arithmetic, `DUP/DROP/SWAP/OVER`, case-insensitive user-defined words (expanded at definition time so redefinitions behave correctly), `StackUnderflowError`, `ZeroDivisionError(\\\"divide by zero\\\")`, and `ValueError` for illegal/undefined operations. All 54 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 42295,\n    \"output_tokens\": 134,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 37.7,
+      "input_tokens": 38399,
+      "output_tokens": 88,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_herb_1789447777227_9cbfcbcee8b1965b\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"All 25 tests pass. `wordy.py` now parses \\\"What is ...?\\\" questions, evaluates left to right, and raises `ValueError(\\\"unknown operation\\\")` for unsupported words or non-math questions and `ValueError(\\\"syntax error\\\")` for malformed sequences.\",\n  \"usage\": {\n    \"input_tokens\": 38399,\n    \"output_tokens\": 88,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 70.0,
+      "total_wall_s": 357.1,
+      "errors": 0,
+      "input_tokens": 94235,
+      "output_tokens": 701,
+      "cached_tokens": 93184
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 224.0,
+      "input_tokens": 37317,
+      "output_tokens": 212,
+      "cached_tokens": 37120,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": " tests pass and the implementation is committed.\\n\\n`BowlingGame` tracks rolls frame by frame: `roll()` validates pin counts (0\u201310, not exceeding the pins standing, with proper tenth-frame fill-ball resets after a strike or spare) and rejects rolls once ten frames are done; `score()` refuses incomplete games and applies strike/spare bonuses using the next one or two rolls, with the tenth frame's fill balls counting once toward that frame only.\",\n  \"usage\": {\n    \"input_tokens\": 37317,\n    \"output_tokens\": 212,\n    \"cache_read_input_tokens\": 37120,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 70.0,
+      "input_tokens": 28530,
+      "output_tokens": 218,
+      "cached_tokens": 27904,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": " division truncates toward zero and raises `ZeroDivisionError(\\\"divide by zero\\\")`.\\n- Word definitions `: name body ;` are eagerly expanded against the definitions in scope at definition time, so redefinitions and self-referencing words (`: foo foo 1 + ;`) resolve correctly, and words/names are case-insensitive.\\n- Defining a numeric name raises `ValueError(\\\"illegal operation\\\")`; an unknown word raises `ValueError(\\\"undefined operation\\\")`.\",\n  \"usage\": {\n    \"input_tokens\": 28530,\n    \"output_tokens\": 218,\n    \"cache_read_input_tokens\": 27904,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 63.1,
+      "input_tokens": 28388,
+      "output_tokens": 271,
+      "cached_tokens": 28160,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "he text after `What is` into numbers and operators (`multiplied by`/`divided by` are two-word tokens), then folds strictly left-to-right with alternating number/operator validation. Unknown words raise `ValueError(\\\"unknown operation\\\")` and any ordering problem (missing operand, repeated operator, adjacent numbers, prefix/postfix) raises `ValueError(\\\"syntax error\\\")`. Division truncates toward zero without floats so large numbers stay exact.\",\n  \"usage\": {\n    \"input_tokens\": 28388,\n    \"output_tokens\": 271,\n    \"cache_read_input_tokens\": 28160,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}
