@@ -143,11 +143,17 @@ def main() -> None:
     ap.add_argument("--turns", type=int, default=100, help="length of the script (default: the full 100)")
     ap.add_argument("--facts", type=int, default=len(FACTS), help="facts planted and probed (default: all 20)")
     ap.add_argument("--api-key", default=None, help="bearer for the endpoint (or env LH_API_KEY); local engines need none")
+    ap.add_argument("--reasoning-effort", default=None, help="sent as reasoning_effort on every request")
+    ap.add_argument("--usage-include", action="store_true", help='send usage: {include: true} (OpenRouter returns usage.cost)')
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     model = f"{args.model}@{args.session}" if (args.arm == "proxy-window" and args.session) else args.model
     extra = {"chat_template_kwargs": {"enable_thinking": False}} if args.no_think else {}
+    if args.reasoning_effort:
+        extra["reasoning_effort"] = args.reasoning_effort
+    if args.usage_include:
+        extra["usage"] = {"include": True}
     key = args.api_key or os.environ.get("LH_API_KEY")
     if key:
         extra["_auth"] = key
@@ -177,6 +183,7 @@ def main() -> None:
                      "cached_tokens": (usage.get("prompt_tokens_details") or {}).get("cached_tokens"),
                      "completion_tokens": usage.get("completion_tokens"),
                      "reasoning_tokens": (usage.get("completion_tokens_details") or {}).get("reasoning_tokens"),
+                     "cost": usage.get("cost"),
                      "finish_reason": usage.get("finish_reason"), "error": err})
         print(f"t{step['turn']:3} {step['kind']:6} {dt:5.1f}s "
               f"{'HIT' if hit else ('MISS' if hit is False else '   ')} "
@@ -194,6 +201,9 @@ def main() -> None:
         "total_s": round(time.time() - t_start, 1),
         "prompt_tokens": sum(r["prompt_tokens"] or 0 for r in rows),
         "cached_tokens": sum(r["cached_tokens"] or 0 for r in rows),
+        "completion_tokens": sum(r["completion_tokens"] or 0 for r in rows),
+        # Only present when the endpoint reports it (OpenRouter with usage.include).
+        "cost_usd": round(sum(r["cost"] or 0 for r in rows), 4) if any(r.get("cost") is not None for r in rows) else None,
         "errors": sum(1 for r in rows if r["error"]),
         # A probe cut off by max_tokens is a measurement defect, not a miss;
         # surfaced so a low recall can be read correctly.
