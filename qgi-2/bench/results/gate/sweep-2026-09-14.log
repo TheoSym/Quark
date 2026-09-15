@@ -1,0 +1,40 @@
+== skip Gemini 3.8 Flash (gate-gemini-3-8-flash.json exists)
+== Deepseek V4 Pro  12:49
+Deepseek V4 Pro            correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 600.9 s/task · 40.3 tok/s · TTFT 2.01 s  | tools ✓  cache yes  errors 4
+gate wall 2707.6 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-deepseek-v4-pro.json
+== QGI 3.8 Flash  13:34
+QGI 3.8 Flash              correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 61.9 s/task · 67.2 tok/s · TTFT 0.36 s  | tools ✓  cache yes  errors 1
+gate wall 1152.4 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-qgi-3-8-flash.json
+== GLM 5.3  13:53
+GLM 5.3                    correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 76.9 s/task · 189.9 tok/s · TTFT 0.55 s  | tools ✓  cache yes  errors 1
+gate wall 1125.3 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-glm-5-3.json
+== GLM 5.3 Flash  14:12
+GLM 5.3 Flash              correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 225.2 s/task · 58.7 tok/s · TTFT 2.47 s  | tools ✓  cache yes  errors 0
+gate wall 1624.5 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-glm-5-3-flash.json
+== Kimi-k3  14:39
+Kimi-k3                    correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 60.5 s/task · 65.4 tok/s · TTFT 1.03 s  | tools ✓  cache yes  errors 0
+gate wall 973.7 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-kimi-k3.json
+== GPT-5.6 Luna  14:55
+GPT-5.6 Luna               correctness  13/15  coding 3/3  agentic 2/4  memory 8/8  | speed 202.6 s/task · 125.3 tok/s · TTFT ? s  | tools ✓  cache yes  errors 0
+gate wall 1142.7 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-gpt-5-6-luna.json
+== Qwen 3.8 max  15:15
+Qwen 3.8 max               correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 166.7 s/task · 32.6 tok/s · TTFT 1.34 s  | tools ✓  cache yes  errors 0
+gate wall 1172.9 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-qwen-3-8-max.json
+== QGI-V4 Pro  15:34
+QGI-V4 Pro                 correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 59.1 s/task · 69.1 tok/s · TTFT 0.91 s  | tools ✓  cache yes  errors 0
+gate wall 544.9 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-qgi-v4-pro.json
+== QGI-Flash 3.8 Next  15:43
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['C:\\Users\\SamSammane\\AppData\\Local\\Programs\\Python\\Python311\\python.exe', 'F:\\QHG\\Quark\\qgi-2\\bench\\long_horizon.py', '--base', 'http://<host>/v1', '--model', 'QGI-Flash 3.8 Next', '--arm', 'direct-full', '--turns', '40', '--facts', '8', '--max-tokens', '2048', '--timeout', '180', '--out', 'F:\\QHG\\Quark\\qgi-2\\bench\\results\\gate\\qgi-flash-3-8-next-memory.json']' timed out after 3600 seconds
+== report
+| model | correctness | coding | agentic | memory | s/task | tok/s | TTFT | tools | cache | errors | date |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Gemini 3.8 Flash | 15/15 | 3/3 | 4/4 | 8/8 | 50.4 | 76.4 | 1.22 | ✓ | no | 0 | 2026-09-14 12:46 |
+| QGI-V4 Pro | 15/15 | 3/3 | 4/4 | 8/8 | 59.1 | 69.1 | 0.91 | ✓ | yes | 0 | 2026-09-14 15:43 |
+| Kimi-k3 | 15/15 | 3/3 | 4/4 | 8/8 | 60.5 | 65.4 | 1.03 | ✓ | yes | 0 | 2026-09-14 14:55 |
+| QGI 3.8 Flash | 15/15 | 3/3 | 4/4 | 8/8 | 61.9 | 67.2 | 0.36 | ✓ | yes | 1 | 2026-09-14 13:53 |
+| GLM 5.3 | 15/15 | 3/3 | 4/4 | 8/8 | 76.9 | 189.9 | 0.55 | ✓ | yes | 1 | 2026-09-14 14:12 |
+| Qwen 3.8 max | 15/15 | 3/3 | 4/4 | 8/8 | 166.7 | 32.6 | 1.34 | ✓ | yes | 0 | 2026-09-14 15:34 |
+| GLM 5.3 Flash | 15/15 | 3/3 | 4/4 | 8/8 | 225.2 | 58.7 | 2.47 | ✓ | yes | 0 | 2026-09-14 14:39 |
+| Deepseek V4 Pro | 15/15 | 3/3 | 4/4 | 8/8 | 600.9 | 40.3 | 2.01 | ✓ | yes | 4 | 2026-09-14 13:34 |
+| GPT-5.6 Luna | 13/15 | 3/3 | 2/4 | 8/8 | 202.6 | 125.3 | None | ✓ | yes | 0 | 2026-09-14 15:15 |

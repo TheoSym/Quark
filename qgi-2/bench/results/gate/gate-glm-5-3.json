@@ -1,0 +1,92 @@
+{
+ "model": "GLM 5.3",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 14:12",
+ "gate_wall_s": 1125.3,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 0.55,
+   "decode_tps": 189.9,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2752,
+   "cache_probe_prompt_tokens": 2777,
+   "wall_s": 6.3
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 76.9,
+   "total_wall_s": 192.5,
+   "input_tokens": 81985,
+   "cached_tokens": 79488,
+   "errors": 0,
+   "file": "glm-5-3-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 834.6,
+    "errors": 1,
+    "file": "glm-5-3-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 27.7,
+    "errors": 0,
+    "file": "glm-5-3-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 1.35,
+   "p90_latency_s": 1.48,
+   "prompt_tokens": 38815,
+   "cached_tokens": 35648,
+   "errors": 0,
+   "total_s": 54.2,
+   "file": "glm-5-3-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "GLM 5.3",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 76.9,
+  "decode_tps": 189.9,
+  "ttft_s": 0.55,
+  "cache_reported": true,
+  "errors": 1
+ }
+}

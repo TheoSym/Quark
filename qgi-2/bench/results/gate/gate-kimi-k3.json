@@ -1,0 +1,92 @@
+{
+ "model": "Kimi-k3",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 14:55",
+ "gate_wall_s": 973.7,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 1.03,
+   "decode_tps": 65.4,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2850,
+   "cache_probe_prompt_tokens": 2850,
+   "wall_s": 16.4
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 60.5,
+   "total_wall_s": 212.8,
+   "input_tokens": 79725,
+   "cached_tokens": 79575,
+   "errors": 0,
+   "file": "kimi-k3-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 622.4,
+    "errors": 0,
+    "file": "kimi-k3-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 34.4,
+    "errors": 0,
+    "file": "kimi-k3-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 1.94,
+   "p90_latency_s": 2.68,
+   "prompt_tokens": 61202,
+   "cached_tokens": 56524,
+   "errors": 0,
+   "total_s": 77.5,
+   "file": "kimi-k3-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "Kimi-k3",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 60.5,
+  "decode_tps": 65.4,
+  "ttft_s": 1.03,
+  "cache_reported": true,
+  "errors": 0
+ }
+}

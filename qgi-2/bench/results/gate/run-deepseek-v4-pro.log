@@ -1,0 +1,16 @@
+== gate: Deepseek V4 Pro via qgillm (http://<host>/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 2.01, 'decode_tps': 40.3, 'cache_reported': True, 'cache_probe_cached_tokens': 2526, 'cache_probe_prompt_tokens': 2769, 'wall_s': 25.3}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 600.9, 'total_wall_s': 1365.9, 'input_tokens': 35507, 'cached_tokens': 32622, 'errors': 2, 'file': 'deepseek-v4-pro-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model Deepseek V4 Pro --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-pro
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider qgillm --baseline-model Deepseek V4 Pro --ta
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 968.5, 'errors': 2, 'file': 'deepseek-v4-pro-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 75.3, 'errors': 0, 'file': 'deepseek-v4-pro-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base http://<host>/v1 --model Deepseek V4 Pro --arm direct-full --turns 40 --facts 8 --max-tokens 2048 --t
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 6.56, 'p90_latency_s': 12.8, 'prompt_tokens': 31513, 'cached_tokens': 25204, 'errors': 0, 'total_s': 262.3, 'file': 'deepseek-v4-pro-memory.json'}
+
+Deepseek V4 Pro            correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 600.9 s/task · 40.3 tok/s · TTFT 2.01 s  | tools ✓  cache yes  errors 4
+gate wall 2707.6 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-deepseek-v4-pro.json

@@ -1,0 +1,65 @@
+{
+  "model": "GLM 5.3",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 834.6,
+    "errors": 1,
+    "input_tokens": 33549,
+    "output_tokens": 338,
+    "cached_tokens": 33216
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 630.9,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=618",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 203.7,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 33549,
+      "output_tokens": 338,
+      "cached_tokens": 33216,
+      "error": null,
+      "agent_tail": "ilable/Used per site, live utilization formulas, bold Total row with `SUM(B2:B4)`/`SUM(C2:C4)`/`=C5/B5`, formats `0` and `0.0%`\\n- **Bar chart**: native `barChart` on Summary, series `Summary!$C$2:$C$4` (Hours Used) with site categories `Summary!$A$2:$A$4`\\n- Recalculated headlessly with LibreOffice (scoop install, not on PATH as claimed) and confirmed with openpyxl: Rotterdam 1440/1152 (80.0%), Hamburg 1440/955 (66.3%), Antwerp 1440/1181 (82.0%), Total 4320/3288 (76.1%), all formulas intact with cached values\\n\\nNote: the `xlsx` skill referenced in `./.claude/skills` does not exist in this directory, so I proceeded with openpyxl directly.\",\n  \"usage\": {\n    \"input_tokens\": 33549,\n    \"output_tokens\": 338,\n    \"cache_read_input_tokens\": 33216,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

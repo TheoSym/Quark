@@ -1,0 +1,16 @@
+== gate: QGI 3.8 Flash via qgillm (http://<host>/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 0.36, 'decode_tps': 67.2, 'cache_reported': True, 'cache_probe_cached_tokens': 2816, 'cache_probe_prompt_tokens': 3076, 'wall_s': 13.7}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 61.9, 'total_wall_s': 204.9, 'input_tokens': 86249, 'cached_tokens': 85248, 'errors': 0, 'file': 'qgi-3-8-flash-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model QGI 3.8 Flash --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-profi
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider qgillm --baseline-model QGI 3.8 Flash --task
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 684.1, 'errors': 1, 'file': 'qgi-3-8-flash-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 137.4, 'errors': 0, 'file': 'qgi-3-8-flash-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base http://<host>/v1 --model QGI 3.8 Flash --arm direct-full --turns 40 --facts 8 --max-tokens 2048 --tim
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 2.55, 'p90_latency_s': 3.73, 'prompt_tokens': 42773, 'cached_tokens': 35840, 'errors': 0, 'total_s': 101.9, 'file': 'qgi-3-8-flash-memory.json'}
+
+QGI 3.8 Flash              correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 61.9 s/task · 67.2 tok/s · TTFT 0.36 s  | tools ✓  cache yes  errors 1
+gate wall 1152.4 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-qgi-3-8-flash.json

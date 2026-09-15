@@ -1,0 +1,16 @@
+== gate: GLM 5.3 Flash via qgillm (http://<host>/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 2.47, 'decode_tps': 58.7, 'cache_reported': True, 'cache_probe_cached_tokens': 0, 'cache_probe_prompt_tokens': 2777, 'wall_s': 29.9}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 225.2, 'total_wall_s': 731.9, 'input_tokens': 82561, 'cached_tokens': 80064, 'errors': 0, 'file': 'glm-5-3-flash-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model GLM 5.3 Flash --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-profi
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider qgillm --baseline-model GLM 5.3 Flash --task
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 542.3, 'errors': 0, 'file': 'glm-5-3-flash-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 143.2, 'errors': 0, 'file': 'glm-5-3-flash-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base http://<host>/v1 --model GLM 5.3 Flash --arm direct-full --turns 40 --facts 8 --max-tokens 2048 --tim
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 4.17, 'p90_latency_s': 5.67, 'prompt_tokens': 35530, 'cached_tokens': 27264, 'errors': 0, 'total_s': 166.9, 'file': 'glm-5-3-flash-memory.json'}
+
+GLM 5.3 Flash              correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 225.2 s/task · 58.7 tok/s · TTFT 2.47 s  | tools ✓  cache yes  errors 0
+gate wall 1624.5 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-glm-5-3-flash.json

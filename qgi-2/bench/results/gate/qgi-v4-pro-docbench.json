@@ -1,0 +1,65 @@
+{
+  "model": "QGI-V4 Pro",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 251.8,
+    "errors": 0,
+    "input_tokens": 83172,
+    "output_tokens": 314,
+    "cached_tokens": 82432
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 34.4,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=476",
+      "input_tokens": 35932,
+      "output_tokens": 166,
+      "cached_tokens": 35456,
+      "error": null,
+      "agent_tail": "{\n  \"session_id\": \"session_cactus_1789425473923_82a23693ce585fa5\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"Done. Created `invoice.pdf` with a professional header, line-item table, and totals block.\\n\\nVerified with pypdf: all text extracts correctly, including the three line totals, subtotal 12,770.00, VAT 3,192.50, grand total 15,962.50, and the IBAN footer line.\",\n  \"usage\": {\n    \"input_tokens\": 35932,\n    \"output_tokens\": 166,\n    \"cache_read_input_tokens\": 35456,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 217.4,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 47240,
+      "output_tokens": 148,
+      "cached_tokens": 46976,
+      "error": null,
+      "agent_tail": "tree_1789425508561_41772321d655e8a1\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"Done. Built `fleet.xlsx` with:\\n\\n- **Data** sheet: CSV as a styled Excel table, bold header, `Utilization` column with live `=D{r}/C{r}` formulas at `0.0%`.\\n- **Summary** sheet: per-site `SUMIF` formulas for hours, live utilization formulas, `Total` row with `SUM` formulas, and a native horizontal bar chart of Hours Used per site.\\n- Number formats: hours `0`, utilization `0.0%`.\\n\\nRecalculated via LibreOffice so cached values are embedded (Total 4320/3288 = 76.1%), and verified with openpyxl that all formulas and the chart are present.\",\n  \"usage\": {\n    \"input_tokens\": 47240,\n    \"output_tokens\": 148,\n    \"cache_read_input_tokens\": 46976,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

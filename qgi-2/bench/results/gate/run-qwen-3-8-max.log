@@ -1,0 +1,16 @@
+== gate: Qwen 3.8 max via qgillm (http://<host>/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 1.34, 'decode_tps': 32.6, 'cache_reported': True, 'cache_probe_cached_tokens': 3072, 'cache_probe_prompt_tokens': 3076, 'wall_s': 27.1}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 166.7, 'total_wall_s': 455.2, 'input_tokens': 92818, 'cached_tokens': 90112, 'errors': 0, 'file': 'qwen-3-8-max-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model Qwen 3.8 max --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-profil
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider qgillm --baseline-model Qwen 3.8 max --tasks
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 478.2, 'errors': 0, 'file': 'qwen-3-8-max-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 58.7, 'errors': 0, 'file': 'qwen-3-8-max-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base http://<host>/v1 --model Qwen 3.8 max --arm direct-full --turns 40 --facts 8 --max-tokens 2048 --time
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 3.59, 'p90_latency_s': 4.94, 'prompt_tokens': 40226, 'cached_tokens': 19456, 'errors': 0, 'total_s': 143.6, 'file': 'qwen-3-8-max-memory.json'}
+
+Qwen 3.8 max               correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 166.7 s/task · 32.6 tok/s · TTFT 1.34 s  | tools ✓  cache yes  errors 0
+gate wall 1172.9 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-qwen-3-8-max.json

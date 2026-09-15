@@ -1,0 +1,65 @@
+{
+  "model": "GLM 5.3 Flash",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 542.3,
+    "errors": 0,
+    "input_tokens": 71103,
+    "output_tokens": 416,
+    "cached_tokens": 37888
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 133.2,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=490",
+      "input_tokens": 31692,
+      "output_tokens": 148,
+      "cached_tokens": 0,
+      "error": null,
+      "agent_tail": "\n  \"session_id\": \"session_parrot_1789421124787_c22e5d2ec3b5a945\",\n  \"provider\": \"openrouter\",\n  \"model\": \"GLM 5.3 Flash\",\n  \"text\": \"Done. `invoice.pdf` created and verified.\\n\\n- Note: the `./.claude/skills` directory was empty (no `pdf` skill present), so I used reportlab directly.\\n- Layout: \\\"INVOICE\\\" header with number, issuer/bill-to/date block, styled line-item table, totals block (subtotal 12,770.00, VAT 3,192.50, grand total 15,962.50), and the IBAN footer.\\n- Verified via pypdf: every required string (invoice number, parties, dates, item descriptions, all amounts with two decimals, footer) extracts correctly from the text-based PDF.\",\n  \"usage\": {\n    \"input_tokens\": 31692,\n    \"output_tokens\": 148,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 409.1,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 39411,
+      "output_tokens": 268,
+      "cached_tokens": 37888,
+      "error": null,
+      "agent_tail": "cached values exactly match: Rotterdam 1440/1152 (80.0%), Hamburg 1440/955 (66.3%), Antwerp 1440/1181 (82.0%), Total 4320/3288 (76.1%)\\n- **Chart**: native barChart on Summary plotting C2:C4 (Hours Used per site) with categories A2:A4\\n- **Recalc**: `soffice` was not on PATH and LibreOffice isn't installed, so I recalculated via Excel COM (`CalculateFullRebuild` + save) instead; formulas were confirmed present via openpyxl\\n\\nNote: `.claude/skills` was empty and no xlsx skill was found on disk, so I applied standard openpyxl chart/format practices directly. Scripts (`build_fleet.py`, `verify_fleet.py`) are committed alongside the workbook.\",\n  \"usage\": {\n    \"input_tokens\": 39411,\n    \"output_tokens\": 268,\n    \"cache_read_input_tokens\": 37888,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

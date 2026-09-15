@@ -1,0 +1,65 @@
+{
+  "model": "Kimi-k3",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 622.4,
+    "errors": 0,
+    "input_tokens": 63366,
+    "output_tokens": 536,
+    "cached_tokens": 58773
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 151.8,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=591",
+      "input_tokens": 34197,
+      "output_tokens": 286,
+      "cached_tokens": 34197,
+      "error": null,
+      "agent_tail": "otals block, and footer with the IBAN payment line.\\n- All values exactly as specified: INV-2026-0913, dates 13 September 2026 / 13 October 2026, line totals 7500.00 / 3920.00 / 1350.00, subtotal 12770.00, VAT 25% = 3192.50, grand total 15962.50 (amounts printed with two decimals, no thousands separators).\\n- Verification: `verify_invoice.py` uses pypdf to extract text and asserts all 18 required strings \u2014 all PASS.\\n\\nNote: the `pdf` skill was not present (`.claude/skills` is empty), so I built it directly with reportlab. Files committed: `invoice.pdf`, `create_invoice.py`, `verify_invoice.py`, plus a `.gitattributes` marking PDFs binary.\",\n  \"usage\": {\n    \"input_tokens\": 34197,\n    \"output_tokens\": 286,\n    \"cache_read_input_tokens\": 34197,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 470.6,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 29169,
+      "output_tokens": 250,
+      "cached_tokens": 24576,
+      "error": null,
+      "agent_tail": "=D2/C2`-style formulas formatted `0.0%`.\\n- **Summary**: Rotterdam/Hamburg/Antwerp rows with live `=SUMIF(Data!...)` formulas for hours, `=C/B` utilization, and a Total row with `=SUM(B2:B4)` / `=SUM(C2:C4)` / `=C5/B5`.\\n- **Chart**: native `BarChart` on Summary plotting Hours Used per site.\\n- **Formats**: hours as `0`, utilization as `0.0%`.\\n\\nRecalculated via LibreOffice (found under scoop, not on PATH): cached values match expectations exactly \u2014 Rotterdam 1440/1152, Hamburg 1440/955, Antwerp 1440/1181, Total 4320/3288 = 76.1%.\\n\\nNote: the referenced `xlsx` skill wasn't present (`.claude/skills` is empty), so I used openpyxl directly.\",\n  \"usage\": {\n    \"input_tokens\": 29169,\n    \"output_tokens\": 250,\n    \"cache_read_input_tokens\": 24576,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

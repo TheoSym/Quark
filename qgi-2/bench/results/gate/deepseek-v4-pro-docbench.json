@@ -1,0 +1,65 @@
+{
+  "model": "Deepseek V4 Pro",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 968.5,
+    "errors": 2,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 367.6,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=470",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "exit 1: inal model_group=Deepseek V4 Pro. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]\",\"type\":null,\"param\":null,\"code\":\"404\"}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n",
+      "agent_tail": "{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]. Received Model Group=Deepseek V4 Pro\\nAvailable Model Group Fallbacks=None\\nError doing the fallback: litellm.NotFoundError: NotFoundError: OpenrouterException - {\\\"error\\\":{\\\"message\\\":\\\"No endpoints found that support image input\\\",\\\"code\\\":404,\\\"metadata\\\":{\\\"routing_funnel\\\":[{\\\"step\\\":\\\"Initial Endpoints\\\",\\\"endpoint_count\\\":16}],\\\"failed_routing_step\\\":\\\"Filter by Image Support\\\"}}}No fallback model group found for original model_group=Deepseek V4 Pro. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]\",\"type\":null,\"param\":null,\"code\":\"404\"}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 600.9,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "agent_tail": ""
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+ "model": "Qwen 3.8 max",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 15:34",
+ "gate_wall_s": 1172.9,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 1.34,
+   "decode_tps": 32.6,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 3072,
+   "cache_probe_prompt_tokens": 3076,
+   "wall_s": 27.1
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 166.7,
+   "total_wall_s": 455.2,
+   "input_tokens": 92818,
+   "cached_tokens": 90112,
+   "errors": 0,
+   "file": "qwen-3-8-max-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 478.2,
+    "errors": 0,
+    "file": "qwen-3-8-max-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 58.7,
+    "errors": 0,
+    "file": "qwen-3-8-max-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 3.59,
+   "p90_latency_s": 4.94,
+   "prompt_tokens": 40226,
+   "cached_tokens": 19456,
+   "errors": 0,
+   "total_s": 143.6,
+   "file": "qwen-3-8-max-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "Qwen 3.8 max",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 166.7,
+  "decode_tps": 32.6,
+  "ttft_s": 1.34,
+  "cache_reported": true,
+  "errors": 0
+ }
+}

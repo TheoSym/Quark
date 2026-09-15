@@ -1,0 +1,92 @@
+{
+ "model": "Deepseek V4 Pro",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 13:34",
+ "gate_wall_s": 2707.6,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 2.01,
+   "decode_tps": 40.3,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2526,
+   "cache_probe_prompt_tokens": 2769,
+   "wall_s": 25.3
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 600.9,
+   "total_wall_s": 1365.9,
+   "input_tokens": 35507,
+   "cached_tokens": 32622,
+   "errors": 2,
+   "file": "deepseek-v4-pro-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 968.5,
+    "errors": 2,
+    "file": "deepseek-v4-pro-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 75.3,
+    "errors": 0,
+    "file": "deepseek-v4-pro-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 6.56,
+   "p90_latency_s": 12.8,
+   "prompt_tokens": 31513,
+   "cached_tokens": 25204,
+   "errors": 0,
+   "total_s": 262.3,
+   "file": "deepseek-v4-pro-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "Deepseek V4 Pro",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 600.9,
+  "decode_tps": 40.3,
+  "ttft_s": 2.01,
+  "cache_reported": true,
+  "errors": 4
+ }
+}

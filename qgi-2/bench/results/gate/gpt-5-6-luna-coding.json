@@ -1,0 +1,60 @@
+{
+  "model": "GPT-5.6 Luna",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 202.6,
+      "total_wall_s": 614.4,
+      "errors": 0,
+      "input_tokens": 344089,
+      "output_tokens": 1464,
+      "cached_tokens": 282961
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 222.8,
+      "input_tokens": 121556,
+      "output_tokens": 491,
+      "cached_tokens": 99053,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": " with messages.\\n- Syntax compilation and `git diff --check` pass.\\n- Repository is clean at commit `e7860a3`.\\n\\nRechecked the flagged items:\\n\\n- All 31 bowling tests pass.\\n- `bowling.py` compiles successfully.\\n- `git diff --check` passes.\\n- Generated cache files were removed.\\n- The working tree is clean.\\n- Latest commit remains `e7860a3`.\",\n  \"usage\": {\n    \"input_tokens\": 121556,\n    \"output_tokens\": 491,\n    \"cache_read_input_tokens\": 99053,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 202.6,
+      "input_tokens": 103871,
+      "output_tokens": 378,
+      "cached_tokens": 86153,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "on is complete:\\n\\n- Supplied tests: **54/54 passed**\\n- `py_compile`: passed\\n- Broader checks passed for:\\n  - Signed division truncating toward zero\\n  - Multiline definitions\\n  - Delayed word resolution\\n  - User-defined overrides\\n  - Undefined words\\n  - Division by zero\\n  - Stack underflow errors\\n\\nNo further source changes were needed.\",\n  \"usage\": {\n    \"input_tokens\": 103871,\n    \"output_tokens\": 378,\n    \"cache_read_input_tokens\": 86153,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 189.0,
+      "input_tokens": 118662,
+      "output_tokens": 595,
+      "cached_tokens": 97755,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "ive arithmetic smoke checks passed\\n- Generated `__pycache__` was removed\\n- Working tree is clean\\n- Final commit remains `d0549de`\\n\\nRechecked both flagged items:\\n\\n- `wordy.py` implementation was reviewed and matches the requested behavior.\\n- Commit `d0549de` contains only the intended change.\\n- All 25 tests pass.\\n- Working tree is clean.\",\n  \"usage\": {\n    \"input_tokens\": 118662,\n    \"output_tokens\": 595,\n    \"cache_read_input_tokens\": 97755,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    }
+  ]
+}

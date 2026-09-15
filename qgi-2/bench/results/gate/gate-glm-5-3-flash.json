@@ -1,0 +1,92 @@
+{
+ "model": "GLM 5.3 Flash",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 14:39",
+ "gate_wall_s": 1624.5,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 2.47,
+   "decode_tps": 58.7,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 0,
+   "cache_probe_prompt_tokens": 2777,
+   "wall_s": 29.9
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 225.2,
+   "total_wall_s": 731.9,
+   "input_tokens": 82561,
+   "cached_tokens": 80064,
+   "errors": 0,
+   "file": "glm-5-3-flash-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 542.3,
+    "errors": 0,
+    "file": "glm-5-3-flash-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 143.2,
+    "errors": 0,
+    "file": "glm-5-3-flash-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 4.17,
+   "p90_latency_s": 5.67,
+   "prompt_tokens": 35530,
+   "cached_tokens": 27264,
+   "errors": 0,
+   "total_s": 166.9,
+   "file": "glm-5-3-flash-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "GLM 5.3 Flash",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 225.2,
+  "decode_tps": 58.7,
+  "ttft_s": 2.47,
+  "cache_reported": true,
+  "errors": 0
+ }
+}

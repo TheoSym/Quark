@@ -1,0 +1,65 @@
+{
+  "model": "GPT-5.6 Luna",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 228.4,
+    "errors": 0,
+    "input_tokens": 166643,
+    "output_tokens": 884,
+    "cached_tokens": 140405
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 118.7,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=555",
+      "input_tokens": 87330,
+      "output_tokens": 363,
+      "cached_tokens": 72678,
+      "error": null,
+      "agent_tail": "current directory.\\n\\nVerified with `pypdf` that:\\n- The PDF is text-based and extracts correctly.\\n- All invoice details, line items, totals, VAT, and footer text are present.\\n- The invoice is one page with the requested professional layout.\\n\\nFull-result verification completed successfully.\\n\\n- `invoice.pdf` exists and is 3,115 bytes.\\n- It is a one-page PDF with extractable text and two text fonts.\\n- All 21 required values were found, with no missing values.\\n- Todo tracking has been updated to reflect the verified closed feedback loop.\",\n  \"usage\": {\n    \"input_tokens\": 87330,\n    \"output_tokens\": 363,\n    \"cache_read_input_tokens\": 72678,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 109.7,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 79313,
+      "output_tokens": 521,
+      "cached_tokens": 67727,
+      "error": null,
+      "agent_tail": "Per-site values match the CSV:\\n  - Rotterdam: 1440 available, 1152 used\\n  - Hamburg: 1440 available, 955 used\\n  - Antwerp: 1440 available, 1181 used\\n- Data utilization formulas are present for every vehicle.\\n- Summary `SUMIF`, `SUM`, and utilization formulas are present.\\n- Integer and percentage formats are correct.\\n- The native bar chart is present.\\n- Total is 4320 available, 3288 used, or 76.1%.\\n\\nThe workbook is configured for automatic recalculation. LibreOffice recalculation could not run because `soffice` is unavailable on PATH.\",\n  \"usage\": {\n    \"input_tokens\": 79313,\n    \"output_tokens\": 521,\n    \"cache_read_input_tokens\": 67727,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    }
+  ]
+}

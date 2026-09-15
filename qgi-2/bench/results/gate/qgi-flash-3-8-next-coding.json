@@ -1,0 +1,60 @@
+{
+  "model": "QGI-Flash 3.8 Next",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 0,
+      "solve_rate": 0.0,
+      "median_wall_s": 600.9,
+      "total_wall_s": 1802.7,
+      "errors": 3,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": false,
+      "wall_s": 600.9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "ls)\n>       with self.assertRaisesWithMessage(Exception):\nE       AssertionError: Exception not raised\n\nbowling_test.py:109: AssertionError\n=========================== short test summary info ===========================\nFAILED bowling_test.py::BowlingTest::test_a_roll_cannot_score_more_than_10_points\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.11s\n",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": false,
+      "wall_s": 600.9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "_two_numbers(self):\n>       self.assertEqual(evaluate([\"1 2 +\"]), [3])\nE       AssertionError: None != [3]\n\nforth_test.py:21: AssertionError\n=========================== short test summary info ===========================\nFAILED forth_test.py::ForthTest::test_addition_can_add_two_numbers - Assertio...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.10s\n",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": false,
+      "wall_s": 600.9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": " test_addition(self):\n>       self.assertEqual(answer(\"What is 1 plus 1?\"), 2)\nE       AssertionError: None != 2\n\nwordy_test.py:17: AssertionError\n=========================== short test summary info ===========================\nFAILED wordy_test.py::WordyTest::test_addition - AssertionError: None != 2\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.10s\n",
+      "agent_tail": ""
+    }
+  ]
+}

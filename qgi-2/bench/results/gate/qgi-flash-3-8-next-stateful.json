@@ -1,0 +1,14 @@
+[
+  {
+    "arm": "baseline",
+    "task": "stateful",
+    "solved": false,
+    "followup_solved": null,
+    "turns": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "wall_s": 600.0282454490662,
+    "error": "timeout after 600s"
+  }
+]

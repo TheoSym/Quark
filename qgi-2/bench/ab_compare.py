@@ -104,6 +104,11 @@ def run_task(jcode, arm, task, workdir, timeout):
                 env=env,
                 capture_output=True,
                 text=True,
+                # jcode's output is UTF-8; the Windows default (cp1252) raised on
+                # the first model that emitted a curly quote and took the whole
+                # run down with it.
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired:

@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 59.1,
+      "total_wall_s": 182.5,
+      "errors": 0,
+      "input_tokens": 103491,
+      "output_tokens": 240,
+      "cached_tokens": 98560
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 52.5,
+      "input_tokens": 34738,
+      "output_tokens": 33,
+      "cached_tokens": 32896,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_retriever_1789425288893_1ed01badf2edef20\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 31 tests pass. Implemented `BowlingGame` with frame tracking, tenth-frame fill ball validation, and score computation in `bowling.py`.\",\n  \"usage\": {\n    \"input_tokens\": 34738,\n    \"output_tokens\": 33,\n    \"cache_read_input_tokens\": 32896,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 70.9,
+      "input_tokens": 36642,
+      "output_tokens": 138,
+      "cached_tokens": 34432,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "ith:\\n- `StackUnderflowError` (with `super().__init__` so `args[0]` works) for underflow.\\n- Built-in arithmetic (`+ - * /`) with `ZeroDivisionError(\\\"divide by zero\\\")` and stack manipulation (`DUP DROP SWAP OVER`).\\n- Case-insensitive dictionary of user-defined words, compiled with early binding so redefinitions behave correctly.\\n- Number parsing (optional leading `-`) and the required `ValueError` messages for illegal/undefined operations.\",\n  \"usage\": {\n    \"input_tokens\": 36642,\n    \"output_tokens\": 138,\n    \"cache_read_input_tokens\": 34432,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 59.1,
+      "input_tokens": 32111,
+      "output_tokens": 69,
+      "cached_tokens": 31232,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_kitten_1789425414018_1a24f69929ca03c8\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 25 tests pass.\\n\\nThe `answer()` function in `wordy.py` now parses \\\"What is ...?\\\" word problems, tokenizes numbers and the four operations, evaluates left-to-right, and raises the required `ValueError` with either `\\\"unknown operation\\\"` or `\\\"syntax error\\\"` as appropriate.\",\n  \"usage\": {\n    \"input_tokens\": 32111,\n    \"output_tokens\": 69,\n    \"cache_read_input_tokens\": 31232,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

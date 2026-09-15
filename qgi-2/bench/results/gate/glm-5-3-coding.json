@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 76.9,
+      "total_wall_s": 192.5,
+      "errors": 0,
+      "input_tokens": 81985,
+      "output_tokens": 469,
+      "cached_tokens": 79488
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 82.1,
+      "input_tokens": 28517,
+      "output_tokens": 168,
+      "cached_tokens": 26944,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "ow (negative, over 10, frame over 10, invalid fill balls, rolling after the game ends) raises a `ValueError` with a descriptive message and leaves the game unchanged.\\n- `score()` splits the rolls into frames via the same parser, raises `IndexError` with a message if the game isn't complete (including missing tenth-frame fill balls), then sums strikes (10 + next two rolls), spares (10 + next roll), open frames, and the tenth frame's raw total.\",\n  \"usage\": {\n    \"input_tokens\": 28517,\n    \"output_tokens\": 168,\n    \"cache_read_input_tokens\": 26944,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 76.9,
+      "input_tokens": 28712,
+      "output_tokens": 217,
+      "cached_tokens": 28416,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "`StackUnderflowError(\\\"Insufficient number of items in stack\\\")` when the stack is too short.\\n- **Definitions**: `: name body ;` resolves word bodies at definition time (so later redefinitions don't alter earlier ones), rejects redefining numbers with `ValueError(\\\"illegal operation\\\")`, and unknown words raise `ValueError(\\\"undefined operation\\\")`.\\n- Everything is case-insensitive.\\n\\nAll 54 tests pass and the work is committed (`ee3f7a2`).\",\n  \"usage\": {\n    \"input_tokens\": 28712,\n    \"output_tokens\": 217,\n    \"cache_read_input_tokens\": 28416,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 33.5,
+      "input_tokens": 24756,
+      "output_tokens": 84,
+      "cached_tokens": 24128,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "nrouter\",\n  \"model\": \"GLM 5.3\",\n  \"text\": \"All 25 tests pass. Implemented `answer()` in wordy.py:\\n\\n- Left-to-right evaluation ignoring standard operator precedence (uses `//` for integer division)\\n- Raises `ValueError(\\\"unknown operation\\\")` for non-math questions and unsupported operations like \\\"cubed\\\"\\n- Raises `ValueError(\\\"syntax error\\\")` for malformed input: missing operands, consecutive numbers/operators, and prefix/postfix notation\",\n  \"usage\": {\n    \"input_tokens\": 24756,\n    \"output_tokens\": 84,\n    \"cache_read_input_tokens\": 24128,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

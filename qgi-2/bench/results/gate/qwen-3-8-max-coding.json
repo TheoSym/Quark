@@ -1,0 +1,60 @@
+{
+  "model": "Qwen 3.8 max",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 166.7,
+      "total_wall_s": 455.2,
+      "errors": 0,
+      "input_tokens": 92818,
+      "output_tokens": 859,
+      "cached_tokens": 90112
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 190.1,
+      "input_tokens": 34616,
+      "output_tokens": 423,
+      "cached_tokens": 33792,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "r a bare `IndexError` or crash.\\n- Manual edge cases: non-int pins, unstarted/incomplete games, rolls after game over, `10,6,10` fill-ball trap, perfect game = 300, 9 strikes + open tenth = 257.\\n\\nOne judgment call worth flagging: the spec types the argument as `int`, and Python's `isinstance(True, int)` is `True`, so I explicitly reject `bool`. That's stricter than the tests require, but it prevents `roll(True)` from silently scoring as a 1.\",\n  \"usage\": {\n    \"input_tokens\": 34616,\n    \"output_tokens\": 423,\n    \"cache_read_input_tokens\": 33792,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 166.7,
+      "input_tokens": 31910,
+      "output_tokens": 242,
+      "cached_tokens": 30720,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "ee semantics: `: foo foo 1 + ;` still refers to the older `foo`.\\n- **Errors**: `StackUnderflowError(\\\"Insufficient number of items in stack\\\")` for underflow, `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"undefined operation\\\")` for unknown words, and `ValueError(\\\"illegal operation\\\")` when redefining a number or a definition is missing its `;`.\\n- **Division** truncates toward zero (Forth behavior) rather than flooring like Python.\",\n  \"usage\": {\n    \"input_tokens\": 31910,\n    \"output_tokens\": 242,\n    \"cache_read_input_tokens\": 30720,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 98.4,
+      "input_tokens": 26292,
+      "output_tokens": 194,
+      "cached_tokens": 25600,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "r(\\\"unknown operation\\\")`).\\n- Tokenizes, folding `multiplied by` / `divided by` into single operator tokens.\\n- Requires `<number> (op <number>)*`, evaluating strictly left-to-right.\\n- Raises `ValueError(\\\"unknown operation\\\")` for unrecognized operators and `ValueError(\\\"syntax error\\\")` for malformed input (missing operand, doubled operators/numbers, prefix/postfix, `What is?`).\\n- Division truncates toward zero and rejects a zero divisor.\",\n  \"usage\": {\n    \"input_tokens\": 26292,\n    \"output_tokens\": 194,\n    \"cache_read_input_tokens\": 25600,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

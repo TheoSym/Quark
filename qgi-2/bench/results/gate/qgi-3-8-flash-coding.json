@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 61.9,
+      "total_wall_s": 204.9,
+      "errors": 0,
+      "input_tokens": 86249,
+      "output_tokens": 543,
+      "cached_tokens": 85248
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 92.2,
+      "input_tokens": 28936,
+      "output_tokens": 162,
+      "cached_tokens": 28672,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "pins, >10 in a two-roll frame) and tracks frames, giving the 10th frame special fill-ball handling where a strike resets the rack for bonus rolls.\\n- `score()` flattens frames into rolls and applies strike/spare bonuses, raising errors for incomplete games (including missing bonus rolls), and rolls after game over.\\n- Every error carries a meaningful message, as the tests require via `assertRaisesRegex(..., \\\".+\\\")`.\\n\\nCommitted as `e814918`.\",\n  \"usage\": {\n    \"input_tokens\": 28936,\n    \"output_tokens\": 162,\n    \"cache_read_input_tokens\": 28672,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 61.9,
+      "input_tokens": 30428,
+      "output_tokens": 201,
+      "cached_tokens": 29952,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "later overrides of a used word don't retroactively change existing definitions (handles the `foo`/`bar` reuse and self-referential `: foo foo 1 + ;` cases). Numbers can't be redefined.\\n- **Errors**: `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"illegal operation\\\")` and `ValueError(\\\"undefined operation\\\")`.\\n\\nAll 54 tests pass and the change is committed (`3b16de8`).\",\n  \"usage\": {\n    \"input_tokens\": 30428,\n    \"output_tokens\": 201,\n    \"cache_read_input_tokens\": 29952,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 50.8,
+      "input_tokens": 26885,
+      "output_tokens": 180,
+      "cached_tokens": 26624,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": " \\\"Who is the President...\\\").\\n- Tokenizes words into numbers and operations, handling two-word ops (`multiplied by`, `divided by`) and rejecting unknown words like `cubed`.\\n- Validates the strict `num (op num)*` shape, so postfix/prefix notation, repeated operators/operands, and missing operands all raise `ValueError(\\\"syntax error\\\")`.\\n- Evaluates strictly left-to-right, ignoring operator precedence (e.g. `3 plus 2 multiplied by 3` \u2192 15).\",\n  \"usage\": {\n    \"input_tokens\": 26885,\n    \"output_tokens\": 180,\n    \"cache_read_input_tokens\": 26624,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

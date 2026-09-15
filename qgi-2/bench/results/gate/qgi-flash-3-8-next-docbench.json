@@ -1,0 +1,51 @@
+{
+  "model": "QGI-Flash 3.8 Next",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 0,
+    "checks_total": 2,
+    "checks_passed": 0,
+    "total_wall_s": 1201.8,
+    "errors": 2,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": false,
+      "wall_s": 600.9,
+      "checks": {
+        "file_exists": false
+      },
+      "notes": "invoice.pdf missing",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": false,
+      "wall_s": 600.9,
+      "checks": {
+        "file_exists": false
+      },
+      "notes": "fleet.xlsx missing",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "agent_tail": ""
+    }
+  ]
+}

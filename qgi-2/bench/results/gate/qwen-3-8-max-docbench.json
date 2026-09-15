@@ -1,0 +1,65 @@
+{
+  "model": "Qwen 3.8 max",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 478.2,
+    "errors": 0,
+    "input_tokens": 68565,
+    "output_tokens": 469,
+    "cached_tokens": 66560
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 235.0,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=831",
+      "input_tokens": 35675,
+      "output_tokens": 203,
+      "cached_tokens": 34816,
+      "error": null,
+      "agent_tail": "9\",\n  \"provider\": \"openrouter\",\n  \"model\": \"Qwen 3.8 max\",\n  \"text\": \"Done. `invoice.pdf` is a real text-based PDF (no images), built with reportlab: header with issuer and INVOICE title, billed-to/date meta grid, striped line-item table, right-aligned totals block (subtotal 12770.00, VAT 25% 3192.50, total due 15962.50), and the IBAN footer line. pypdf extraction confirms every required string verbatim, and a PyMuPDF render confirms the layout. Note: `./.claude/skills` was empty so the pdf skill could not be loaded; I used reportlab directly as installed. Committed as b7d04d9 with `make_invoice.py`, `verify_invoice.py`, and a preview PNG.\",\n  \"usage\": {\n    \"input_tokens\": 35675,\n    \"output_tokens\": 203,\n    \"cache_read_input_tokens\": 34816,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 243.2,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 32890,
+      "output_tokens": 266,
+      "cached_tokens": 31744,
+      "error": null,
+      "agent_tail": "and committed (1f65a4b).\\n\\n- **Data**: 6 vehicle rows + bold header + 5th column with live `=D2/C2`-style formulas formatted `0.0%`, hours as integers.\\n- **Summary**: live `SUMIF` formulas over Data for each site, `=C/B` utilization, Total row with `SUM` formulas. Cached values match: Rotterdam 1440/1152, Hamburg 1440/955, Antwerp 1440/1181, Total 4320/3288 \u2192 76.1%.\\n- **Chart**: native openpyxl BarChart of Hours Used per site on Summary.\\n- Recalculated via LibreOffice (found in scoop; not on PATH), then openpyxl re-check passed all 17 assertions including formula presence. `build_fleet.py` and `check_fleet.py` kept for reproducibility.\",\n  \"usage\": {\n    \"input_tokens\": 32890,\n    \"output_tokens\": 266,\n    \"cache_read_input_tokens\": 31744,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

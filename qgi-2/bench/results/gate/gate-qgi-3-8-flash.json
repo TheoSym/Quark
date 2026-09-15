@@ -1,0 +1,92 @@
+{
+ "model": "QGI 3.8 Flash",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 13:53",
+ "gate_wall_s": 1152.4,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 0.36,
+   "decode_tps": 67.2,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2816,
+   "cache_probe_prompt_tokens": 3076,
+   "wall_s": 13.7
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 61.9,
+   "total_wall_s": 204.9,
+   "input_tokens": 86249,
+   "cached_tokens": 85248,
+   "errors": 0,
+   "file": "qgi-3-8-flash-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 684.1,
+    "errors": 1,
+    "file": "qgi-3-8-flash-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 137.4,
+    "errors": 0,
+    "file": "qgi-3-8-flash-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 2.55,
+   "p90_latency_s": 3.73,
+   "prompt_tokens": 42773,
+   "cached_tokens": 35840,
+   "errors": 0,
+   "total_s": 101.9,
+   "file": "qgi-3-8-flash-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "QGI 3.8 Flash",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 61.9,
+  "decode_tps": 67.2,
+  "ttft_s": 0.36,
+  "cache_reported": true,
+  "errors": 1
+ }
+}

@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 225.2,
+      "total_wall_s": 731.9,
+      "errors": 0,
+      "input_tokens": 82561,
+      "output_tokens": 469,
+      "cached_tokens": 80064
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 308.4,
+      "input_tokens": 28449,
+      "output_tokens": 142,
+      "cached_tokens": 27008,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "ach roll: rejects negative or >10 pins with `ValueError`, rejects rolls exceeding the pins left in a frame, and rejects rolls after the game or fill balls are complete with `IndexError` (including the rule that a non-strike first bonus roll limits the second).\\n- **`score()`** groups rolls into frames, sums frames 1-9 with spare/strike bonuses, adds the tenth frame's total pins including fill balls, and raises `ValueError` on incomplete games.\",\n  \"usage\": {\n    \"input_tokens\": 28449,\n    \"output_tokens\": 142,\n    \"cache_read_input_tokens\": 27008,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 225.2,
+      "input_tokens": 29516,
+      "output_tokens": 211,
+      "cached_tokens": 29120,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "ords `DUP DROP SWAP OVER`, all case-insensitive.\\n- `: name body ;` definitions stored case-insensitively; words referenced in a body are expanded at definition time, so `: foo 5 ;` then `: bar foo ;` then `: foo 6 ;` leaves `bar` yielding 5 while `foo` yields 6.\\n- Redefining a number raises `ValueError(\\\"illegal operation\\\")`, unknown words raise `ValueError(\\\"undefined operation\\\")`, and user words can override builtins including operators.\",\n  \"usage\": {\n    \"input_tokens\": 29516,\n    \"output_tokens\": 211,\n    \"cache_read_input_tokens\": 29120,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 198.3,
+      "input_tokens": 24596,
+      "output_tokens": 116,
+      "cached_tokens": 23936,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "\" prefix and trailing \\\"?\\\", tokenizes the rest\\n- Folds \\\"multiplied by\\\" / \\\"divided by\\\" into single operator tokens\\n- Evaluates strictly left-to-right (no operator precedence)\\n- Raises `ValueError(\\\"unknown operation\\\")` for unknown words or non-math questions, `ValueError(\\\"syntax error\\\")` for malformed structure (missing operands, consecutive numbers/operators, prefix/postfix notation)\\n- Uses integer division so results stay integers\",\n  \"usage\": {\n    \"input_tokens\": 24596,\n    \"output_tokens\": 116,\n    \"cache_read_input_tokens\": 23936,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+== gate: QGI-Flash 3.8 Next via qgillm (http://<host>/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': ['readiness: HTTP Error 500: Internal Server Error', 'ttft: HTTP Error 500: Internal Server Error', 'decode: HTTP Error 500: Internal Server Error', 'cache: HTTP Error 500: Internal Server Error'], 'tool_call': False, 'ttft_s': None, 'decode_tps': None, 'cache_reported': None, 'wall_s': 1084.7}
+   tool call did not come back structured; the agent legs will run anyway but expect failures
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 0, 'n': 3, 'median_wall_s': 600.9, 'total_wall_s': 1802.7, 'input_tokens': 0, 'cached_tokens': 0, 'errors': 3, 'file': 'qgi-flash-3-8-next-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model QGI-Flash 3.8 Next --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider qgillm --baseline-model QGI-Flash 3.8 Next -
+    {'doc': {'solved': 0, 'n': 2, 'checks_passed': 0, 'checks_total': 2, 'total_wall_s': 1201.8, 'errors': 2, 'file': 'qgi-flash-3-8-next-docbench.json'}, 'stateful': {'solved': 0, 'followup_solved': 0, 'n': 1, 'wall_s': 600.0, 'errors': 1, 'file': 'qgi-flash-3-8-next-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base http://<host>/v1 --model QGI-Flash 3.8 Next --arm direct-full --turns 40 --facts 8 --max-tokens 2048 
+Traceback (most recent call last):
+  File "F:\QHG\Quark\qgi-2\bench\gate.py", line 421, in <module>
+    main()
+  File "F:\QHG\Quark\qgi-2\bench\gate.py", line 404, in main
+    legs["memory"] = leg_memory(a, base, key, out_dir, tag)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\QHG\Quark\qgi-2\bench\gate.py", line 252, in leg_memory
+    rc, tail = run([sys.executable, HERE / "long_horizon.py", "--base", base, "--model", a.model, "--arm", "direct-full",
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\QHG\Quark\qgi-2\bench\gate.py", line 199, in run
+    p = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, encoding="utf-8",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 1630, in _communicate
+    raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: Command '['C:\\Users\\SamSammane\\AppData\\Local\\Programs\\Python\\Python311\\python.exe', 'F:\\QHG\\Quark\\qgi-2\\bench\\long_horizon.py', '--base', 'http://<host>/v1', '--model', 'QGI-Flash 3.8 Next', '--arm', 'direct-full', '--turns', '40', '--facts', '8', '--max-tokens', '2048', '--timeout', '180', '--out', 'F:\\QHG\\Quark\\qgi-2\\bench\\results\\gate\\qgi-flash-3-8-next-memory.json']' timed out after 3600 seconds

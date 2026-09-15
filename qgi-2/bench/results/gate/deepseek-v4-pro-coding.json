@@ -1,0 +1,60 @@
+{
+  "model": "Deepseek V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 600.9,
+      "total_wall_s": 1365.9,
+      "errors": 2,
+      "input_tokens": 35507,
+      "output_tokens": 136,
+      "cached_tokens": 32622
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 600.9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 600.9,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": ""
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 164.1,
+      "input_tokens": 35507,
+      "output_tokens": 136,
+      "cached_tokens": 32622,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": " `\\\"What is\\\"` and ending with `\\\"?\\\"\\n- Handles `plus`, `minus`, `multiplied by`, `divided by` with left-to-right evaluation\\n- Handles negative numbers, large numbers, and multiple chained operations\\n- Raises `ValueError(\\\"unknown operation\\\")` for non-math questions and unsupported operations\\n- Raises `ValueError(\\\"syntax error\\\")` for malformed input (missing operands, consecutive numbers, consecutive operations, prefix/postfix notation)\",\n  \"usage\": {\n    \"input_tokens\": 35507,\n    \"output_tokens\": 136,\n    \"cache_read_input_tokens\": 32622,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

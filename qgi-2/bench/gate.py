@@ -196,8 +196,18 @@ def redact(s: str) -> str:
 
 def run(cmd: list[str], env: dict | None = None, timeout: int = 3600) -> tuple[int, str]:
     print("  $", redact(" ".join(str(c) for c in cmd))[:220], flush=True)
-    p = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", env=env, timeout=timeout, stdin=subprocess.DEVNULL)
+    # Children decode the agents' UTF-8 output; without this a Windows console
+    # codec turns one curly quote into a failed leg.
+    env = {**(env or os.environ), "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    try:
+        p = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", env=env, timeout=timeout, stdin=subprocess.DEVNULL)
+    except subprocess.TimeoutExpired as e:
+        # A leg that hangs must cost the leg, not the gate: the other three
+        # legs' files are already on disk and the verdict should say so.
+        tail = redact(((e.stdout or b"").decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or ""))[-800:])
+        print(f"  leg timed out after {timeout}s", flush=True)
+        return 124, f"timeout after {timeout}s\n{tail}"
     tail = redact((p.stdout + p.stderr)[-1500:])
     if p.returncode != 0:
         print(tail, flush=True)
@@ -319,6 +329,19 @@ def refold(path: str) -> None:
                                "p90_latency_s": s["p90_latency_s"], "prompt_tokens": s["prompt_tokens"],
                                "cached_tokens": s["cached_tokens"], "errors": s["errors"], "total_s": s["total_s"],
                                "truncated": s.get("truncated")})
+    ag = legs.get("agentic", {})
+    st_file = p.parent / f"{p.stem[5:]}-stateful.json"
+    if "agentic" in legs and st_file.exists():
+        rows = json.load(open(st_file, encoding="utf-8"))
+        ag["stateful"] = {"solved": sum(1 for r in rows if r["solved"]),
+                          "followup_solved": sum(1 for r in rows if r.get("followup_solved")),
+                          "n": len(rows), "wall_s": round(sum(r["wall_s"] for r in rows), 1),
+                          "errors": sum(1 for r in rows if r["error"]), "file": st_file.name}
+    doc_file = p.parent / f"{p.stem[5:]}-docbench.json"
+    if "agentic" in legs and doc_file.exists():
+        s = json.load(open(doc_file, encoding="utf-8"))["summary"]
+        ag["doc"] = {"solved": s["solved"], "n": s["n"], "checks_passed": s["checks_passed"],
+                     "checks_total": s["checks_total"], "total_wall_s": s["total_wall_s"], "errors": s["errors"], "file": doc_file.name}
     if "coding" in legs and legs["coding"].get("file"):
         s = json.load(open(p.parent / legs["coding"]["file"], encoding="utf-8"))["summary"]["jcode"]
         legs["coding"].update({"solved": s["solved"], "n": s["n"], "median_wall_s": s["median_wall_s"],

@@ -1,0 +1,15 @@
+[
+  {
+    "arm": "baseline",
+    "task": "stateful",
+    "solved": true,
+    "followup_solved": true,
+    "turns": 2,
+    "input_tokens": 45912,
+    "output_tokens": 95,
+    "cached_tokens": 45568,
+    "wall_s": 19.84851312637329,
+    "error": null,
+    "last_text": "Added `circle_perimeter` to `geometry.py` and a matching `test_perimeter` to `test_geometry.py`. Both tests pass."
+  }
+]

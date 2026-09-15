@@ -1,0 +1,92 @@
+{
+ "model": "QGI-V4 Pro",
+ "profile": "qgillm",
+ "endpoint": "http://<host>/v1",
+ "date": "2026-09-14 15:43",
+ "gate_wall_s": 544.9,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "http://<host>/v1",
+   "errors": [],
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 0.91,
+   "decode_tps": 69.1,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2816,
+   "cache_probe_prompt_tokens": 2848,
+   "wall_s": 13.7
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 59.1,
+   "total_wall_s": 182.5,
+   "input_tokens": 103491,
+   "cached_tokens": 98560,
+   "errors": 0,
+   "file": "qgi-v4-pro-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 251.8,
+    "errors": 0,
+    "file": "qgi-v4-pro-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 19.8,
+    "errors": 0,
+    "file": "qgi-v4-pro-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 1.66,
+   "p90_latency_s": 2.37,
+   "prompt_tokens": 34686,
+   "cached_tokens": 30848,
+   "errors": 0,
+   "total_s": 66.6,
+   "file": "qgi-v4-pro-memory.json"
+  }
+ },
+ "verdict": {
+  "model": "QGI-V4 Pro",
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 59.1,
+  "decode_tps": 69.1,
+  "ttft_s": 0.91,
+  "cache_reported": true,
+  "errors": 0
+ }
+}
