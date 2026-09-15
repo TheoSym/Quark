@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 177.0,
+      "total_wall_s": 844.3,
+      "errors": 1,
+      "input_tokens": 68158,
+      "output_tokens": 250,
+      "cached_tokens": 66752
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 66.3,
+      "input_tokens": 30211,
+      "output_tokens": 147,
+      "cached_tokens": 30016,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "ll, open frames sum both rolls, 10th frame counts fill balls with no cascading bonuses.\\n- **Validation**: rejects negative rolls, rolls over the pins standing (including two-ball frames and the tricky second fill ball after a non-strike), and any roll once the game is complete.\\n- **Completion checks**: `score()` raises until the game is truly finished, including pending fill balls.\\n\\nAll 31 tests pass and the work is committed as `6d05d26`.\",\n  \"usage\": {\n    \"input_tokens\": 30211,\n    \"output_tokens\": 147,\n    \"cache_read_input_tokens\": 30016,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 177.0,
+      "input_tokens": 37947,
+      "output_tokens": 103,
+      "cached_tokens": 36736,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "ps with fresh evidence:\\n\\n- Test run: re-ran `python -m unittest forth_test` \u2192 54 tests, OK, exit code 0. Confirmed.\\n- Commit: `git show --stat HEAD` \u2192 `2c9c73f` at HEAD, modifies only `forth.py` (+150/-2), working tree clean except untracked `__pycache__/`. Confirmed.\\n\\nBoth verified states hold. Todo updated with the re-verification evidence.\",\n  \"usage\": {\n    \"input_tokens\": 37947,\n    \"output_tokens\": 103,\n    \"cache_read_input_tokens\": 36736,\n    \"cache_creation_input_tokens\": null\n  }\n}\nWe asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 601.0,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.08s\n",
+      "agent_tail": "We asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    }
+  ]
+}

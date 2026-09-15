@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse+tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 52.0,
+      "total_wall_s": 410.6,
+      "errors": 0,
+      "input_tokens": 104625,
+      "output_tokens": 669,
+      "cached_tokens": 103424
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 325.4,
+      "input_tokens": 44606,
+      "output_tokens": 239,
+      "cached_tokens": 44288,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "egative/over-10 rolls, two rolls exceeding a rack, bonus rolls after an open tenth frame, rolling past a finished game, and the rack rule for fill balls (a spare's fill ball gets fresh pins; after a tenth-frame strike, rolls 2 and 3 share a rack unless roll 2 was a strike).\\n- **`score()`** flattens to a roll list, walks 9 frames applying strike (+next two) and spare (+next one) bonuses, then adds the tenth frame raw. Rejects unfinished games.\",\n  \"usage\": {\n    \"input_tokens\": 44606,\n    \"output_tokens\": 239,\n    \"cache_read_input_tokens\": 44288,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 52.0,
+      "input_tokens": 31798,
+      "output_tokens": 281,
+      "cached_tokens": 31488,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "ions at define time, so overrides and self-referencing words (`: foo foo 1 + ;`) behave per spec\\n- **Errors**: custom `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"illegal operation\\\")` for numeric word names, `ValueError(\\\"undefined operation\\\")` for unknown words\\n- **Case-insensitive**: all tokens lowercased before processing; negative numbers handled via `^-?\\\\d+$`\",\n  \"usage\": {\n    \"input_tokens\": 31798,\n    \"output_tokens\": 281,\n    \"cache_read_input_tokens\": 31488,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 33.2,
+      "input_tokens": 28221,
+      "output_tokens": 149,
+      "cached_tokens": 27648,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "zes `multiplied by` / `divided by` into single tokens, then tokenizes.\\n- Requires the `What is ...` prefix; any unrecognized word raises `ValueError(\\\"unknown operation\\\")`.\\n- Validates strict alternating number/operator structure (odd token count, numbers at even positions) and raises `ValueError(\\\"syntax error\\\")` for malformed problems.\\n- Evaluates left-to-right, ignoring operator precedence, with truncating division for integer results.\",\n  \"usage\": {\n    \"input_tokens\": 28221,\n    \"output_tokens\": 149,\n    \"cache_read_input_tokens\": 27648,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

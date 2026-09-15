@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem+exa-tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 105.4,
+      "total_wall_s": 292.4,
+      "errors": 0,
+      "input_tokens": 100997,
+      "output_tokens": 1098,
+      "cached_tokens": 95488
+    }
+  },
+  "results": [
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 123.2,
+      "input_tokens": 35519,
+      "output_tokens": 466,
+      "cached_tokens": 33792,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": ": \"openrouter\",\n  \"model\": \"QGI 3.8 Flash@jcode-bowling-_il_la1j\",\n  \"text\": \"Done. `bowling.py` implements `BowlingGame` with `roll(pins)` and `score()`: frames 1\u20139 tracked with strike/spare validation, the tenth frame handled via pins-standing bookkeeping (fill balls only on a strike or spare), and `ValueError`/`TypeError` with messages for every illegal roll or premature score. All 31 tests in `bowling_test.py` pass, committed as `5e358a0`.\",\n  \"usage\": {\n    \"input_tokens\": 35519,\n    \"output_tokens\": 466,\n    \"cache_read_input_tokens\": 33792,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 63.8,
+      "input_tokens": 35357,
+      "output_tokens": 350,
+      "cached_tokens": 33792,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "Error(\\\"divide by zero\\\")`, `ValueError(\\\"undefined operation\\\")`, and `ValueError(\\\"illegal operation\\\")` (redefining a number) cover the built-in cases. Division truncates toward zero.\\n- Definitions (`: word def ;`) are flattened and resolved at definition time and take precedence over builtins, so overrides and self-referential words like `: foo foo 1 + ;` behave as the tests expect. Tokens are lowercased throughout for case-insensitivity.\",\n  \"usage\": {\n    \"input_tokens\": 35357,\n    \"output_tokens\": 350,\n    \"cache_read_input_tokens\": 33792,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 105.4,
+      "input_tokens": 30121,
+      "output_tokens": 282,
+      "cached_tokens": 27904,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "wordy-uh20xfbj\",\n  \"text\": \"All 25 tests pass. `wordy.py` now:\\n\\n- Strips the `What is ...?` wrapper, folds `multiplied by` / `divided by` into single operator tokens, and rejects any token that isn't a number or known operator with `ValueError(\\\"unknown operation\\\")`.\\n- Evaluates strictly left-to-right (ignoring precedence), and raises `ValueError(\\\"syntax error\\\")` for missing operands, repeated operators/numbers, and prefix/postfix forms.\",\n  \"usage\": {\n    \"input_tokens\": 30121,\n    \"output_tokens\": 282,\n    \"cache_read_input_tokens\": 27904,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

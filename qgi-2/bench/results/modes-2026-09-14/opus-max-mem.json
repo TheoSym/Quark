@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 66.1,
+      "total_wall_s": 192.6,
+      "errors": 0,
+      "input_tokens": 128698,
+      "output_tokens": 867,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "mem",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 82.3,
+      "input_tokens": 44727,
+      "output_tokens": 268,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "\\n- `ValueError` for negative pins, >10 pins, and two rolls in a frame exceeding the standing rack (including tenth-frame fill balls, where a fresh rack is only granted after a mark)\\n- `IndexError` for rolling past the end of the game and for scoring an unstarted, incomplete, or fill-ball-pending game\\n\\nAll 31 tests pass, plus spot checks for a perfect game (300), all spares (150), the README example (48), and `X1/` (20). Committed as `9363719`.\",\n  \"usage\": {\n    \"input_tokens\": 44727,\n    \"output_tokens\": 268,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 66.1,
+      "input_tokens": 44435,
+      "output_tokens": 421,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": " 10 ; : foo foo 1 + ;` correctly captures the old `foo`, and later redefinitions do not retroactively change earlier words.\\n- User definitions shadow builtins on lookup, which is what makes `: swap dup ;` and `: + * ;` work.\\n- Numeric names (`: 1 2 ;`, `: -1 2 ;`) and unterminated/stray definitions raise `ValueError(\\\"illegal operation\\\")`; unknown words raise `ValueError(\\\"undefined operation\\\")`. All input is lowercased for case insensitivity.\",\n  \"usage\": {\n    \"input_tokens\": 44435,\n    \"output_tokens\": 421,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 44.2,
+      "input_tokens": 39536,
+      "output_tokens": 178,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "work is committed.\\n\\n`wordy.py` now:\\n- Requires a `What is ...?` shape; other questions raise `ValueError(\\\"unknown operation\\\")`.\\n- Collapses `multiplied by` / `divided by` into single tokens, then validates every token, rejecting unknown words like `cubed` with `\\\"unknown operation\\\"`.\\n- Evaluates strictly left-to-right, raising `ValueError(\\\"syntax error\\\")` for missing operands, doubled operators, doubled numbers, and prefix/postfix forms.\",\n  \"usage\": {\n    \"input_tokens\": 39536,\n    \"output_tokens\": 178,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

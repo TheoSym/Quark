@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 24.9,
+      "total_wall_s": 76.0,
+      "errors": 0,
+      "input_tokens": 120794,
+      "output_tokens": 277,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 29.7,
+      "input_tokens": 37827,
+      "output_tokens": 82,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_nautilus_1789448674567_b40e530ebc378e4e\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"All 31 tests pass. `bowling.py` now tracks rolls, validates pin counts and game state (raising `ValueError`/`IndexError` with messages), and computes the score with strike/spare bonuses and 10th-frame fill balls.\",\n  \"usage\": {\n    \"input_tokens\": 37827,\n    \"output_tokens\": 82,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 24.9,
+      "input_tokens": 43606,
+      "output_tokens": 101,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_humpback_1789448703683_3b7b5b292c814dfd\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"All 54 tests pass. `forth.py` now implements arithmetic, stack words, user-defined words (expanded at definition time so later redefinitions don't leak backward), case-insensitivity, and the required `StackUnderflowError`, `ZeroDivisionError`, and `ValueError` messages.\",\n  \"usage\": {\n    \"input_tokens\": 43606,\n    \"output_tokens\": 101,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 21.4,
+      "input_tokens": 39361,
+      "output_tokens": 94,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_hare_1789448729429_4aafb0331ec78614\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `wordy.py`: parses \\\"What is ...?\\\" questions, evaluates left-to-right, raises `ValueError(\\\"unknown operation\\\")` for unsupported words or non-math questions, and `ValueError(\\\"syntax error\\\")` for malformed sequences. All 25 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 39361,\n    \"output_tokens\": 94,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

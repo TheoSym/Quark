@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 134.5,
+      "total_wall_s": 841.5,
+      "errors": 1,
+      "input_tokens": 59353,
+      "output_tokens": 242,
+      "cached_tokens": 54528
+    }
+  },
+  "results": [
+    {
+      "agent": "mem",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 75.9,
+      "input_tokens": 31365,
+      "output_tokens": 161,
+      "cached_tokens": 28416,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": "  \"model\": \"QGI 3.8 Flash@jcode-bowling-xe4fsgid\",\n  \"text\": \"All 31 tests pass (`Ran 31 tests ... OK`). `bowling.py` now implements `BowlingGame` with `roll()` and `score()`: it tracks rolls per frame, validates pin counts (negatives, >10, >10 per frame, tenth-frame bonus rules), and computes strikes/spares with the correct bonuses and tenth-frame fill balls, raising `ValueError` with meaningful messages for invalid play or premature scoring.\",\n  \"usage\": {\n    \"input_tokens\": 31365,\n    \"output_tokens\": 161,\n    \"cache_read_input_tokens\": 28416,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 631.1,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.10s\n",
+      "agent_tail": ""
+    },
+    {
+      "agent": "mem",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 134.5,
+      "input_tokens": 27988,
+      "output_tokens": 81,
+      "cached_tokens": 26112,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_panda_1789450519198_ddcb9519b36f3b44\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI 3.8 Flash@jcode-wordy-1tsqxzpo\",\n  \"text\": \"Done \u2014 nothing outstanding. `wordy.py` implements the left-to-right verbal-math parser, all 25 tests pass, and the change is committed (`44afbac`).\",\n  \"usage\": {\n    \"input_tokens\": 27988,\n    \"output_tokens\": 81,\n    \"cache_read_input_tokens\": 26112,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

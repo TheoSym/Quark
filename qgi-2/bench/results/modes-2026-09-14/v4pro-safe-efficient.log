@@ -1,8 +1,6 @@
-[jcode] bowling                      PASS   83.4s
-[jcode] forth                        PASS   72.5s
-[jcode] wordy                        FAIL    0.8s  exit 1:  original model_group=QGI-V4 Pro. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
-Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
-
+[jcode] bowling                      PASS   99.0s
+[jcode] forth                        PASS  105.5s
+[jcode] wordy                        PASS   60.6s
 
 agent    solved   rate  median s  total s errors     in tok  out tok     cached
-safe-efficient    2/3      67%      72.5    156.7      1     65,275      137     56,576
+safe-efficient    3/3     100%      99.0    265.1      0    105,775      187    102,656

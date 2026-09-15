@@ -1,12 +1,6 @@
-[jcode] bowling                      FAIL    1.6s  exit 1:  To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
-Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
-
-[jcode] forth                        FAIL    0.6s  exit 1:  To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
-Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
-
-[jcode] wordy                        FAIL    0.7s  exit 1:  To increase, visit https://openrouter.ai/settings/credits and add more credits"}]}},"user_id":"user_2sICfsTHLXOHjLxq7lnPrkK2DDb"}
-Local endpoint hint: make sure the server is running, the base URL includes /v1, the selected model is loaded, and the server supports streaming POST /chat/completions.
-
+[jcode] bowling                      PASS  123.6s
+[jcode] forth                        PASS   44.8s
+[jcode] wordy                        PASS  141.0s
 
 agent    solved   rate  median s  total s errors     in tok  out tok     cached
-mem+exa-tool    0/3       0%       0.7      2.9      3          0        0          0
+mem+exa-tool    3/3     100%     123.6    309.4      0    149,514      903          0

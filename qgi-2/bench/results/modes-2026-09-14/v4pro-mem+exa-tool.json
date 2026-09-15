@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem+exa-tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 54.4,
+      "total_wall_s": 176.8,
+      "errors": 0,
+      "input_tokens": 101107,
+      "output_tokens": 196,
+      "cached_tokens": 91136
+    }
+  },
+  "results": [
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 46.8,
+      "input_tokens": 37773,
+      "output_tokens": 50,
+      "cached_tokens": 34688,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.10s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_deer_1789449697215_8a8a8404187bf577\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro@jcode-bowling-3b915edb\",\n  \"text\": \"All 31 tests pass. Implemented `BowlingGame` in `bowling.py` with `roll()` and `score()`, including input validation, tenth-frame fill-ball handling, and meaningful exception messages for invalid rolls or premature scoring.\",\n  \"usage\": {\n    \"input_tokens\": 37773,\n    \"output_tokens\": 50,\n    \"cache_read_input_tokens\": 34688,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 75.6,
+      "input_tokens": 33435,
+      "output_tokens": 98,
+      "cached_tokens": 28672,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.10s\n",
+      "agent_tail": "r\",\n  \"model\": \"QGI-V4 Pro@jcode-forth-7zkrqd2x\",\n  \"text\": \"All 54 tests pass. The evaluator in `forth.py` implements the full Forth subset: arithmetic (`+ - * /` with truncation-toward-zero division), stack ops (`DUP DROP SWAP OVER`), case-insensitive word definitions via `: name ... ;`, and the required `StackUnderflowError`, `ZeroDivisionError(\\\"divide by zero\\\")`, and `ValueError(\\\"undefined operation\\\" / \\\"illegal operation\\\")` behaviors.\",\n  \"usage\": {\n    \"input_tokens\": 33435,\n    \"output_tokens\": 98,\n    \"cache_read_input_tokens\": 28672,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 54.4,
+      "input_tokens": 29899,
+      "output_tokens": 48,
+      "cached_tokens": 27776,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_wyvern_1789449823005_6754b72eb8fd360e\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro@jcode-wordy-w24cce1a\",\n  \"text\": \"All 25 tests pass. The `answer()` function parses \\\"What is ...?\\\" questions, evaluates operations left-to-right, and raises `ValueError` with the required \\\"unknown operation\\\" or \\\"syntax error\\\" messages.\",\n  \"usage\": {\n    \"input_tokens\": 29899,\n    \"output_tokens\": 48,\n    \"cache_read_input_tokens\": 27776,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

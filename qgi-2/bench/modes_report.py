@@ -48,9 +48,34 @@ def load(dir_: str) -> dict:
     return cells
 
 
+def openrouter_rates() -> dict:
+    """model id -> USD per token (prompt, completion, cache read). Empty if offline."""
+    import urllib.request
+    try:
+        data = json.load(urllib.request.urlopen("https://openrouter.ai/api/v1/models", timeout=30))["data"]
+    except Exception:  # noqa: BLE001
+        return {}
+    out = {}
+    for m in data:
+        p = m.get("pricing") or {}
+        out[m["id"]] = (float(p.get("prompt") or 0), float(p.get("completion") or 0),
+                        float(p.get("input_cache_read") or p.get("prompt") or 0))
+    return out
+
+
+def priced(rates: dict, model: str | None, c: dict) -> float | None:
+    """Floor: jcode's usage omits reasoning tokens. Gateway models have no rate."""
+    r = rates.get(model or "")
+    if not r or c.get("in") is None:
+        return None
+    i, o, k = c["in"] or 0, c["out"] or 0, c["cached"] or 0
+    return round((i - k) * r[0] + k * r[2] + o * r[1], 3)
+
+
 def main() -> None:
     dir_ = sys.argv[1]
     cells = load(dir_)
+    rates = openrouter_rates() if "--no-cost" not in sys.argv else {}
     keys = []
     for k, _ in cells:
         if k not in keys:
@@ -58,22 +83,25 @@ def main() -> None:
     if "--json" in sys.argv:
         print(json.dumps({f"{k}/{a}": v for (k, a), v in cells.items()}, indent=1))
         return
-    print("| model | arm | solved | median s | total s | input tok | output tok | cache | bowling | forth | wordy | note |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| model | arm | solved | median s | total s | input tok | output tok | cache | $ 3 tasks (floor) | $/task | bowling | forth | wordy | note |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for k in keys:
         for a in ARMS:
             c = cells.get((k, a))
             if not c:
-                print(f"| {k} | {a} | - | - | - | - | - | - | - | - | - | not run |")
+                print(f"| {k} | {a} | - | - | - | - | - | - | - | - | - | - | - | not run |")
                 continue
             if c["status"] == "BLOCKED":
-                print(f"| {c['model']} | {a} | BLOCKED | - | - | - | - | - | - | - | - | {c['note']} |")
+                print(f"| {c['model']} | {a} | BLOCKED | - | - | - | - | - | - | - | - | - | - | {c['note']} |")
                 continue
             cache = f"{100 * (c['cached'] or 0) / c['in']:.0f}%" if c.get("in") else "-"
+            cost = priced(rates, c["model"], c)
+            cost_s = f"{cost:.3f}" if cost is not None else "-"
+            per_task = f"{cost / c['n']:.3f}" if (cost is not None and c.get("n")) else "-"
             per = " | ".join(
                 (f"{c['per'][e][0]}{'' if c['per'][e][1] else ' ✗'}" if e in c["per"] else "-")
                 for e in ("bowling", "forth", "wordy"))
-            print(f"| {c['model']} | {a} | {c['solved']}/{c['n']} | {c['median']} | {c['total']} | {c['in']} | {c['out']} | {cache} | {per} | {(c['note'] or '')[:40]} |")
+            print(f"| {c['model']} | {a} | {c['solved']}/{c['n']} | {c['median']} | {c['total']} | {c['in']} | {c['out']} | {cache} | {cost_s} | {per_task} | {per} | {(c['note'] or '')[:40]} |")
 
 
 if __name__ == "__main__":

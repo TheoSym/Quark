@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 99.0,
+      "total_wall_s": 265.1,
+      "errors": 0,
+      "input_tokens": 105775,
+      "output_tokens": 187,
+      "cached_tokens": 102656
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 99.0,
+      "input_tokens": 37024,
+      "output_tokens": 47,
+      "cached_tokens": 36864,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_camel_1789448682594_6d9abef82303e856\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 31 tests pass. Implemented `BowlingGame` in `bowling.py` with frame-based roll tracking, validation of pin counts and frame sums, tenth-frame fill ball handling, and classic flat-roll scoring.\",\n  \"usage\": {\n    \"input_tokens\": 37024,\n    \"output_tokens\": 47,\n    \"cache_read_input_tokens\": 36864,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 105.5,
+      "input_tokens": 37364,
+      "output_tokens": 68,
+      "cached_tokens": 35200,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_daisy_1789448782341_4798f568042a0c47\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 54 tests pass.\\n\\nImplemented `forth.py` with a stack-based Forth evaluator supporting arithmetic (`+ - * /`), stack words (`DUP DROP SWAP OVER`), case-insensitive user-defined words, and the required exceptions (`StackUnderflowError`, `ZeroDivisionError`, `ValueError`).\",\n  \"usage\": {\n    \"input_tokens\": 37364,\n    \"output_tokens\": 68,\n    \"cache_read_input_tokens\": 35200,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 60.6,
+      "input_tokens": 31387,
+      "output_tokens": 72,
+      "cached_tokens": 30592,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_sunflower_1789448888686_8638823711c957ca\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 25 tests pass.\\n\\nImplemented `answer()` in `wordy.py` to parse \\\"What is ...?\\\" problems, evaluate left-to-right with `plus`, `minus`, `multiplied by`, and `divided by`, and raise the required `ValueError` messages (`\\\"unknown operation\\\"` vs `\\\"syntax error\\\"`).\",\n  \"usage\": {\n    \"input_tokens\": 31387,\n    \"output_tokens\": 72,\n    \"cache_read_input_tokens\": 30592,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

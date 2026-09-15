@@ -12,3 +12,14 @@ keys or=73 exa=36
   == fable-low mem+exa-tool  21:50:59
      0/3 med=0.7s tot=2.9s in=0 out=0 err=3
 DONE fable-low 21:51:04
+  skip baseline (exists)
+  skip safe-efficient (exists)
+  == fable-low exa-reuse  22:04:32
+     3/3 med=24.9s tot=76.0s in=120794 out=277 err=0
+  == fable-low exa-reuse+tool  22:05:51
+     3/3 med=27.4s tot=92.0s in=129558 out=369 err=0
+  == fable-low mem  22:07:26
+     3/3 med=23.5s tot=70.6s in=122041 out=281 err=0
+  == fable-low mem+exa-tool  22:08:39
+     3/3 med=28.1s tot=94.2s in=133527 out=439 err=0
+DONE fable-low 22:10:16

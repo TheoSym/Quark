@@ -12,3 +12,15 @@ keys or=73 exa=36
   == opus-max mem+exa-tool  21:52:23
      0/3 med=0.7s tot=2.9s in=0 out=0 err=3
 DONE opus-max 21:52:29
+  skip baseline (exists)
+  == opus-max safe-efficient  22:04:36
+     3/3 med=61.4s tot=179.3s in=127337 out=597 err=0
+  == opus-max exa-reuse  22:07:38
+     3/3 med=81.5s tot=285.3s in=139744 out=726 err=0
+  == opus-max exa-reuse+tool  22:12:26
+     3/3 med=71.2s tot=291.3s in=138336 out=927 err=0
+  == opus-max mem  22:17:21
+     3/3 med=66.1s tot=192.6s in=128698 out=867 err=0
+  == opus-max mem+exa-tool  22:20:37
+     3/3 med=123.6s tot=309.4s in=149514 out=903 err=0
+DONE opus-max 22:25:50

@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 81.1,
+      "total_wall_s": 247.8,
+      "errors": 0,
+      "input_tokens": 87953,
+      "output_tokens": 189,
+      "cached_tokens": 77696
+    }
+  },
+  "results": [
+    {
+      "agent": "mem",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 81.1,
+      "input_tokens": 29342,
+      "output_tokens": 63,
+      "cached_tokens": 26880,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_dolphin_1789449445662_29c35604113c1355\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro@jcode-bowling-qrziiwml\",\n  \"text\": \"All 31 tests pass. The `BowlingGame` class now tracks rolls, validates each roll against the rules (negative pins, over 10, frame totals over 10, invalid fill balls, rolls after game over), and computes the score with strike/spare bonuses including the tenth-frame fill balls.\",\n  \"usage\": {\n    \"input_tokens\": 29342,\n    \"output_tokens\": 63,\n    \"cache_read_input_tokens\": 26880,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 95.0,
+      "input_tokens": 31189,
+      "output_tokens": 80,
+      "cached_tokens": 26368,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.10s\n",
+      "agent_tail": "\n  \"session_id\": \"session_panda_1789449527539_96192c5bebe44532\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro@jcode-forth-smnr2nu2\",\n  \"text\": \"All 54 tests pass. The evaluator in `forth.py` now supports the arithmetic operators, stack manipulation words, case-insensitive user-defined words with proper override semantics, and raises the required `StackUnderflowError`, `ZeroDivisionError`, and `ValueError` with the exact expected messages.\",\n  \"usage\": {\n    \"input_tokens\": 31189,\n    \"output_tokens\": 80,\n    \"cache_read_input_tokens\": 26368,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 71.7,
+      "input_tokens": 27422,
+      "output_tokens": 46,
+      "cached_tokens": 24448,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_rhino_1789449624388_7b98629f5daa0270\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro@jcode-wordy-mwqffyzo\",\n  \"text\": \"All 25 tests pass. The `answer()` function now parses \\\"What is ...?\\\" math word problems, evaluates them left-to-right, and raises the required `ValueError` messages for unknown operations and syntax errors.\",\n  \"usage\": {\n    \"input_tokens\": 27422,\n    \"output_tokens\": 46,\n    \"cache_read_input_tokens\": 24448,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

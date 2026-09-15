@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem+exa-tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 123.6,
+      "total_wall_s": 309.4,
+      "errors": 0,
+      "input_tokens": 149514,
+      "output_tokens": 903,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 123.6,
+      "input_tokens": 49824,
+      "output_tokens": 252,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "s pins including fill balls.\\n- **Roll validation**: `ValueError` for negative or >10 pins, frame totals over 10, invalid fill-ball pairs (including a strike as second fill after a non-strike first fill); `IndexError` for rolling past the end of the game.\\n- **Score validation**: `IndexError` when the game is unstarted, incomplete, or missing fill balls.\\n\\nVerified spot checks: perfect game 300, all spares 150, `X 1 /` tenth 20, `X X 6` tenth 26.\",\n  \"usage\": {\n    \"input_tokens\": 49824,\n    \"output_tokens\": 252,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 44.8,
+      "input_tokens": 47975,
+      "output_tokens": 204,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.10s\n",
+      "agent_tail": "rithmetic `+ - * /` with truncate-toward-zero division and `ZeroDivisionError(\\\"divide by zero\\\")`\\n- `DUP DROP SWAP OVER`, all case-insensitive\\n- `: name body ;` definitions, eagerly expanded so redefinitions don't retroactively change earlier words\\n- `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, `ValueError(\\\"illegal operation\\\")` for numeric/malformed definitions, and `ValueError(\\\"undefined operation\\\")` for unknown words\",\n  \"usage\": {\n    \"input_tokens\": 47975,\n    \"output_tokens\": 204,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 141.0,
+      "input_tokens": 51715,
+      "output_tokens": 447,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "s 1 multiplied 2?\\\"` silently returned 2 because I was string-replacing `\\\"multiplied by\\\"` before tokenizing. `by` is now required.\\n- Division by zero was being swallowed into `\\\"syntax error\\\"`. It now raises a genuine `ZeroDivisionError`, since a malformed-input message would misdescribe it.\\n\\nDivision truncates toward zero (`-7 divided by 2` is -3) rather than using Python's floor semantics, matching the arithmetic these word problems imply.\",\n  \"usage\": {\n    \"input_tokens\": 51715,\n    \"output_tokens\": 447,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

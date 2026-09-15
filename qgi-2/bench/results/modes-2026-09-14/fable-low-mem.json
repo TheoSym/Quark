@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 23.5,
+      "total_wall_s": 70.6,
+      "errors": 0,
+      "input_tokens": 122041,
+      "output_tokens": 281,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "mem",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 23.5,
+      "input_tokens": 41651,
+      "output_tokens": 82,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_humpback_1789448846450_6d9ec817f019908a\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1@jcode-bowling-zkqz7evw\",\n  \"text\": \"Implemented `BowlingGame` in `bowling.py` with roll validation (pin range, frame limits, tenth-frame fill-ball rules, no rolling after game end) and scoring that raises on incomplete games. All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 41651,\n    \"output_tokens\": 82,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 24.5,
+      "input_tokens": 41803,
+      "output_tokens": 130,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "s_1789448870776_cd68b33e1c1ee630\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1@jcode-forth-vnywagez\",\n  \"text\": \"Implemented `forth.py`: a stack evaluator supporting `+ - * /`, `DUP DROP SWAP OVER`, case-insensitive user word definitions (inlined at definition time so redefinitions behave correctly), and the required `StackUnderflowError`, `ZeroDivisionError(\\\"divide by zero\\\")`, and `ValueError` messages. All 54 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 41803,\n    \"output_tokens\": 130,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 22.6,
+      "input_tokens": 38587,
+      "output_tokens": 69,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_lizard_1789448896168_1fb9199f26425697\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1@jcode-wordy-asc8k9cn\",\n  \"text\": \"Implemented `wordy.py` with left-to-right evaluation, `\\\"unknown operation\\\"` for unsupported/non-math questions, and `\\\"syntax error\\\"` for malformed input. All 25 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 38587,\n    \"output_tokens\": 69,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

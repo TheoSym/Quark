@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 81.5,
+      "total_wall_s": 285.3,
+      "errors": 0,
+      "input_tokens": 139744,
+      "output_tokens": 726,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 130.3,
+      "input_tokens": 49927,
+      "output_tokens": 273,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.10s\n",
+      "agent_tail": " since fill balls are just the next rolls.\\n- **Roll validation** rejects non-integers (`TypeError`), negatives and values over 10, frames summing past 10, and invalid fill balls. Pins reset correctly after a strike or spare in the 10th frame, so `10, 10, 6` is allowed but `10, 6, 10` is not.\\n- **Game completion** is tracked explicitly, so extra rolls raise `IndexError` and `score()` refuses any unfinished game, including one awaiting fill balls.\",\n  \"usage\": {\n    \"input_tokens\": 49927,\n    \"output_tokens\": 273,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 73.5,
+      "input_tokens": 46984,
+      "output_tokens": 220,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "Insufficient number of items in stack\\\" message; `ZeroDivisionError(\\\"divide by zero\\\")`, `ValueError(\\\"undefined operation\\\")`, and `ValueError(\\\"illegal operation\\\")` cover the other cases.\\n- Division truncates toward zero, and tokens are lowercased for case-insensitivity.\\n- Definitions expand eagerly at compile time, so `: foo 10 ; : foo foo 1 + ;` resolves to the older `foo` and later redefinitions do not retroactively change existing words.\",\n  \"usage\": {\n    \"input_tokens\": 46984,\n    \"output_tokens\": 220,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 81.5,
+      "input_tokens": 42833,
+      "output_tokens": 233,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "ctions, joining the two-word ops (`multiplied by`, `divided by`).\\n- Evaluates strictly left-to-right, so `3 plus 2 multiplied by 3` is 15.\\n- Raises `ValueError(\\\"unknown operation\\\")` for non-math questions and unsupported words like `cubed`, and `ValueError(\\\"syntax error\\\")` for bad operand/operator arrangements.\\n- Uses floor division so integer results stay ints (`ZeroDivisionError` still propagates for divide-by-zero, which no test covers).\",\n  \"usage\": {\n    \"input_tokens\": 42833,\n    \"output_tokens\": 233,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

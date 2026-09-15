@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem+exa-tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 28.1,
+      "total_wall_s": 94.2,
+      "errors": 0,
+      "input_tokens": 133527,
+      "output_tokens": 439,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 28.1,
+      "input_tokens": 45469,
+      "output_tokens": 124,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "tterfly_1789448920049_3280352f9e3f4701\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1@jcode-bowling-ftqj8_0f\",\n  \"text\": \"Implemented `BowlingGame` in `bowling.py` with `roll` and `score`, including validation (negative pins, over 10 pins per roll/frame, tenth-frame fill-ball rules, rolling after game end, scoring incomplete games) that raises `ValueError`/`IndexError` with messages.\\n\\nAll 31 tests in `bowling_test.py` pass.\",\n  \"usage\": {\n    \"input_tokens\": 45469,\n    \"output_tokens\": 124,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 39.4,
+      "input_tokens": 45730,
+      "output_tokens": 193,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "metic (`+ - * /`, with `ZeroDivisionError(\\\"divide by zero\\\")`), stack words (`DUP DROP SWAP OVER`), `StackUnderflowError(\\\"Insufficient number of items in stack\\\")`, case-insensitive user definitions via `: name ... ;` (expanded at definition time so redefinitions behave correctly), `ValueError(\\\"illegal operation\\\")` for numeric names, and `ValueError(\\\"undefined operation\\\")` for unknown words.\\n\\nAll 54 tests pass, and the change is committed.\",\n  \"usage\": {\n    \"input_tokens\": 45730,\n    \"output_tokens\": 193,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 26.7,
+      "input_tokens": 42328,
+      "output_tokens": 122,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "8fb9b767f911a5d\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1@jcode-wordy-h1ouwk0d\",\n  \"text\": \"Implemented `wordy.py`: it strips the \\\"What is ... ?\\\" frame, tokenizes (treating \\\"multiplied by\\\" / \\\"divided by\\\" as single operators), raises `ValueError(\\\"unknown operation\\\")` for unrecognized words or non-math questions, `ValueError(\\\"syntax error\\\")` for malformed sequences, and evaluates left to right. All 25 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 42328,\n    \"output_tokens\": 122,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

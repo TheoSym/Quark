@@ -1,10 +1,6 @@
-[jcode] bowling                      PASS  155.5s
-[jcode] forth                        PASS   30.5s  exit 1: nal model_group=Gemini 3.8 Flash. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
-Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
-
-[jcode] wordy                        FAIL    0.7s  exit 1: nal model_group=Gemini 3.8 Flash. Fallbacks=[{'QGI-Hy3': ['Gemini 3.8 Flash']}, {'Kimi-k3': ['Gemini 3.8 Flash']}]","type":null,"param":null,"code":"402"}}
-Hint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.
-
+[jcode] bowling                      PASS   27.3s
+[jcode] forth                        PASS   36.6s
+[jcode] wordy                        PASS   76.7s
 
 agent    solved   rate  median s  total s errors     in tok  out tok     cached
-exa-reuse    2/3      67%      30.5    186.7      2     34,366       52     30,275
+exa-reuse    3/3     100%      36.6    140.6      0     77,445       65     67,865

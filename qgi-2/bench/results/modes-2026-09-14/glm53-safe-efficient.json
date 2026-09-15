@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 54.1,
+      "total_wall_s": 424.4,
+      "errors": 0,
+      "input_tokens": 85169,
+      "output_tokens": 640,
+      "cached_tokens": 82048
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 54.1,
+      "input_tokens": 29530,
+      "output_tokens": 137,
+      "cached_tokens": 29248,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": " rolls, rolls over 10 pins, and impossible mid-frame/tenth-frame/fill-ball combinations with a meaningful error. Rejected rolls leave the game state unchanged.\\n- **`score()`**: raises an error for incomplete games, otherwise sums frames 1-9 with proper strike/spare bonus handling and adds the raw tenth-frame total (fill balls included).\\n\\nAll 31 tests in `bowling_test.py` pass (`Ran 31 tests ... OK`), and the change is committed on `master`.\",\n  \"usage\": {\n    \"input_tokens\": 29530,\n    \"output_tokens\": 137,\n    \"cache_read_input_tokens\": 29248,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 321.2,
+      "input_tokens": 29588,
+      "output_tokens": 241,
+      "cached_tokens": 27392,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": " `ZeroDivisionError` (\\\"divide by zero\\\") and truncates toward zero like real Forth\\n- Word definitions are stored fully expanded (early binding), so redefining a word later doesn't change words that already referenced it, matching the test for same-name words\\n- Words are case-insensitive via `.lower()` normalization, and redefining numbers raises `ValueError` (\\\"illegal operation\\\"); unknown words raise `ValueError` (\\\"undefined operation\\\")\",\n  \"usage\": {\n    \"input_tokens\": 29588,\n    \"output_tokens\": 241,\n    \"cache_read_input_tokens\": 27392,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 49.1,
+      "input_tokens": 26051,
+      "output_tokens": 262,
+      "cached_tokens": 25408,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "rsing).\\n- **Operations**: `plus`, `minus`, `multiplied by`, `divided by` (division truncates toward zero).\\n- **Left-to-right evaluation**: `3 plus 2 multiplied by 3` \u2192 15, ignoring operator precedence.\\n- **Errors**: raises `ValueError(\\\"unknown operation\\\")` for non-math questions and unsupported operations like `cubed`, and `ValueError(\\\"syntax error\\\")` for malformed problems (missing operands, doubled operators, prefix/postfix notation).\",\n  \"usage\": {\n    \"input_tokens\": 26051,\n    \"output_tokens\": 262,\n    \"cache_read_input_tokens\": 25408,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

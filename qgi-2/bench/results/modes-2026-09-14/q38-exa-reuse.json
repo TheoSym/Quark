@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 100.8,
+      "total_wall_s": 332.2,
+      "errors": 0,
+      "input_tokens": 94752,
+      "output_tokens": 721,
+      "cached_tokens": 93696
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 172.5,
+      "input_tokens": 35187,
+      "output_tokens": 225,
+      "cached_tokens": 34816,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": "fill balls only for a strike or spare, caps each fill pair to one rack unless the first was a strike, and marks the game complete once no more balls are owed.\\n- `score()` walks strikes/spares with their bonuses and raises `ValueError` (with messages) for negative/over-10 rolls, rolling past game end, and scoring an unstarted or incomplete game.\\n\\nAll 31 tests pass (`python -m unittest bowling_test`), and the change is committed as `587c897`.\",\n  \"usage\": {\n    \"input_tokens\": 35187,\n    \"output_tokens\": 225,\n    \"cache_read_input_tokens\": 34816,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 58.9,
+      "input_tokens": 30917,
+      "output_tokens": 184,
+      "cached_tokens": 30464,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": " over`, case-insensitive tokens, negative-number support.\\n- Word definitions (`: name def ;`) expand eagerly at definition time, so overriding built-ins/user words and self-referential definitions (`: foo foo 1 + ;`) behave per spec; numeric names raise `ValueError(\\\"illegal operation\\\")`, unknown words raise `ValueError(\\\"undefined operation\\\")`, and `/` by zero raises `ZeroDivisionError(\\\"divide by zero\\\")` with truncating integer division.\",\n  \"usage\": {\n    \"input_tokens\": 30917,\n    \"output_tokens\": 184,\n    \"cache_read_input_tokens\": 30464,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 100.8,
+      "input_tokens": 28648,
+      "output_tokens": 312,
+      "cached_tokens": 28416,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "word that isn't a number, an operator keyword, or `by` \u2192 `unknown operation` (covers `52 cubed?`, `Who is the President\u2026?`).\\n- Then strict left-to-right walk: number, then alternating `(operator, number)` pairs; deviations (missing operand, two numbers/ops in a row, prefix/postfix, dangling `multiplied` without `by`, divide-by-zero) \u2192 `ValueError(\\\"syntax error\\\")`.\\n- Division truncates toward zero, so `-12 divided by 2 divided by -3` \u2192 `2`.\",\n  \"usage\": {\n    \"input_tokens\": 28648,\n    \"output_tokens\": 312,\n    \"cache_read_input_tokens\": 28416,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

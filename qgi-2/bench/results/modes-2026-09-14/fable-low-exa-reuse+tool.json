@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse+tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 27.4,
+      "total_wall_s": 92.0,
+      "errors": 0,
+      "input_tokens": 129558,
+      "output_tokens": 369,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 42.5,
+      "input_tokens": 45459,
+      "output_tokens": 94,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_hare_1789448752795_4410ff99f84d873b\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `BowlingGame` in `bowling.py` with `roll` validation (pin range, frame limits, tenth-frame fill-ball rules, no rolls after game end) and `score` (strike/spare bonuses, raises on incomplete games). All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 45459,\n    \"output_tokens\": 94,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 27.4,
+      "input_tokens": 43674,
+      "output_tokens": 181,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "d `forth.py`. All 54 tests pass.\\n\\nKey design: user-defined words are expanded at definition time into a flat list of ints and builtin callables, so later redefinitions (e.g. `: foo 6 ;` after `: bar foo ;`) don't affect earlier definitions, and self-referential definitions like `: foo foo 1 + ;` resolve to the previous `foo`. Errors raise `StackUnderflowError`, `ZeroDivisionError(\\\"divide by zero\\\")`, and `ValueError` with the required messages.\",\n  \"usage\": {\n    \"input_tokens\": 43674,\n    \"output_tokens\": 181,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 22.1,
+      "input_tokens": 40425,
+      "output_tokens": 94,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_dolphin_1789448824356_1e4a4489b14b04bf\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"Implemented `answer()` in `wordy.py`: tokenizes the question, evaluates left-to-right, raises `ValueError(\\\"unknown operation\\\")` for unsupported ops/non-math questions and `ValueError(\\\"syntax error\\\")` for malformed input. All 25 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 40425,\n    \"output_tokens\": 94,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

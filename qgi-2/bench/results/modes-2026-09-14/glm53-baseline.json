@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 58.7,
+      "total_wall_s": 180.6,
+      "errors": 0,
+      "input_tokens": 82667,
+      "output_tokens": 572,
+      "cached_tokens": 81792
+    }
+  },
+  "results": [
+    {
+      "agent": "baseline",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 52.0,
+      "input_tokens": 28555,
+      "output_tokens": 108,
+      "cached_tokens": 28288,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "789448688172_1e673d4906be9ff4\",\n  \"provider\": \"openrouter\",\n  \"model\": \"GLM 5.3\",\n  \"text\": \"Implemented `bowling.py` and all 31 tests pass. Committed as `f66d140`.\\n\\nDesign: rolls are stored per frame. `roll` validates pin counts, frame limits, and 10th-frame fill-ball rules (raising `ValueError`/`IndexError` with messages). `score` raises unless the game is complete, then sums frames with strike/spare bonuses plus the flat 10th-frame total.\",\n  \"usage\": {\n    \"input_tokens\": 28555,\n    \"output_tokens\": 108,\n    \"cache_read_input_tokens\": 28288,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 69.9,
+      "input_tokens": 28943,
+      "output_tokens": 303,
+      "cached_tokens": 28608,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "on with underflow checks.\\n- **Word definitions** (`: name body ;`): bodies are resolved at definition time into atoms (integers or built-in callables), so later redefinitions don't alter earlier ones. Number names are rejected with `ValueError(\\\"illegal operation\\\")`; unterminated definitions raise too.\\n- **Case-insensitivity**: all tokens are lowercased before lookup.\\n- **Errors**: unknown words raise `ValueError(\\\"undefined operation\\\")`.\",\n  \"usage\": {\n    \"input_tokens\": 28943,\n    \"output_tokens\": 303,\n    \"cache_read_input_tokens\": 28608,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "baseline",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 58.7,
+      "input_tokens": 25169,
+      "output_tokens": 161,
+      "cached_tokens": 24896,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": " `plus`, `minus`, `multiplied by`, and `divided by`, raising `ValueError(\\\"unknown operation\\\")` for anything else (including non-math questions).\\n- Left-to-right evaluation ignoring standard operator precedence, with truncating integer division.\\n- `ValueError(\\\"syntax error\\\")` for malformed input: missing operands, consecutive operators or numbers, and prefix/postfix notation.\\n\\nAll 25 tests pass, and the change is committed as `2c7aeb0`.\",\n  \"usage\": {\n    \"input_tokens\": 25169,\n    \"output_tokens\": 161,\n    \"cache_read_input_tokens\": 24896,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

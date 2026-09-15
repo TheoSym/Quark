@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse+tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 141.8,
+      "total_wall_s": 390.8,
+      "errors": 0,
+      "input_tokens": 98497,
+      "output_tokens": 360,
+      "cached_tokens": 96512
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 101.8,
+      "input_tokens": 41695,
+      "output_tokens": 154,
+      "cached_tokens": 40256,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": ", over-rack throws, and post-game rolls raise `ValueError` with descriptive messages. It tracks frames 1-9 normally and handles the 10th frame's fill balls (a strike always earns two, a spare one, with the rack resetting between them).\\n- **`score()`** raises `ValueError` until the game is actually complete, then sums frames 1-9 (strike = 10 + next two throws, spare = 10 + next throw, open = pins knocked down) plus the 10th frame's total pins.\",\n  \"usage\": {\n    \"input_tokens\": 41695,\n    \"output_tokens\": 154,\n    \"cache_read_input_tokens\": 40256,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 141.8,
+      "input_tokens": 29367,
+      "output_tokens": 118,
+      "cached_tokens": 29120,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_wyvern_1789450250120_1eb7dfa277bb9a76\",\n  \"provider\": \"openrouter\",\n  \"model\": \"GLM 5.3\",\n  \"text\": \"Done. `forth.py` implements the evaluator (arithmetic, `DUP`/`DROP`/`SWAP`/`OVER`, redefinable user words with snapshot semantics, case-insensitive, truncating division, custom `StackUnderflowError`). All 54 tests pass and it's committed as `c4a6f71`.\",\n  \"usage\": {\n    \"input_tokens\": 29367,\n    \"output_tokens\": 118,\n    \"cache_read_input_tokens\": 29120,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 147.2,
+      "input_tokens": 27435,
+      "output_tokens": 88,
+      "cached_tokens": 27136,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "91_766657fea36891ff\",\n  \"provider\": \"openrouter\",\n  \"model\": \"GLM 5.3\",\n  \"text\": \"Done. Implemented `answer()` in `wordy.py` with a left-to-right tokenizer/evaluator supporting `plus`, `minus`, `multiplied by`, and `divided by` (floor division), raising `ValueError(\\\"unknown operation\\\")` for non-math questions and unsupported operations, and `ValueError(\\\"syntax error\\\")` for malformed problems. All 25 tests pass, and the change is committed.\",\n  \"usage\": {\n    \"input_tokens\": 27435,\n    \"output_tokens\": 88,\n    \"cache_read_input_tokens\": 27136,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

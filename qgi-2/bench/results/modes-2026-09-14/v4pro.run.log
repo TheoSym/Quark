@@ -11,3 +11,15 @@
   == v4pro mem+exa-tool  21:52:58
      0/3 med=1.0s tot=2.9s in=0 out=0 err=3
 DONE v4pro 21:53:03
+  skip baseline (exists)
+  == v4pro safe-efficient  22:04:42
+     3/3 med=99.0s tot=265.1s in=105775 out=187 err=0
+  == v4pro exa-reuse  22:09:10
+     3/3 med=65.9s tot=202.8s in=103813 out=173 err=0
+  == v4pro exa-reuse+tool  22:12:36
+     3/3 med=97.9s tot=285.9s in=116940 out=184 err=0
+  == v4pro mem  22:17:25
+     3/3 med=81.1s tot=247.8s in=87953 out=189 err=0
+  == v4pro mem+exa-tool  22:21:36
+     3/3 med=54.4s tot=176.8s in=101107 out=196 err=0
+DONE v4pro 22:24:37

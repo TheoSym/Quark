@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 61.4,
+      "total_wall_s": 179.3,
+      "errors": 0,
+      "input_tokens": 127337,
+      "output_tokens": 597,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 61.4,
+      "input_tokens": 42477,
+      "output_tokens": 137,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "\"openrouter\",\n  \"model\": \"anthropic/claude-opus-5\",\n  \"text\": \"All 31 tests pass and the work is committed (`976016e`).\\n\\n`bowling.py` tracks rolls as frames plus fill balls:\\n- `roll` validates pin range, per-frame pin totals, fill-ball legality (a second fill is only capped when the first left pins standing), and rejects rolls after the game ends.\\n- `score` requires a complete game, then does the standard single pass with strike/spare bonuses.\",\n  \"usage\": {\n    \"input_tokens\": 42477,\n    \"output_tokens\": 137,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 76.1,
+      "input_tokens": 45868,
+      "output_tokens": 312,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": " `0`) and `DUP DROP SWAP OVER`.\\n- `: name body ;` definitions expand referenced words eagerly at definition time, so redefinitions keep the old meaning for earlier definitions (`: foo 5 ; : bar foo ; : foo 6 ;` \u2192 `bar foo` = `[5, 6]`) and self-reference works.\\n- Everything lowercased for case insensitivity; numeric names or malformed definitions raise `ValueError(\\\"illegal operation\\\")`, unknown words raise `ValueError(\\\"undefined operation\\\")`.\",\n  \"usage\": {\n    \"input_tokens\": 45868,\n    \"output_tokens\": 312,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 41.8,
+      "input_tokens": 38992,
+      "output_tokens": 148,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "anthropic/claude-opus-5\",\n  \"text\": \"All 25 tests pass and the work is committed.\\n\\n`wordy.py` tokenizes the question body (joining the two-word operations), requires a leading number, then folds `operation number` pairs left-to-right:\\n- Non-`What is ...?` questions or unrecognized words raise `ValueError(\\\"unknown operation\\\")`.\\n- Structural problems (missing operand/operator, two in a row, prefix/postfix) raise `ValueError(\\\"syntax error\\\")`.\",\n  \"usage\": {\n    \"input_tokens\": 38992,\n    \"output_tokens\": 148,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

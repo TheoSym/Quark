@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse+tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 71.2,
+      "total_wall_s": 291.3,
+      "errors": 0,
+      "input_tokens": 138336,
+      "output_tokens": 927,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 162.7,
+      "input_tokens": 48650,
+      "output_tokens": 382,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.06s\n",
+      "agent_tail": "in counts and `IndexError` for sequencing violations, each with a descriptive message.\\n\\n**Verification**: pytest 31/31, plus a temporary script covering 21 extra cases (perfect game 300, all-5s spares 150, the instructions' three-frame example 48, and every error path) which I removed before committing. Two of my initial expected values in that script were miscalculated; I hand-verified the frame math and the implementation was right both times.\",\n  \"usage\": {\n    \"input_tokens\": 48650,\n    \"output_tokens\": 382,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 71.2,
+      "input_tokens": 47769,
+      "output_tokens": 343,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.08s\n",
+      "agent_tail": "ng its body had when defined (`: foo 10 ;` then `: foo foo 1 + ;` gives `11`).\\n- `/` truncates toward zero rather than using Python's floor division, and raises `ZeroDivisionError(\\\"divide by zero\\\")`.\\n- A single `ARITY` table drives the `StackUnderflowError(\\\"Insufficient number of items in stack\\\")` check for every built-in; unknown words and malformed `: ... ;` lines raise `ValueError` with `\\\"undefined operation\\\"` / `\\\"illegal operation\\\"`.\",\n  \"usage\": {\n    \"input_tokens\": 47769,\n    \"output_tokens\": 343,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 57.4,
+      "input_tokens": 41917,
+      "output_tokens": 202,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.08s\n",
+      "agent_tail": "pper; a non-matching prefix (non-math question) raises `ValueError(\\\"unknown operation\\\")`.\\n- Tokenizes numbers (with optional sign) and the four operations, joining `multiplied by` / `divided by`; any other word raises `unknown operation`.\\n- Evaluates strictly left to right, requiring alternating operand/operator, otherwise `ValueError(\\\"syntax error\\\")`.\\n- Division truncates toward zero, so `-7 divided by 2` is `-3` rather than Python's `-4`.\",\n  \"usage\": {\n    \"input_tokens\": 41917,\n    \"output_tokens\": 202,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

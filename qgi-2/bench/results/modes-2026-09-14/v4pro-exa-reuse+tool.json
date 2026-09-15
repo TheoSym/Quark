@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse+tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 97.9,
+      "total_wall_s": 285.9,
+      "errors": 0,
+      "input_tokens": 116940,
+      "output_tokens": 184,
+      "cached_tokens": 115328
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 121.7,
+      "input_tokens": 39653,
+      "output_tokens": 7,
+      "cached_tokens": 39552,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_lobster_1789449156735_c5417f6c7ecf8678\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 31 tests pass.\",\n  \"usage\": {\n    \"input_tokens\": 39653,\n    \"output_tokens\": 7,\n    \"cache_read_input_tokens\": 39552,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 97.9,
+      "input_tokens": 44486,
+      "output_tokens": 130,
+      "cached_tokens": 43776,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "l 54 tests pass.\\n\\nImplemented `forth.py` with a Forth evaluator supporting:\\n- integer arithmetic `+ - * /` (truncating division, divide-by-zero error)\\n- stack words `DUP`, `DROP`, `SWAP`, `OVER`\\n- `: name definition ;` user-defined words with compile-time inlining of currently-defined words\\n- case-insensitive words and numbers (including negatives)\\n- `StackUnderflowError`, `ValueError`, and `ZeroDivisionError` with the expected messages\",\n  \"usage\": {\n    \"input_tokens\": 44486,\n    \"output_tokens\": 130,\n    \"cache_read_input_tokens\": 43776,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse+tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 66.3,
+      "input_tokens": 32801,
+      "output_tokens": 47,
+      "cached_tokens": 32000,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_hibiscus_1789449378264_fabe4306fb8a619f\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 25 tests pass. The implementation parses \\\"What is ... ?\\\" questions, tokenizes numbers and operations, evaluates left-to-right, and raises the expected `ValueError` messages for malformed or unsupported questions.\",\n  \"usage\": {\n    \"input_tokens\": 32801,\n    \"output_tokens\": 47,\n    \"cache_read_input_tokens\": 32000,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

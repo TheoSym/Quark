@@ -1,0 +1,60 @@
+{
+  "model": "QGI 3.8 Flash",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "safe-efficient": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 125.1,
+      "total_wall_s": 372.5,
+      "errors": 0,
+      "input_tokens": 96572,
+      "output_tokens": 843,
+      "cached_tokens": 95488
+    }
+  },
+  "results": [
+    {
+      "agent": "safe-efficient",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 125.1,
+      "input_tokens": 34598,
+      "output_tokens": 257,
+      "cached_tokens": 34304,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "fill balls only for a strike or spare, with correct shared-rack rules (balls 2 and 3 share a rack unless ball 2 was its own strike).\\n- `score()` raises with messages on an unstarted/incomplete game, and rolls raise `ValueError`/`IndexError`/`TypeError` for invalid pin counts, over-ten frame pairs, extra rolls after ten frames, or rolling past a finished game.\\n\\nAll 31 tests in `bowling_test.py` pass, and the change is committed as `df7bf87`.\",\n  \"usage\": {\n    \"input_tokens\": 34598,\n    \"output_tokens\": 257,\n    \"cache_read_input_tokens\": 34304,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 176.7,
+      "input_tokens": 35021,
+      "output_tokens": 196,
+      "cached_tokens": 34560,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.10s\n",
+      "agent_tail": "es toward zero and raises `ZeroDivisionError(\\\"divide by zero\\\")`.\\n- Word definitions (`: word def ;`) are expanded/flattened at define time, so overrides and self-referencing definitions (`: foo foo 1 + ;`) resolve with the semantics captured at definition; redefining a number raises `ValueError(\\\"illegal operation\\\")`, unknown words raise `ValueError(\\\"undefined operation\\\")`.\\n- Case-insensitive via lowercasing each line before tokenizing.\",\n  \"usage\": {\n    \"input_tokens\": 35021,\n    \"output_tokens\": 196,\n    \"cache_read_input_tokens\": 34560,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "safe-efficient",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 70.7,
+      "input_tokens": 26953,
+      "output_tokens": 390,
+      "cached_tokens": 26624,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.06s\n",
+      "agent_tail": "python -m unittest wordy_test` \u2192 `Ran 25 tests ... OK`).\\n\\n`wordy.py` implements `answer()` as a left-to-right evaluator: strip the `What is ... ?` wrapper, merge `multiplied by` / `divided by` into single tokens, validate every token (unrecognized words raise `ValueError(\\\"unknown operation\\\")`), then fold numbers through the operator table, raising `ValueError(\\\"syntax error\\\")` for missing operands, repeated operators, or repeated numbers.\",\n  \"usage\": {\n    \"input_tokens\": 26953,\n    \"output_tokens\": 390,\n    \"cache_read_input_tokens\": 26624,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

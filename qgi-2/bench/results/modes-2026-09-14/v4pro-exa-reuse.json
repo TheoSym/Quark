@@ -1,0 +1,60 @@
+{
+  "model": "QGI-V4 Pro",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "exa-reuse": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 65.9,
+      "total_wall_s": 202.8,
+      "errors": 0,
+      "input_tokens": 103813,
+      "output_tokens": 173,
+      "cached_tokens": 99200
+    }
+  },
+  "results": [
+    {
+      "agent": "exa-reuse",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 65.9,
+      "input_tokens": 35668,
+      "output_tokens": 70,
+      "cached_tokens": 33920,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_lobster_1789448950681_36ee2de06581e0ff\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 31 tests pass.\\n\\nI implemented `bowling.py` with:\\n- Frame-by-frame roll validation, including pins range and 10th-frame fill-ball rules.\\n- A completion check so `score()` raises on incomplete games and `roll()` raises after the game ends.\\n- Standard strike/spare bonus scoring over the recorded roll list.\",\n  \"usage\": {\n    \"input_tokens\": 35668,\n    \"output_tokens\": 70,\n    \"cache_read_input_tokens\": 33920,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 93.8,
+      "input_tokens": 38121,
+      "output_tokens": 48,
+      "cached_tokens": 35968,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_palmtree_1789449017417_0fc559acb4e43917\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 54 tests pass. The Forth evaluator is implemented in `forth.py` with the required custom `StackUnderflowError` and appropriate error messages for underflow, divide by zero, illegal operation, and undefined operation.\",\n  \"usage\": {\n    \"input_tokens\": 38121,\n    \"output_tokens\": 48,\n    \"cache_read_input_tokens\": 35968,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "exa-reuse",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 43.1,
+      "input_tokens": 30024,
+      "output_tokens": 55,
+      "cached_tokens": 29312,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "{\n  \"session_id\": \"session_llama_1789449112562_a31e42b550a56c06\",\n  \"provider\": \"openrouter\",\n  \"model\": \"QGI-V4 Pro\",\n  \"text\": \"All 25 tests pass. Implemented `answer()` in `wordy.py` to parse \\\"What is ...\\\" questions, tokenize numbers and operations, evaluate left-to-right, and raise the required `ValueError` messages for malformed or unknown-operation inputs.\",\n  \"usage\": {\n    \"input_tokens\": 30024,\n    \"output_tokens\": 55,\n    \"cache_read_input_tokens\": 29312,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}
