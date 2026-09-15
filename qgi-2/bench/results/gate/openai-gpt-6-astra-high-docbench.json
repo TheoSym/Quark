@@ -1,0 +1,65 @@
+{
+  "model": "openai/gpt-6-astra",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 260.9,
+    "errors": 0,
+    "input_tokens": 46642,
+    "output_tokens": 140,
+    "cached_tokens": 45268
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 111.9,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=489",
+      "input_tokens": 21351,
+      "output_tokens": 71,
+      "cached_tokens": 21120,
+      "error": null,
+      "agent_tail": "{\n  \"session_id\": \"session_butterfly_1789442104378_a8b4db25606cf052\",\n  \"provider\": \"openrouter\",\n  \"model\": \"openai/gpt-6-astra\",\n  \"text\": \"Created [invoice.pdf](invoice.pdf) with a professional header, line-item table, and totals block.\\n\\nVerified with pypdf that all required text and amounts extract correctly, including the **EUR 15962.50** grand total.\",\n  \"usage\": {\n    \"input_tokens\": 21351,\n    \"output_tokens\": 71,\n    \"cache_read_input_tokens\": 21120,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 149.0,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 25291,
+      "output_tokens": 69,
+      "cached_tokens": 24148,
+      "error": null,
+      "agent_tail": "{\n  \"session_id\": \"session_dove_1789442216545_791a6212444f2808\",\n  \"provider\": \"openrouter\",\n  \"model\": \"openai/gpt-6-astra\",\n  \"text\": \"Created [fleet.xlsx](fleet.xlsx) with Data and Summary tables, live formulas, required number formats, and a native bar chart.\\n\\nRecalculated using Excel and verified formulas and results with openpyxl. Total: **4,320 hours available, 3,288 used, 76.1% utilization**.\",\n  \"usage\": {\n    \"input_tokens\": 25291,\n    \"output_tokens\": 69,\n    \"cache_read_input_tokens\": 24148,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

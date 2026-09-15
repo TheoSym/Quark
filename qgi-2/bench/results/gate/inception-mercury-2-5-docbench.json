@@ -1,0 +1,65 @@
+{
+  "model": "inception/mercury-2.5",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 98.7,
+    "errors": 0,
+    "input_tokens": 65651,
+    "output_tokens": 410,
+    "cached_tokens": 42118
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 18.8,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=455",
+      "input_tokens": 33959,
+      "output_tokens": 130,
+      "cached_tokens": 20034,
+      "error": null,
+      "agent_tail": "{\n  \"session_id\": \"session_rhino_1789442262828_9c1ef16099b51fbf\",\n  \"provider\": \"openrouter\",\n  \"model\": \"inception/mercury-2.5\",\n  \"text\": \"\\n\\nThe invoice.pdf has been created and verified successfully. All required fields are present: invoice number, sender, recipient, dates, line items with correct totals (subtotal: 12,770.00, VAT 25%: 3,192.50, grand total: 15,962.50), and the payment IBAN. The PDF is text-based with extracted text matching all values.\",\n  \"usage\": {\n    \"input_tokens\": 33959,\n    \"output_tokens\": 130,\n    \"cache_read_input_tokens\": 20034,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 79.9,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 31692,
+      "output_tokens": 280,
+      "cached_tokens": 22084,
+      "error": null,
+      "agent_tail": "tion/mercury-2.5\",\n  \"text\": \"\\n\\nThe Excel workbook `fleet.xlsx` has been created successfully with all requirements:\\n\\n**Data sheet:**\\n- Bold header row: site, vehicle, hours_available, hours_used, Utilization\\n- 6 vehicle rows with data from CSV\\n- Utilization column with live formulas (`=D2/C2`, etc.) formatted as `0.0%`\\n\\n**Summary sheet:**\\n- Per-site table with Rotterdam, Hamburg, Antwerp\\n- Hours Available and Hours Used calculated via SUMIF formulas\\n- Utilization formulas for each site\\n- Total row with SUM formulas (4320/3288 expected)\\n- Bar chart showing Hours Used per site\\n\\nAll formulas have been verified using openpyxl.\",\n  \"usage\": {\n    \"input_tokens\": 31692,\n    \"output_tokens\": 280,\n    \"cache_read_input_tokens\": 22084,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+ "model": "x-ai/grok-4.6",
+ "profile": "or-grok",
+ "endpoint": "https://<host>/api/v1",
+ "reasoning_effort": null,
+ "pricing": {
+  "prompt": 2e-06,
+  "completion": 6e-06,
+  "cache_read": 5e-07,
+  "context_length": 500000
+ },
+ "date": "2026-09-14 20:38",
+ "gate_wall_s": 1990.6,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "https://<host>/api/v1",
+   "errors": [],
+   "cost_usd": 0.0891,
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 5.83,
+   "decode_tps": 63.8,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 3456,
+   "cache_probe_prompt_tokens": 3471,
+   "wall_s": 229.0
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 100.8,
+   "total_wall_s": 756.9,
+   "input_tokens": 62697,
+   "output_tokens": 241,
+   "cached_tokens": 61184,
+   "cost_usd": 0.0351,
+   "errors": 1,
+   "file": "x-ai-grok-4-6-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 619.1,
+    "errors": 0,
+    "input_tokens": 101574,
+    "output_tokens": 377,
+    "cached_tokens": 100096,
+    "cost_usd": 0.0553,
+    "file": "x-ai-grok-4-6-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 117.4,
+    "input_tokens": 56750,
+    "output_tokens": 36,
+    "cached_tokens": 53760,
+    "cost_usd": 0.0331,
+    "errors": 0,
+    "file": "x-ai-grok-4-6-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 6.2,
+   "p90_latency_s": 8.0,
+   "prompt_tokens": 41446,
+   "cached_tokens": 29568,
+   "completion_tokens": 14083,
+   "cost_usd": 0.1218,
+   "truncated": 0,
+   "errors": 0,
+   "total_s": 248.1,
+   "file": "x-ai-grok-4-6-memory.json"
+  },
+  "_effort": null
+ },
+ "verdict": {
+  "model": "x-ai/grok-4.6",
+  "reasoning_effort": null,
+  "gate_cost_usd": 0.3344,
+  "cost_per_task_usd": 0.0206,
+  "tokens_per_task": 36946,
+  "output_tokens_per_task": 109,
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 100.8,
+  "decode_tps": 63.8,
+  "ttft_s": 5.83,
+  "cache_reported": true,
+  "errors": 1
+ }
+}

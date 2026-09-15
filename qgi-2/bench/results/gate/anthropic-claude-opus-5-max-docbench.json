@@ -1,0 +1,65 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 710.8,
+    "errors": 1,
+    "input_tokens": 43633,
+    "output_tokens": 417,
+    "cached_tokens": 0
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 109.7,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=1051",
+      "input_tokens": 43633,
+      "output_tokens": 417,
+      "cached_tokens": 0,
+      "error": null,
+      "agent_tail": "line-item table, right-aligned totals block, and the payment footer.\\n\\n| # | Description | Qty | Unit | Line total |\\n|---|---|---|---|---|\\n| 1 | AGV fleet software licence | 6 | 1250.00 | 7500.00 |\\n| 2 | On-site commissioning (days) | 4 | 980.00 | 3920.00 |\\n| 3 | Remote support retainer (months) | 3 | 450.00 | 1350.00 |\\n\\nSubtotal 12770.00, VAT 25% 3192.50, total due EUR 15962.50.\\n\\nVerification passed 19 pypdf text checks plus 3 independent arithmetic checks, and no text block crosses the page margins. Re-run any time with `python verify_invoice.py`; `make_invoice.py` regenerates it. Committed as `fdf57c2` (`fleet.csv` left untouched).\",\n  \"usage\": {\n    \"input_tokens\": 43633,\n    \"output_tokens\": 417,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 601.1,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "agent_tail": ""
+    }
+  ]
+}

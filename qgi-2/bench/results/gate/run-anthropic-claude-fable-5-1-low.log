@@ -1,0 +1,17 @@
+   pricing: $10.00/M in · $50.00/M out · $0.250/M cache read
+== gate: anthropic/claude-fable-5.1 via or-fable-low (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'cost_usd': 0.1017, 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 2.43, 'decode_tps': 40.3, 'cache_reported': True, 'cache_probe_cached_tokens': 0, 'cache_probe_prompt_tokens': 3277, 'wall_s': 28.4}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 24.3, 'total_wall_s': 69.8, 'input_tokens': 115556, 'output_tokens': 280, 'cached_tokens': 0, 'cost_usd': 1.1696, 'errors': 0, 'file': 'anthropic-claude-fable-5-1-low-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model anthropic/claude-fable-5.1 --jcode F:\QHG\Quark\target\selfdev\jcode.exe 
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-fable-low --baseline-model anthropic/clau
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 84.1, 'errors': 0, 'input_tokens': 72483, 'output_tokens': 473, 'cached_tokens': 0, 'cost_usd': 0.7485, 'file': 'anthropic-claude-fable-5-1-low-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 37.8, 'input_tokens': 66040, 'output_tokens': 262, 'cached_tokens': 0, 'cost_usd': 0.6735, 'errors': 0, 'file': 'anthropic-claude-fable-5-1-low-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model anthropic/claude-fable-5.1 --arm direct-full --turns 40 --facts 8 --max
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 3.7, 'p90_latency_s': 4.14, 'prompt_tokens': 59945, 'cached_tokens': 0, 'completion_tokens': 1725, 'cost_usd': 0.6788, 'truncated': 0, 'errors': 0, 'total_s': 147.8, 'file': 'anthropic-claude-fable-5-1-low-memory.json'}
+
+anthropic/claude-fable-5.1 (low)   correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 24.3 s/task · 40.3 tok/s · TTFT 2.43 s  | tools ✓  cache yes  errors 0  | $0.4319/task · 42516 tok/task · gate $3.3721
+gate wall 389.9 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-anthropic-claude-fable-5-1-low.json

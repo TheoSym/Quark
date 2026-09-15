@@ -156,6 +156,18 @@ def openrouter_pricing(model: str, key: str | None) -> dict | None:
     return None
 
 
+def openrouter_key_usage(key: str | None) -> float | None:
+    """Total USD spent on this key so far; the delta across a gate is the exact
+    cost, reasoning tokens included, which jcode's token counts leave out."""
+    if not key:
+        return None
+    try:
+        req = urllib.request.Request("https://openrouter.ai/api/v1/auth/key", headers={"Authorization": f"Bearer {key}"})
+        return float(json.load(urllib.request.urlopen(req, timeout=30))["data"]["usage"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def cost_of(pricing: dict | None, input_tokens: int | None, output_tokens: int | None, cached: int | None) -> float | None:
     """jcode reports input (inclusive of cache reads), output, and cache-read tokens."""
     if not pricing or input_tokens is None:
@@ -504,6 +516,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     tag = a.tag or slug(a.model)
     started = time.time()
+    spend_before = openrouter_key_usage(key) if is_openrouter else None
     print(f"== gate: {a.model} via {a.jcode_profile} ({re.sub(r'//[^/]+', '//<host>', base)})  legs: {', '.join(a.legs)}", flush=True)
 
     legs: dict = {}
@@ -527,7 +540,15 @@ def main() -> None:
         print("   ", legs["memory"], flush=True)
 
     legs["_effort"] = a.reasoning_effort
+    if spend_before is not None:
+        spend_after = openrouter_key_usage(key)
+        if spend_after is not None:
+            # Exact, reasoning included. Only meaningful when nothing else used
+            # the key during the run; parallel gates share it, so the priced
+            # per-leg figures stay the per-model number and this is the check.
+            legs["_key_spend_delta_usd"] = round(spend_after - spend_before, 4)
     v = fold(a.model, legs)
+    v["key_spend_delta_usd"] = legs.get("_key_spend_delta_usd")
     doc = {"model": a.model, "profile": a.jcode_profile, "endpoint": re.sub(r"//[^/]+", "//<host>", base),
            "reasoning_effort": a.reasoning_effort, "pricing": a.pricing,
            "date": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "gate_wall_s": round(time.time() - started, 1),

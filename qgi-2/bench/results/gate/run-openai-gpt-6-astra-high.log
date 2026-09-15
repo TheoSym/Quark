@@ -1,0 +1,17 @@
+   pricing: $10.00/M in · $50.00/M out · $1.000/M cache read
+== gate: openai/gpt-6-astra via or-astra-high (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'cost_usd': 0.0704, 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': None, 'decode_tps': 26.6, 'cache_reported': True, 'cache_probe_cached_tokens': 2768, 'cache_probe_prompt_tokens': 2771, 'wall_s': 31.3}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 180.6, 'total_wall_s': 542.0, 'input_tokens': 92333, 'output_tokens': 157, 'cached_tokens': 92186, 'cost_usd': 0.1015, 'errors': 0, 'file': 'openai-gpt-6-astra-high-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model openai/gpt-6-astra --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-astra-high --baseline-model openai/gpt-6-
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 260.9, 'errors': 0, 'input_tokens': 46642, 'output_tokens': 140, 'cached_tokens': 45268, 'cost_usd': 0.066, 'file': 'openai-gpt-6-astra-high-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 185.2, 'input_tokens': 41332, 'output_tokens': 112, 'cached_tokens': 41152, 'cost_usd': 0.0486, 'errors': 0, 'file': 'openai-gpt-6-astra-high-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model openai/gpt-6-astra --arm direct-full --turns 40 --facts 8 --max-tokens 
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 2.61, 'p90_latency_s': 5.53, 'prompt_tokens': 33426, 'cached_tokens': 18660, 'completion_tokens': 1882, 'cost_usd': 0.2619, 'truncated': 0, 'errors': 0, 'total_s': 104.5, 'file': 'openai-gpt-6-astra-high-memory.json'}
+
+openai/gpt-6-astra (high)          correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 180.6 s/task · 26.6 tok/s · TTFT ? s  | tools ✓  cache yes  errors 0  | $0.036/task · 30119 tok/task · gate $0.5484
+gate wall 1139.2 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-openai-gpt-6-astra-high.json

@@ -1,0 +1,14 @@
+[
+  {
+    "arm": "baseline",
+    "task": "stateful",
+    "solved": false,
+    "followup_solved": null,
+    "turns": 1,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "wall_s": 0.4958686828613281,
+    "error": "\":{\"message\":\"This model is only available through the Batch API. Use the /api/beta/batches endpoint instead.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing_step\":\"Filter Batch-Only Endpoints\"}}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider."
+  }
+]

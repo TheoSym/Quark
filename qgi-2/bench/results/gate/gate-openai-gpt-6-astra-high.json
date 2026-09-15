@@ -1,0 +1,119 @@
+{
+ "model": "openai/gpt-6-astra",
+ "profile": "or-astra-high",
+ "endpoint": "https://<host>/api/v1",
+ "reasoning_effort": "high",
+ "pricing": {
+  "prompt": 1e-05,
+  "completion": 5e-05,
+  "cache_read": 1e-06,
+  "context_length": 1050000
+ },
+ "date": "2026-09-14 20:24",
+ "gate_wall_s": 1139.2,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "https://<host>/api/v1",
+   "errors": [],
+   "cost_usd": 0.0704,
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": null,
+   "decode_tps": 26.6,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 2768,
+   "cache_probe_prompt_tokens": 2771,
+   "wall_s": 31.3
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 180.6,
+   "total_wall_s": 542.0,
+   "input_tokens": 92333,
+   "output_tokens": 157,
+   "cached_tokens": 92186,
+   "cost_usd": 0.1015,
+   "errors": 0,
+   "file": "openai-gpt-6-astra-high-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 260.9,
+    "errors": 0,
+    "input_tokens": 46642,
+    "output_tokens": 140,
+    "cached_tokens": 45268,
+    "cost_usd": 0.066,
+    "file": "openai-gpt-6-astra-high-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 185.2,
+    "input_tokens": 41332,
+    "output_tokens": 112,
+    "cached_tokens": 41152,
+    "cost_usd": 0.0486,
+    "errors": 0,
+    "file": "openai-gpt-6-astra-high-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 2.61,
+   "p90_latency_s": 5.53,
+   "prompt_tokens": 33426,
+   "cached_tokens": 18660,
+   "completion_tokens": 1882,
+   "cost_usd": 0.2619,
+   "truncated": 0,
+   "errors": 0,
+   "total_s": 104.5,
+   "file": "openai-gpt-6-astra-high-memory.json"
+  },
+  "_effort": "high"
+ },
+ "verdict": {
+  "model": "openai/gpt-6-astra",
+  "reasoning_effort": "high",
+  "gate_cost_usd": 0.5484,
+  "cost_per_task_usd": 0.036,
+  "tokens_per_task": 30119,
+  "output_tokens_per_task": 68,
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 180.6,
+  "decode_tps": 26.6,
+  "ttft_s": null,
+  "cache_reported": true,
+  "errors": 0
+ }
+}

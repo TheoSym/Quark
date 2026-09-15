@@ -1,0 +1,17 @@
+   pricing: $2.00/M in · $6.00/M out · $0.500/M cache read
+== gate: x-ai/grok-4.6 via or-grok (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'cost_usd': 0.0891, 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': 5.83, 'decode_tps': 63.8, 'cache_reported': True, 'cache_probe_cached_tokens': 3456, 'cache_probe_prompt_tokens': 3471, 'wall_s': 229.0}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 100.8, 'total_wall_s': 756.9, 'input_tokens': 62697, 'output_tokens': 241, 'cached_tokens': 61184, 'cost_usd': 0.0351, 'errors': 1, 'file': 'x-ai-grok-4-6-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model x-ai/grok-4.6 --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jcode-profi
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-grok --baseline-model x-ai/grok-4.6 --tas
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 619.1, 'errors': 0, 'input_tokens': 101574, 'output_tokens': 377, 'cached_tokens': 100096, 'cost_usd': 0.0553, 'file': 'x-ai-grok-4-6-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 117.4, 'input_tokens': 56750, 'output_tokens': 36, 'cached_tokens': 53760, 'cost_usd': 0.0331, 'errors': 0, 'file': 'x-ai-grok-4-6-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model x-ai/grok-4.6 --arm direct-full --turns 40 --facts 8 --max-tokens 2048 
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 6.2, 'p90_latency_s': 8.0, 'prompt_tokens': 41446, 'cached_tokens': 29568, 'completion_tokens': 14083, 'cost_usd': 0.1218, 'truncated': 0, 'errors': 0, 'total_s': 248.1, 'file': 'x-ai-grok-4-6-memory.json'}
+
+x-ai/grok-4.6                      correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 100.8 s/task · 63.8 tok/s · TTFT 5.83 s  | tools ✓  cache yes  errors 1  | $0.0206/task · 36946 tok/task · gate $0.3344
+gate wall 1990.6 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-x-ai-grok-4-6.json

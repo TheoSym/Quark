@@ -1,0 +1,51 @@
+{
+  "model": "anthropic/claude-fable-5.1:batch",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 0,
+    "checks_total": 2,
+    "checks_passed": 0,
+    "total_wall_s": 1.0,
+    "errors": 2,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": false,
+      "wall_s": 0.5,
+      "checks": {
+        "file_exists": false
+      },
+      "notes": "invoice.pdf missing",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "exit 1:  instead.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing_step\":\"Filter Batch-Only Endpoints\"}}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n",
+      "agent_tail": "Error: OpenAI-compatible chat request failed\n  endpoint: https://openrouter.ai/api/v1/chat/completions\n  model: anthropic/claude-fable-5.1:batch\n  auth: OPENROUTER_API_KEY\n  status: 404 Not Found\n  response: {\"error\":{\"message\":\"This model is only available through the Batch API. Use the /api/beta/batches endpoint instead.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing_step\":\"Filter Batch-Only Endpoints\"}}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": false,
+      "wall_s": 0.5,
+      "checks": {
+        "file_exists": false
+      },
+      "notes": "fleet.xlsx missing",
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "exit 1:  instead.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing_step\":\"Filter Batch-Only Endpoints\"}}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n",
+      "agent_tail": "Error: OpenAI-compatible chat request failed\n  endpoint: https://openrouter.ai/api/v1/chat/completions\n  model: anthropic/claude-fable-5.1:batch\n  auth: OPENROUTER_API_KEY\n  status: 404 Not Found\n  response: {\"error\":{\"message\":\"This model is only available through the Batch API. Use the /api/beta/batches endpoint instead.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing_step\":\"Filter Batch-Only Endpoints\"}}}\nHint: check network connectivity, DNS/TLS, that the base URL includes the API version (usually /v1), and that the model exists on the provider.\n"
+    }
+  ]
+}

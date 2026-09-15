@@ -1,0 +1,65 @@
+{
+  "model": "anthropic/claude-fable-5.1",
+  "label": "jcode",
+  "tasks": [
+    "pdf-invoice",
+    "xlsx-model"
+  ],
+  "summary": {
+    "n": 2,
+    "solved": 2,
+    "checks_total": 16,
+    "checks_passed": 16,
+    "total_wall_s": 84.1,
+    "errors": 0,
+    "input_tokens": 72483,
+    "output_tokens": 473,
+    "cached_tokens": 0
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "task": "pdf-invoice",
+      "solved": true,
+      "wall_s": 37.0,
+      "checks": {
+        "file_exists": true,
+        "pages": true,
+        "number": true,
+        "parties": true,
+        "items": true,
+        "line_totals": true,
+        "totals": true,
+        "dates": true,
+        "footer": true
+      },
+      "notes": "pages=1 chars=507",
+      "input_tokens": 35756,
+      "output_tokens": 150,
+      "cached_tokens": 0,
+      "error": null,
+      "agent_tail": "{\n  \"session_id\": \"session_humpback_1789440078918_67178740d698023b\",\n  \"provider\": \"openrouter\",\n  \"model\": \"anthropic/claude-fable-5.1\",\n  \"text\": \"`invoice.pdf` is created and verified with pypdf: all fields, line totals (7,500.00 / 3,920.00 / 1,350.00), subtotal 12,770.00, VAT 3,192.50, total 15,962.50, and the IBAN footer extract correctly. The generator script is `make_invoice.py`. Note: the `pdf` skill in `./.claude/skills` was not present (directory empty), so I used reportlab directly.\",\n  \"usage\": {\n    \"input_tokens\": 35756,\n    \"output_tokens\": 150,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "task": "xlsx-model",
+      "solved": true,
+      "wall_s": 47.1,
+      "checks": {
+        "file_exists": true,
+        "sheets": true,
+        "data_util_formulas": true,
+        "summary_sumif": true,
+        "summary_sum_total": true,
+        "chart": true,
+        "values_after_recalc": true
+      },
+      "notes": "recalc nums=[955, 1152, 1181, 1440, 3288, 4320]",
+      "input_tokens": 36727,
+      "output_tokens": 323,
+      "cached_tokens": 0,
+      "error": null,
+      "agent_tail": ".py`):\\n\\n- **Data**: bold header, 6 vehicle rows, column E `Utilization` = `=D/C` formatted `0.0%`, hours formatted `0`.\\n- **Summary**: Rotterdam/Hamburg/Antwerp rows with live `SUMIF` formulas over `Data!A:C` / `Data!A:D`, `=C/B` utilization, plus a Total row with `SUM` formulas and `=C5/B5` (76.1%). Hours `0`, utilization `0.0%`.\\n- Native column bar chart of Hours Used per site anchored at F2.\\n\\nVerified with openpyxl that all formulas and the chart are present. LibreOffice (`soffice`) was not actually on PATH, so I checked the expected results in Python instead: 1440/1152, 1440/955, 1440/1181, total 4320/3288 = 76.1%, matching the spec.\",\n  \"usage\": {\n    \"input_tokens\": 36727,\n    \"output_tokens\": 323,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

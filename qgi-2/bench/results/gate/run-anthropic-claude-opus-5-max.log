@@ -1,0 +1,17 @@
+   pricing: $5.00/M in · $25.00/M out · $0.500/M cache read
+== gate: anthropic/claude-opus-5 via or-opus-max (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'cost_usd': 0.0186, 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': None, 'decode_tps': 36.8, 'cache_reported': False, 'cache_probe_cached_tokens': None, 'cache_probe_prompt_tokens': None, 'wall_s': 31.9}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 91.7, 'total_wall_s': 241.1, 'input_tokens': 127244, 'output_tokens': 740, 'cached_tokens': 0, 'cost_usd': 0.6547, 'errors': 0, 'file': 'anthropic-claude-opus-5-max-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model anthropic/claude-opus-5 --jcode F:\QHG\Quark\target\selfdev\jcode.exe --j
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-opus-max --baseline-model anthropic/claud
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 710.8, 'errors': 1, 'input_tokens': 43633, 'output_tokens': 417, 'cached_tokens': 0, 'cost_usd': 0.2286, 'file': 'anthropic-claude-opus-5-max-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 43.9, 'input_tokens': 67663, 'output_tokens': 379, 'cached_tokens': 0, 'cost_usd': 0.3478, 'errors': 0, 'file': 'anthropic-claude-opus-5-max-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model anthropic/claude-opus-5 --arm direct-full --turns 40 --facts 8 --max-to
+    {'recall': 6, 'probes': 8, 'mean_latency_s': 3.33, 'p90_latency_s': 5.6, 'prompt_tokens': 42153, 'cached_tokens': 0, 'completion_tokens': 2806, 'cost_usd': 0.2781, 'truncated': 0, 'errors': 0, 'total_s': 133.2, 'file': 'anthropic-claude-opus-5-max-memory.json'}
+
+anthropic/claude-opus-5 (max)      correctness  13/15  coding 3/3  agentic 4/4  memory 6/8  | speed 91.7 s/task · 36.8 tok/s · TTFT ? s  | tools ✓  cache no  errors 1  | $0.2052/task · 40013 tok/task · gate $1.5278
+gate wall 1172.6 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-anthropic-claude-opus-5-max.json

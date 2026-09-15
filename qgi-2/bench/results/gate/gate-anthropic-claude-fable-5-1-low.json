@@ -1,0 +1,119 @@
+{
+ "model": "anthropic/claude-fable-5.1",
+ "profile": "or-fable-low",
+ "endpoint": "https://<host>/api/v1",
+ "reasoning_effort": "low",
+ "pricing": {
+  "prompt": 1e-05,
+  "completion": 5e-05,
+  "cache_read": 2.5e-07,
+  "context_length": 1000000
+ },
+ "date": "2026-09-14 19:46",
+ "gate_wall_s": 389.9,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "https://<host>/api/v1",
+   "errors": [],
+   "cost_usd": 0.1017,
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": 2.43,
+   "decode_tps": 40.3,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 0,
+   "cache_probe_prompt_tokens": 3277,
+   "wall_s": 28.4
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 24.3,
+   "total_wall_s": 69.8,
+   "input_tokens": 115556,
+   "output_tokens": 280,
+   "cached_tokens": 0,
+   "cost_usd": 1.1696,
+   "errors": 0,
+   "file": "anthropic-claude-fable-5-1-low-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 84.1,
+    "errors": 0,
+    "input_tokens": 72483,
+    "output_tokens": 473,
+    "cached_tokens": 0,
+    "cost_usd": 0.7485,
+    "file": "anthropic-claude-fable-5-1-low-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 37.8,
+    "input_tokens": 66040,
+    "output_tokens": 262,
+    "cached_tokens": 0,
+    "cost_usd": 0.6735,
+    "errors": 0,
+    "file": "anthropic-claude-fable-5-1-low-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 3.7,
+   "p90_latency_s": 4.14,
+   "prompt_tokens": 59945,
+   "cached_tokens": 0,
+   "completion_tokens": 1725,
+   "cost_usd": 0.6788,
+   "truncated": 0,
+   "errors": 0,
+   "total_s": 147.8,
+   "file": "anthropic-claude-fable-5-1-low-memory.json"
+  },
+  "_effort": "low"
+ },
+ "verdict": {
+  "model": "anthropic/claude-fable-5.1",
+  "reasoning_effort": "low",
+  "gate_cost_usd": 3.3721,
+  "cost_per_task_usd": 0.4319,
+  "tokens_per_task": 42516,
+  "output_tokens_per_task": 169,
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 24.3,
+  "decode_tps": 40.3,
+  "ttft_s": 2.43,
+  "cache_reported": true,
+  "errors": 0
+ }
+}

@@ -1,0 +1,60 @@
+{
+  "model": "anthropic/claude-opus-5",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "jcode": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 91.7,
+      "total_wall_s": 241.1,
+      "errors": 0,
+      "input_tokens": 127244,
+      "output_tokens": 740,
+      "cached_tokens": 0
+    }
+  },
+  "results": [
+    {
+      "agent": "jcode",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 91.7,
+      "input_tokens": 43683,
+      "output_tokens": 236,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": "ring**: walks 10 frames, adding two-roll bonus for strikes and one-roll bonus for spares; tenth-frame fill balls count only once.\\n- **Roll validation**: `ValueError` for negative/over-10 pins and for exceeding standing pins (the tenth frame re-racks after each strike or spare), `TypeError` for non-integers, `IndexError` for rolling past game end.\\n- **Score validation**: `IndexError` when the game is unstarted, incomplete, or awaiting fill balls.\",\n  \"usage\": {\n    \"input_tokens\": 43683,\n    \"output_tokens\": 236,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 93.2,
+      "input_tokens": 46025,
+      "output_tokens": 262,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.07s\n",
+      "agent_tail": "lds `11` and later redefinitions do not retroactively change earlier words.\\n- `StackUnderflowError` carries \\\"Insufficient number of items in stack\\\"; division by zero raises `ZeroDivisionError(\\\"divide by zero\\\")`; numeric or malformed definition names raise `ValueError(\\\"illegal operation\\\")`; unknown words raise `ValueError(\\\"undefined operation\\\")`.\\n- Division truncates toward zero using integer math only, so it stays exact for large values.\",\n  \"usage\": {\n    \"input_tokens\": 46025,\n    \"output_tokens\": 262,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "jcode",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 56.2,
+      "input_tokens": 37536,
+      "output_tokens": 242,
+      "cached_tokens": 0,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "ass, committed as `3b636e5`.\\n\\nImplementation in `wordy.py`:\\n- `_tokenize` strips the `What is` prefix / `?`, joins two-word operators (`multiplied by` \u2192 `multiplied_by`), then maps each word to an int or operation name.\\n- Unknown words raise `unknown operation`; a half-written operator like `multiplied` alone raises `syntax error`.\\n- `answer` folds left-to-right in number/operator/number triples, raising `syntax error` on any bad arrangement.\",\n  \"usage\": {\n    \"input_tokens\": 37536,\n    \"output_tokens\": 242,\n    \"cache_read_input_tokens\": 0,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

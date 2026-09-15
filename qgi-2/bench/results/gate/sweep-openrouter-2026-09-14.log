@@ -1,0 +1,8 @@
+== anthropic/claude-fable-5.1  effort=low  19:39
+anthropic/claude-fable-5.1 (low)   correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 24.3 s/task · 40.3 tok/s · TTFT 2.43 s  | tools ✓  cache yes  errors 0  | $0.4319/task · 42516 tok/task · gate $3.3721
+gate wall 389.9 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-anthropic-claude-fable-5-1-low.json
+== anthropic/claude-opus-5  effort=max  19:46
+anthropic/claude-opus-5 (max)      correctness  13/15  coding 3/3  agentic 4/4  memory 6/8  | speed 91.7 s/task · 36.8 tok/s · TTFT ? s  | tools ✓  cache no  errors 1  | $0.2052/task · 40013 tok/task · gate $1.5278
+gate wall 1172.6 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-anthropic-claude-opus-5-max.json
+== skip anthropic/claude-fable-5.1:batch (low): gate-anthropic-claude-fable-5-1-batch-low.json exists
+== inception/mercury-2.5  effort=-  20:05

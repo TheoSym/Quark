@@ -1,0 +1,18 @@
+   pricing: $5.00/M in · $25.00/M out · $0.125/M cache read
+== gate: anthropic/claude-fable-5.1:batch via or-fable-batch-low (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': ['readiness: HTTP Error 404: Not Found', 'ttft: HTTP Error 404: Not Found', 'decode: HTTP Error 404: Not Found', 'cache: HTTP Error 404: Not Found'], 'cost_usd': None, 'tool_call': False, 'ttft_s': None, 'decode_tps': None, 'cache_reported': None, 'wall_s': 0.4}
+   tool call did not come back structured; the agent legs will run anyway but expect failures
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 0, 'n': 3, 'median_wall_s': 0.5, 'total_wall_s': 1.5, 'input_tokens': 0, 'output_tokens': 0, 'cached_tokens': 0, 'cost_usd': 0.0, 'errors': 3, 'file': 'anthropic-claude-fable-5-1-batch-low-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model anthropic/claude-fable-5.1:batch --jcode F:\QHG\Quark\target\selfdev\jcod
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-fable-batch-low --baseline-model anthropi
+    {'doc': {'solved': 0, 'n': 2, 'checks_passed': 0, 'checks_total': 2, 'total_wall_s': 1.0, 'errors': 2, 'input_tokens': 0, 'output_tokens': 0, 'cached_tokens': 0, 'cost_usd': 0.0, 'file': 'anthropic-claude-fable-5-1-batch-low-docbench.json'}, 'stateful': {'solved': 0, 'followup_solved': 0, 'n': 1, 'wall_s': 0.5, 'input_tokens': 0, 'output_tokens': 0, 'cached_tokens': 0, 'cost_usd': 0.0, 'errors': 1, 'file': 'anthropic-claude-fable-5-1-batch-low-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model anthropic/claude-fable-5.1:batch --arm direct-full --turns 40 --facts 8
+    {'recall': 0, 'probes': 8, 'mean_latency_s': 0.0, 'p90_latency_s': None, 'prompt_tokens': 0, 'cached_tokens': 0, 'completion_tokens': 0, 'cost_usd': 0.0, 'truncated': 0, 'errors': 40, 'total_s': 4.2, 'file': 'anthropic-claude-fable-5-1-batch-low-memory.json'}
+
+anthropic/claude-fable-5.1:batch (low) correctness   0/15  coding 0/3  agentic 0/4  memory 0/8  | speed 0.5 s/task · ? tok/s · TTFT ? s  | tools ✗  cache ?  errors 50  | $0.0/task · None tok/task · gate $0.0
+gate wall 10.8 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-anthropic-claude-fable-5-1-batch-low.json

@@ -1,0 +1,119 @@
+{
+ "model": "inception/mercury-2.5",
+ "profile": "or-mercury",
+ "endpoint": "https://<host>/api/v1",
+ "reasoning_effort": null,
+ "pricing": {
+  "prompt": 4e-08,
+  "completion": 1.5e-07,
+  "cache_read": 4e-09,
+  "context_length": 260000
+ },
+ "date": "2026-09-14 20:20",
+ "gate_wall_s": 929.2,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "https://<host>/api/v1",
+   "errors": [],
+   "cost_usd": 0.0004,
+   "tool_call": true,
+   "tool_call_raw_in_content": false,
+   "ttft_s": null,
+   "decode_tps": 341.6,
+   "cache_reported": true,
+   "cache_probe_cached_tokens": 0,
+   "cache_probe_prompt_tokens": 2971,
+   "wall_s": 5.0
+  },
+  "coding": {
+   "solved": 3,
+   "n": 3,
+   "median_wall_s": 51.6,
+   "total_wall_s": 726.8,
+   "input_tokens": 95587,
+   "output_tokens": 223,
+   "cached_tokens": 0,
+   "cost_usd": 0.0039,
+   "errors": 1,
+   "file": "inception-mercury-2-5-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 2,
+    "n": 2,
+    "checks_passed": 16,
+    "checks_total": 16,
+    "total_wall_s": 98.7,
+    "errors": 0,
+    "input_tokens": 65651,
+    "output_tokens": 410,
+    "cached_tokens": 42118,
+    "cost_usd": 0.0012,
+    "file": "inception-mercury-2-5-docbench.json"
+   },
+   "stateful": {
+    "solved": 1,
+    "followup_solved": 1,
+    "n": 1,
+    "wall_s": 21.1,
+    "input_tokens": 47040,
+    "output_tokens": 171,
+    "cached_tokens": 19477,
+    "cost_usd": 0.0012,
+    "errors": 0,
+    "file": "inception-mercury-2-5-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 8,
+   "probes": 8,
+   "mean_latency_s": 1.35,
+   "p90_latency_s": 2.05,
+   "prompt_tokens": 33967,
+   "cached_tokens": 0,
+   "completion_tokens": 19990,
+   "cost_usd": 0.0043,
+   "truncated": 0,
+   "errors": 0,
+   "total_s": 53.8,
+   "file": "inception-mercury-2-5-memory.json"
+  },
+  "_effort": null
+ },
+ "verdict": {
+  "model": "inception/mercury-2.5",
+  "reasoning_effort": null,
+  "gate_cost_usd": 0.011,
+  "cost_per_task_usd": 0.001,
+  "tokens_per_task": 34847,
+  "output_tokens_per_task": 134,
+  "correctness": "15/15",
+  "correctness_rate": 1.0,
+  "coding": "3/3",
+  "agentic": "4/4",
+  "memory": "8/8",
+  "tool_call": true,
+  "coding_median_wall_s": 51.6,
+  "decode_tps": 341.6,
+  "ttft_s": null,
+  "cache_reported": true,
+  "errors": 1
+ }
+}

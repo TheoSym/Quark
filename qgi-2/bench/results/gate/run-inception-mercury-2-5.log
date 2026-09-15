@@ -1,0 +1,17 @@
+   pricing: $0.04/M in · $0.15/M out · $0.004/M cache read
+== gate: inception/mercury-2.5 via or-mercury (https://<host>/api/v1)  legs: engine, coding, agentic, memory
+-- engine
+    {'errors': [], 'cost_usd': 0.0004, 'tool_call': True, 'tool_call_raw_in_content': False, 'ttft_s': None, 'decode_tps': 412.7, 'cache_reported': True, 'cache_probe_cached_tokens': 0, 'cache_probe_prompt_tokens': 2892, 'wall_s': 4.4}
+-- coding
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\polyglot_bench.py --bench F:/QHG/polyglot-benchmark --lang python --exercises bowling forth wordy --agents jcode --jcode F:\
+    {'solved': 3, 'n': 3, 'median_wall_s': 51.6, 'total_wall_s': 726.8, 'input_tokens': 95587, 'output_tokens': 223, 'cached_tokens': 0, 'cost_usd': 0.0039, 'errors': 1, 'file': 'inception-mercury-2-5-coding.json'}
+-- agentic
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\docbench.py --tasks pdf-invoice xlsx-model --model inception/mercury-2.5 --jcode F:\QHG\Quark\target\selfdev\jcode.exe --jco
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\ab_compare.py --jcode F:\QHG\Quark\target\selfdev\jcode.exe --baseline-provider or-mercury --baseline-model inception/mercur
+    {'doc': {'solved': 2, 'n': 2, 'checks_passed': 16, 'checks_total': 16, 'total_wall_s': 98.7, 'errors': 0, 'input_tokens': 65651, 'output_tokens': 410, 'cached_tokens': 42118, 'cost_usd': 0.0012, 'file': 'inception-mercury-2-5-docbench.json'}, 'stateful': {'solved': 1, 'followup_solved': 1, 'n': 1, 'wall_s': 21.1, 'input_tokens': 47040, 'output_tokens': 171, 'cached_tokens': 19477, 'cost_usd': 0.0012, 'errors': 0, 'file': 'inception-mercury-2-5-stateful.json'}}
+-- memory
+  $ C:\Users\SamSammane\AppData\Local\Programs\Python\Python311\python.exe F:\QHG\Quark\qgi-2\bench\long_horizon.py --base https://<host>/api/v1 --model inception/mercury-2.5 --arm direct-full --turns 40 --facts 8 --max-toke
+    {'recall': 8, 'probes': 8, 'mean_latency_s': 1.35, 'p90_latency_s': 2.05, 'prompt_tokens': 33967, 'cached_tokens': 0, 'completion_tokens': 19990, 'cost_usd': 0.0043, 'truncated': 0, 'errors': 0, 'total_s': 53.8, 'file': 'inception-mercury-2-5-memory.json'}
+
+inception/mercury-2.5              correctness  15/15  coding 3/3  agentic 4/4  memory 8/8  | speed 51.6 s/task · 341.6 tok/s · TTFT ? s  | tools ✓  cache yes  errors 1  | $0.001/task · 34847 tok/task · gate $0.011
+gate wall 929.2 s -> F:\QHG\Quark\qgi-2\bench\results\gate\gate-inception-mercury-2-5.json

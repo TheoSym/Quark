@@ -1,0 +1,122 @@
+{
+ "model": "anthropic/claude-fable-5.1:batch",
+ "profile": "or-fable-batch-low",
+ "endpoint": "https://<host>/api/v1",
+ "reasoning_effort": "low",
+ "pricing": {
+  "prompt": 5e-06,
+  "completion": 2.5e-05,
+  "cache_read": 1.25e-07,
+  "context_length": 1000000
+ },
+ "date": "2026-09-14 20:05",
+ "gate_wall_s": 10.8,
+ "config": {
+  "exercises": [
+   "bowling",
+   "forth",
+   "wordy"
+  ],
+  "doc_tasks": [
+   "pdf-invoice",
+   "xlsx-model"
+  ],
+  "ab_tasks": [
+   "stateful"
+  ],
+  "lh_turns": 40,
+  "lh_facts": 8,
+  "timeout": 600
+ },
+ "legs": {
+  "engine": {
+   "base": "https://<host>/api/v1",
+   "errors": [
+    "readiness: HTTP Error 404: Not Found",
+    "ttft: HTTP Error 404: Not Found",
+    "decode: HTTP Error 404: Not Found",
+    "cache: HTTP Error 404: Not Found"
+   ],
+   "cost_usd": null,
+   "tool_call": false,
+   "ttft_s": null,
+   "decode_tps": null,
+   "cache_reported": null,
+   "wall_s": 0.4
+  },
+  "coding": {
+   "solved": 0,
+   "n": 3,
+   "median_wall_s": 0.5,
+   "total_wall_s": 1.5,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cached_tokens": 0,
+   "cost_usd": 0.0,
+   "errors": 3,
+   "file": "anthropic-claude-fable-5-1-batch-low-coding.json"
+  },
+  "agentic": {
+   "doc": {
+    "solved": 0,
+    "n": 2,
+    "checks_passed": 0,
+    "checks_total": 2,
+    "total_wall_s": 1.0,
+    "errors": 2,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "cost_usd": 0.0,
+    "file": "anthropic-claude-fable-5-1-batch-low-docbench.json"
+   },
+   "stateful": {
+    "solved": 0,
+    "followup_solved": 0,
+    "n": 1,
+    "wall_s": 0.5,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_tokens": 0,
+    "cost_usd": 0.0,
+    "errors": 1,
+    "file": "anthropic-claude-fable-5-1-batch-low-stateful.json"
+   }
+  },
+  "memory": {
+   "recall": 0,
+   "probes": 8,
+   "mean_latency_s": 0.0,
+   "p90_latency_s": null,
+   "prompt_tokens": 0,
+   "cached_tokens": 0,
+   "completion_tokens": 0,
+   "cost_usd": 0.0,
+   "truncated": 0,
+   "errors": 40,
+   "total_s": 4.2,
+   "file": "anthropic-claude-fable-5-1-batch-low-memory.json"
+  },
+  "_effort": "low"
+ },
+ "verdict": {
+  "model": "anthropic/claude-fable-5.1:batch",
+  "reasoning_effort": "low",
+  "gate_cost_usd": 0.0,
+  "cost_per_task_usd": 0.0,
+  "tokens_per_task": null,
+  "output_tokens_per_task": null,
+  "correctness": "0/15",
+  "correctness_rate": 0.0,
+  "coding": "0/3",
+  "agentic": "0/4",
+  "memory": "0/8",
+  "tool_call": false,
+  "coding_median_wall_s": 0.5,
+  "decode_tps": null,
+  "ttft_s": null,
+  "cache_reported": null,
+  "errors": 50
+ },
+ "note": "OpenRouter refuses this model on /chat/completions: \"This model is only available through the Batch API. Use the /api/beta/batches endpoint instead.\" (HTTP 404). Every request in every leg failed the same way in 11 s; nothing here measures the model. A batch-only endpoint cannot drive an interactive agent loop."
+}
