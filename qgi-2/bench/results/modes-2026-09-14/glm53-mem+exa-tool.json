@@ -1,0 +1,60 @@
+{
+  "model": "GLM 5.3",
+  "lang": "python",
+  "exercises": [
+    "bowling",
+    "forth",
+    "wordy"
+  ],
+  "summary": {
+    "mem+exa-tool": {
+      "n": 3,
+      "solved": 3,
+      "solve_rate": 1.0,
+      "median_wall_s": 151.2,
+      "total_wall_s": 865.7,
+      "errors": 1,
+      "input_tokens": 60447,
+      "output_tokens": 745,
+      "cached_tokens": 57856
+    }
+  },
+  "results": [
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "bowling",
+      "solved": true,
+      "wall_s": 113.9,
+      "input_tokens": 31917,
+      "output_tokens": 384,
+      "cached_tokens": 30656,
+      "error": null,
+      "test_tail": "...............................                                          [100%]\n31 passed in 0.08s\n",
+      "agent_tail": "ules in the 10th frame) and raises `ValueError`/`IndexError` with meaningful messages for any violation.\\n- **`score()`** computes the total by walking the roll list: strikes add the next two rolls, spares add the next one, open frames sum their two rolls, and the 10th frame counts all pins including fill balls.\\n- Incomplete games and rolls after game end are rejected.\\n\\nVerified with `python -m unittest bowling_test`: **Ran 31 tests \u2014 OK**.\",\n  \"usage\": {\n    \"input_tokens\": 31917,\n    \"output_tokens\": 384,\n    \"cache_read_input_tokens\": 30656,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "forth",
+      "solved": true,
+      "wall_s": 600.6,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cached_tokens": null,
+      "error": "timeout after 600s",
+      "test_tail": "......................................................                   [100%]\n54 passed in 0.09s\n",
+      "agent_tail": "We asked the agent to double-check this turn's weak points. Set JCODE_RUN_AUTO_POKE=0 to disable.\n"
+    },
+    {
+      "agent": "mem+exa-tool",
+      "exercise": "wordy",
+      "solved": true,
+      "wall_s": 151.2,
+      "input_tokens": 28530,
+      "output_tokens": 361,
+      "cached_tokens": 27200,
+      "error": null,
+      "test_tail": ".........................                                                [100%]\n25 passed in 0.07s\n",
+      "agent_tail": "cedence, so `3 plus 2 multiplied by 3` \u2192 15.\\n- **All 25 tests pass** (`Ran 25 tests ... OK`), including the negative-number, large-number, and error-message tests that assert on the exact exception text.\\n- **Committed** as `7619aec \\\"Implement wordy math word problem parser\\\"` on `master`. Only untracked leftover is `__pycache__/`, which is build noise.\\n\\nNo changes to `wordy_test.py` were made, and only the standard library (`re`) is used.\",\n  \"usage\": {\n    \"input_tokens\": 28530,\n    \"output_tokens\": 361,\n    \"cache_read_input_tokens\": 27200,\n    \"cache_creation_input_tokens\": null\n  }\n}\n"
+    }
+  ]
+}

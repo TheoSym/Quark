@@ -1,0 +1,6 @@
+[jcode] bowling                      PASS  153.3s
+[jcode] forth                        PASS  282.0s
+[jcode] wordy                        PASS  524.1s
+
+agent    solved   rate  median s  total s errors     in tok  out tok     cached
+mem       3/3     100%     282.0    959.4      0     93,823      942     88,128

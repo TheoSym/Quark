@@ -25,3 +25,7 @@ DONE glm53 21:54:42
   skip exa-reuse (exists)
   skip exa-reuse+tool (exists)
   == glm53 mem  10:09:35
+     3/3 med=282.0s tot=959.4s in=93823 out=942 err=0
+  == glm53 mem+exa-tool  10:25:38
+     3/3 med=151.2s tot=865.7s in=60447 out=745 err=1
+DONE glm53 10:40:06
