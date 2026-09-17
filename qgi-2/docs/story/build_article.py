@@ -126,7 +126,7 @@ H = ["<title>Four Days on Rented Silicon</title>", FONTS, "<style>" + CSS + "</s
 H.append(f"""<header class="mast"><p class="kicker">A field report from the QGI-2 and Quark trials · 11–17 September 2026</p>
 <h1>Four Days on Rented Silicon</h1>
 <p class="stand">We rented a supercomputer that couldn't count to three, built a planner that lost to the thing it was planning for, taught a proxy to remember a Wi-Fi password from 88 turns ago, graded sixteen models on a test they nearly all aced, and ran a credit card down to $1.85. Here is everything we measured, and what it means.</p>
-<p class="byline">Starring {V41} and {QFN} · with Claude Fable 5.1, Claude Opus 5, Mercury 2.5, Grok 4.6, GPT-6 Astra and nine gateway regulars · <a href="https://claude.ai/artifact/H3KuBy8kWtonVuNpRej71p" target="_blank" rel="noopener">the ten-slide version</a></p>
+<p class="byline">Starring {V41} and {QFN} · with Claude Fable 5.1, Claude Opus 5, Mercury 2.5, Grok 4.6, GPT-6 Astra and nine gateway regulars</p>
 <div class="stats"><div class="stat"><b>2</b><span>GPU boxes · one lost</span></div><div class="stat"><b>24</b><span>models touched</span></div><div class="stat"><b>402</b><span>harness tests</span></div>
 <div class="stat"><b>240</b><span>gate verdicts</span></div><div class="stat"><b>48</b><span>matrix cells, all 3/3</span></div><div class="stat"><b>$122.79</b><span>OpenRouter, two days</span></div></div></header>""")
 

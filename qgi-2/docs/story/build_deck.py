@@ -150,7 +150,7 @@ S.append(f"""<section class="slide" data-n="10"><p class="eyebrow">What we keep<
 <div class="cols even"><div><ul><li><b>The memory layer stays.</b> Free on the models that matter, decisive on long sessions.</li><li><b>The step-split planner goes.</b> Native tool calling wins.</li>
 <li><b>Self-hosting wins on speed:</b> 14.8 s against 24.3 for the best frontier model and 50+ for the gateway.</li><li><b>Effort is a lever, not a virtue.</b> Max and high bought minutes, not answers.</li>
 <li><b>Prompt policy is per model.</b> So safe-efficient ships opt-in.</li><li><b>Quark ships:</b> CLI and runner in the app factory, 47/47 tests.</li></ul></div>
-<div><p class="eyebrow" style="margin-bottom:1vh">Blooper reel</p><div class="blooper">{bl}</div><p style="margin-top:2.4vh">Every number, chart and ledger: <a href="https://claude.ai/artifact/FbMF6uhGNGut7UDffMWYZP" target="_blank" rel="noopener">the full article</a></p></div></div></section>""")
+<div><p class="eyebrow" style="margin-bottom:1vh">Blooper reel</p><div class="blooper">{bl}</div></div></div></section>""")
 
 page = "<title>Four Days on Rented Silicon · Deck</title>" + FONTS + "<style>" + CSS + "</style>" + "".join(S) + '<div class="hint">← → to move · 10 slides</div>' + JS
 open(os.path.join(OUT, "quark-story-deck.html"), "w", encoding="utf-8").write(page)
