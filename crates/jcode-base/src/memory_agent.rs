@@ -227,7 +227,7 @@ async fn run_final_extraction(transcript: String, session_id: String, working_di
         }
         Err(e) => {
             crate::logging::info(&format!(
-                "Final extraction for session {} failed: {}",
+                "Final extraction for session {} failed: {:#}",
                 session_id, e
             ));
         }

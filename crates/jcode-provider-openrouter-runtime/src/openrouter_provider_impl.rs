@@ -798,7 +798,7 @@ impl Provider for OpenRouterProvider {
         Arc::new(Self {
             client: self.client.clone(),
             model: Arc::new(RwLock::new(
-                self.model.try_read().map(|m| m.clone()).unwrap_or_default(),
+                self.model(),
             )),
             reasoning_effort: Arc::new(RwLock::new(self.reasoning_effort())),
             api_base: self.api_base.clone(),
